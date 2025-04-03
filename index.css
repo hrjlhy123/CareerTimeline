@@ -47,6 +47,7 @@ body > * {
    grid-area: timeline;
    background-color: #00f;
    text-align: center;
+   overflow: auto;
 }
 
 #timeline > img {
