@@ -1,0 +1,161 @@
+{
+    "type": "float-area",
+    "_widgets": [
+        [
+            {
+                "widget": {
+                    "constructionOptions": {
+                        "factoryId": "code-editor-opener",
+                        "options": {
+                            "kind": "navigatable",
+                            "uri": "3D_model_1.js",
+                            "floatAreaId": "d99a7373-b6af-423e-8107-7bc4531d35ac"
+                        }
+                    },
+                    "innerWidgetState": {
+                        "cursorState": [
+                            {
+                                "inSelectionMode": false,
+                                "selectionStart": {
+                                    "lineNumber": 33,
+                                    "column": 25
+                                },
+                                "position": {
+                                    "lineNumber": 33,
+                                    "column": 25
+                                }
+                            }
+                        ],
+                        "viewState": {
+                            "scrollLeft": 0,
+                            "firstPosition": {
+                                "lineNumber": 1,
+                                "column": 1
+                            },
+                            "firstPositionDeltaTop": 0
+                        },
+                        "contributionsState": {
+                            "editor.contrib.folding": {
+                                "lineCount": 290,
+                                "provider": "syntax",
+                                "foldedImports": false
+                            },
+                            "editor.contrib.wordHighlighter": true
+                        }
+                    }
+                },
+                "width": 870.8333225713841,
+                "height": 450,
+                "spacing": 0
+            }
+        ],
+        [
+            {
+                "widget": {
+                    "constructionOptions": {
+                        "factoryId": "code-editor-opener",
+                        "options": {
+                            "kind": "navigatable",
+                            "uri": "read_dae.js",
+                            "floatAreaId": "d99a7373-b6af-423e-8107-7bc4531d35ac"
+                        }
+                    },
+                    "innerWidgetState": {
+                        "cursorState": [
+                            {
+                                "inSelectionMode": false,
+                                "selectionStart": {
+                                    "lineNumber": 69,
+                                    "column": 9
+                                },
+                                "position": {
+                                    "lineNumber": 69,
+                                    "column": 9
+                                }
+                            }
+                        ],
+                        "viewState": {
+                            "scrollLeft": 0,
+                            "firstPosition": {
+                                "lineNumber": 69,
+                                "column": 1
+                            },
+                            "firstPositionDeltaTop": -8
+                        },
+                        "contributionsState": {
+                            "editor.contrib.folding": {
+                                "lineCount": 91,
+                                "provider": "syntax",
+                                "foldedImports": false
+                            },
+                            "editor.contrib.wordHighlighter": false
+                        }
+                    }
+                },
+                "width": 600,
+                "height": 450,
+                "spacing": 0
+            }
+        ]
+    ],
+    "_widths": [
+        870.8333225713841,
+        600
+    ],
+    "_modelData": {
+        "connections": [
+            {
+                "startWord": {
+                    "uri": "3D_model_1.js",
+                    "lineNumber": 1,
+                    "startColumn": 33,
+                    "endLineNumber": 1,
+                    "endColumn": 41,
+                    "word": "read_dae",
+                    "x": 340.0000001955204,
+                    "y": 61.999998713037776,
+                    "hide": false,
+                    "height": 19,
+                    "width": 62
+                },
+                "endWord": {
+                    "uri": "read_dae.js",
+                    "lineNumber": 1,
+                    "startColumn": 1,
+                    "endLineNumber": 1,
+                    "endColumn": 1,
+                    "word": "",
+                    "x": 1020.8312145415825,
+                    "y": 61.999998713037776,
+                    "hide": true,
+                    "height": 1,
+                    "width": 1
+                },
+                "id": "111955df-3816-45b7-8f5e-fb6a13daac16",
+                "startAnchor": {
+                    "x": 402.0000001955204,
+                    "y": 71.07098655147246
+                },
+                "endAnchor": {
+                    "x": 1020.8312145415825,
+                    "y": 62.506918264030766
+                },
+                "startControl": {
+                    "x": 433.99693630371206,
+                    "y": 71.07098655147246
+                },
+                "endControl": {
+                    "x": 976.835427392819,
+                    "y": 62.506918264030766
+                },
+                "arrow": {
+                    "angle": 0,
+                    "x": 1008.8312145415825,
+                    "y": 62.506918264030766
+                }
+            }
+        ],
+        "annotations": [],
+        "highlights": []
+    }
+}
