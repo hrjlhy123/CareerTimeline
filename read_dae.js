@@ -84,6 +84,8 @@ export async function geometryData(path) {
     }
   })
 
+  console.log(`GET geometryData success!`)
+
   return {
     positions: new Float32Array(positions),
     indices: new Uint32Array(indices),

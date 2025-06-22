@@ -1,4 +1,5 @@
-import { geometryData } from "./read_dae.js";
+import { geometryData } from "./read_dae_1.js";
+import { mat4 } from "./node_modules/gl-matrix/esm/index.js";
 
 `use strict`;
 
@@ -7,7 +8,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     let canvas, context, adapter, device, // GPUEnv
         canvasFormat, alphaMode, // GPUConfig
-        result // Custom
+        results // Custom
 
     {
         navigator.gpu
@@ -37,18 +38,18 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare data ===
-    let positions, indices, 
-        cameraUniformBuffer, transformStorageBuffer, 
+    let positions, indices,
+        cameraUniformBuffer, transformStorageBuffer,
         bindGroupLayout, bindGroup
     {
         // === Prepare model data ===
         {
-            result = await geometryData(`./screenshot/mailbox slot.dae`)
+            results = await geometryData(`./screenshot/mailbox slot.dae`)
 
-            positions = result.positions
-            indices = result.indices
+            // positions = results.positions
+            // indices = results.indices
 
-            console.log(`result: ${JSON.stringify(result)}`)
+            console.log(`results: ${JSON.stringify(results)}`)
         }
 
         // === Prepare camera/transform data ===
@@ -104,31 +105,57 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare buffer ===
-    let vertexBuffer, indexBuffer
+    let meshBuffers, vertexBuffer, indexBuffer
     let vertexBufferLayout
     {
         // === Prepare buffer data ===
         {
             // === Write model data ===
-            {
+            meshBuffers = results.map(result => {
                 vertexBuffer = device.createBuffer({
-                    label: `vertex buffer`,
-                    size: positions.byteLength,
+                    label: `vertex buffer for ${result.name}`,
+                    size: result.positions.byteLength,
                     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
                     mappedAtCreation: false,
                 })
 
-                device.queue.writeBuffer(vertexBuffer, 0, positions)
+                device.queue.writeBuffer(vertexBuffer, 0, result.positions)
 
                 indexBuffer = device.createBuffer({
-                    label: `index buffer`,
-                    size: indices.byteLength,
+                    label: `index buffer for ${result.name}`,
+                    size: result.indices.byteLength,
                     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
                     mappedAtCreation: false,
                 })
 
-                device.queue.writeBuffer(indexBuffer, 0, indices)
-            }
+                device.queue.writeBuffer(indexBuffer, 0, result.indices)
+
+                return {
+                    name: result.name,
+                    vertexBuffer,
+                    indexBuffer,
+                    indexCount: result.indices.length,
+                }
+            })
+            // {
+            //     vertexBuffer = device.createBuffer({
+            //         label: `vertex buffer`,
+            //         size: positions.byteLength,
+            //         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            //         mappedAtCreation: false,
+            //     })
+
+            //     device.queue.writeBuffer(vertexBuffer, 0, positions)
+
+            //     indexBuffer = device.createBuffer({
+            //         label: `index buffer`,
+            //         size: indices.byteLength,
+            //         usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+            //         mappedAtCreation: false,
+            //     })
+
+            //     device.queue.writeBuffer(indexBuffer, 0, indices)
+            // }
 
             // === Write camera/transform data ===
             let fov, aspect, near, far, f,
@@ -136,10 +163,14 @@ window.addEventListener("DOMContentLoaded", async () => {
             {
                 // Perspective projection matrix
                 {
-                    fov = Math.PI / 4
-                    aspect = canvas.width / canvas.height
-                    near = 0.1
-                    far = 100.0
+                    // fov = Math.PI / 4
+                    // aspect = canvas.width / canvas.height
+                    // near = 0.1
+                    // far = 100.0
+                    fov = 35 * Math.PI / 180
+                    aspect = canvas.width / canvas.height // 因为 .dae 里是 0
+                    near = 1
+                    far = 1000
                     f = 1 / Math.tan(fov / 2)
                     matrix_projection = new Float32Array([
                         f / aspect, 0, 0, 0,
@@ -151,12 +182,22 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 // View matrix
                 {
-                    matrix_view = new Float32Array([
-                        1, 0, 0, 0,
-                        0, 1, 0, 0,
-                        0, 0, 1, 0,
-                        0, 0, -5, 1,
-                    ])
+                    let matrix_view_world
+
+                    matrix_view_world = mat4.fromValues(
+                        0.7658986, 0.6429614, 0, 0,
+                        -0.2184546, 0.260224, 0.940511, 0,
+                        0.6047123, -0.7203361, 0.3397631, 0,
+                        105.9, -90.24405, 74.0491, 1
+                    )
+                    matrix_view = mat4.create()
+                    mat4.invert(matrix_view, matrix_view_world)
+                    // matrix_view = new Float32Array([
+                    //     1, 0, 0, 0,
+                    //     0, 1, 0, 0,
+                    //     0, 0, 1, 0,
+                    //     0, 0, -5, 1,
+                    // ])
                 }
 
                 // Transform matrix
@@ -318,10 +359,15 @@ window.addEventListener("DOMContentLoaded", async () => {
         renderPass.setPipeline(renderPipeline)
         renderPass.setBindGroup(0, bindGroup)
 
-        renderPass.setVertexBuffer(0, vertexBuffer)
-        renderPass.setIndexBuffer(indexBuffer, `uint32`)
+        for (let mesh of meshBuffers) {
+            renderPass.setVertexBuffer(0, mesh.vertexBuffer)
+            renderPass.setIndexBuffer(mesh.indexBuffer, `uint32`)
+            renderPass.drawIndexed(mesh.indexCount)
+        }
+        // renderPass.setVertexBuffer(0, vertexBuffer)
+        // renderPass.setIndexBuffer(indexBuffer, `uint32`)
+        // renderPass.drawIndexed(indices.length)
 
-        renderPass.drawIndexed(indices.length)
         renderPass.end()
 
         device.queue.submit([encoder.finish()])
