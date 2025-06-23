@@ -22,6 +22,7 @@ fn vertexMain(
 @builtin(instance_index) instanceIndex : u32,
 ) -> VertexOutput {
     let modelMatrix = transform[instanceIndex].modelMatrix;
+    
     let worldPosition = modelMatrix * vec4f(position, 1.0);
     let worldNormal = normalize((modelMatrix * vec4f(normal, 0.0)).xyz);
 

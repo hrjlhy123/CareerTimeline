@@ -56,7 +56,7 @@ span.title {
 
 div.mailboxSlot {
   grid-area: mailboxSlot;
-  padding: 1%;
+  /* padding: 1%; */
   background-color: rgba(0, 255, 0, 0.5);
 }
 
@@ -67,7 +67,7 @@ img.mailboxSlot {
 }
 
 div.mailboxSlot > canvas {
-  width: 100%;
+  width: 80%;
   height: 100%;
   object-fit: contain;
 }

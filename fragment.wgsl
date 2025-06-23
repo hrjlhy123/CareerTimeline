@@ -1,10 +1,19 @@
 @fragment
 fn fragmentMain(
-@location(0) normal: vec3f
+@location(0) normal : vec3f
 ) -> @location(0) vec4f {
-    let lightDir = normalize(vec3f(1.0, 1.0, -1.0));
+    let lightDir = normalize(vec3f(-0.5, 1.0, -1.0));
     let lambert = max(dot(normalize(normal), lightDir), 0.0);
-    let baseColor = vec3f(0.4, 0.6, 0.8);
-    // return vec4f(0.4, 0.6, 0.8, 1.0);
-    return vec4f(baseColor * lambert, 0.8);
+
+    let viewDir = normalize(vec3f(-0.5, 1.0, -1.0));
+    let halfDir = normalize(lightDir + viewDir);
+    let spec = pow(max(dot(normal, halfDir), 0.0), 32.0); // shininess = 32
+    let specular = vec3f(1.0, 1.0, 1.0) * spec;
+
+    let ambient = 0.2;
+
+    let baseColor = vec3f(0.8, 0.8, 0.8);
+
+    let finalColor = baseColor * (ambient + lambert) + specular;
+    return vec4f(finalColor, 1.0);
 }

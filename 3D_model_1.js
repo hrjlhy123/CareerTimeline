@@ -114,6 +114,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let meshBuffers,
         vertexBuffer, normalDirBuffer, indexBuffer,
         vertexBufferLayout,
+        matrix_projection, matrix_transform,
         matrix_view, matrix_view_world // view
 
     {
@@ -159,12 +160,11 @@ window.addEventListener("DOMContentLoaded", async () => {
             })
 
             // === Write camera/transform data ===
-            let fov, aspect, near, far, f,
-                matrix_projection, matrix_transform
+            let fov, aspect, near, far, f
             {
                 // Perspective projection matrix
                 {
-                    fov = 35 * Math.PI / 180
+                    fov = 30 * Math.PI / 180
                     aspect = canvas.width / canvas.height
                     near = 1
                     far = 1000
@@ -199,7 +199,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 }
 
                 // Transform matrix
-                let center 
+                let center
                 {
                     matrix_transform = mat4.create()
                     center = results.center.map(value => -value)
@@ -374,10 +374,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         mat4.fromYRotation(rotate, yaw)
 
         matrix_view_world_2 = mat4.create()
-        mat4.multiply(matrix_view_world_2, rotate, matrix_view_world)
-        mat4.invert(matrix_view, matrix_view_world_2)
+        // mat4.multiply(matrix_view_world_2, rotate, matrix_view_world)
+        // mat4.invert(matrix_view, matrix_view_world_2)
 
-        device.queue.writeBuffer(cameraUniformBuffer, 64, matrix_view)
+        // device.queue.writeBuffer(cameraUniformBuffer, 64, matrix_view)
+
+        mat4.multiply(matrix_view_world_2, rotate, matrix_transform)
+
+        device.queue.writeBuffer(transformStorageBuffer, 0, matrix_view_world_2)
 
         renderPass.end()
 
