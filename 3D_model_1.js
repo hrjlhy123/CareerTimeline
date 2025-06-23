@@ -44,18 +44,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare data ===
-    let positions, indices,
-        cameraUniformBuffer, transformStorageBuffer,
+    let cameraUniformBuffer, transformStorageBuffer,
         bindGroupLayout, bindGroup
     {
         // === Prepare model data ===
         {
             results = await geometryData(`./screenshot/mailbox slot_2.dae`)
 
-            // positions = results.positions
-            // indices = results.indices
-
-            console.log(`results: ${JSON.stringify(results)}`)
+            // console.log(`results: ${JSON.stringify(results)}`)
         }
 
         // === Prepare camera/transform data ===
@@ -172,12 +168,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                     matrix_projection = mat4.create()
 
                     mat4.perspective(matrix_projection, fov, aspect, near, far)
-                    // matrix_projection = new Float32Array([
-                    //     f / aspect, 0, 0, 0,
-                    //     0, f, 0, 0,
-                    //     0, 0, (far + near) / (near - far), -1,
-                    //     0, 0, (2 * far * near) / (near - far), 0,
-                    // ])
                 }
 
                 // View matrix
@@ -374,10 +364,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         mat4.fromYRotation(rotate, yaw)
 
         matrix_view_world_2 = mat4.create()
-        // mat4.multiply(matrix_view_world_2, rotate, matrix_view_world)
-        // mat4.invert(matrix_view, matrix_view_world_2)
-
-        // device.queue.writeBuffer(cameraUniformBuffer, 64, matrix_view)
 
         mat4.multiply(matrix_view_world_2, rotate, matrix_transform)
 
