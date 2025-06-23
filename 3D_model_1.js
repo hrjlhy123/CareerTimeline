@@ -1,5 +1,5 @@
 import { geometryData } from "./read_dae_1.js";
-import { mat4 } from "./node_modules/gl-matrix/esm/index.js";
+import { mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js";
 
 `use strict`;
 
@@ -7,7 +7,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     // === WebGPU init ===
 
     let canvas, context, adapter, device, // GPUEnv
-        canvasFormat, alphaMode, // GPUConfig
+        canvasFormat, alphaMode, dpr, // GPUConfig
         results // Custom
 
     {
@@ -30,10 +30,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         alphaMode = `premultiplied`
 
+        dpr = window.devicePixelRatio || 1
+
+        canvas.width = canvas.clientWidth * dpr
+        canvas.height = canvas.clientHeight * dpr
+
         context.configure({
             device: device,
             format: canvasFormat,
             alphaMode: alphaMode,
+            size: [canvas.width, canvas.height]
         })
     }
 
@@ -44,7 +50,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     {
         // === Prepare model data ===
         {
-            results = await geometryData(`./screenshot/mailbox slot.dae`)
+            results = await geometryData(`./screenshot/mailbox slot_2.dae`)
 
             // positions = results.positions
             // indices = results.indices
@@ -105,13 +111,17 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare buffer ===
-    let meshBuffers, vertexBuffer, indexBuffer
-    let vertexBufferLayout
+    let meshBuffers,
+        vertexBuffer, normalDirBuffer, indexBuffer,
+        vertexBufferLayout,
+        matrix_view, matrix_view_world // view
+
     {
         // === Prepare buffer data ===
         {
             // === Write model data ===
-            meshBuffers = results.map(result => {
+            meshBuffers = results.meshes.map(result => {
+                console.log(Math.max(...result.positions))
                 vertexBuffer = device.createBuffer({
                     label: `vertex buffer for ${result.name}`,
                     size: result.positions.byteLength,
@@ -120,6 +130,15 @@ window.addEventListener("DOMContentLoaded", async () => {
                 })
 
                 device.queue.writeBuffer(vertexBuffer, 0, result.positions)
+
+                normalDirBuffer = device.createBuffer({
+                    label: `normal buffer for ${result.name}`,
+                    size: result.normals.byteLength,
+                    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+                    mappedAtCreation: false,
+                })
+
+                device.queue.writeBuffer(normalDirBuffer, 0, result.normals)
 
                 indexBuffer = device.createBuffer({
                     label: `index buffer for ${result.name}`,
@@ -133,82 +152,61 @@ window.addEventListener("DOMContentLoaded", async () => {
                 return {
                     name: result.name,
                     vertexBuffer,
+                    normalDirBuffer,
                     indexBuffer,
                     indexCount: result.indices.length,
                 }
             })
-            // {
-            //     vertexBuffer = device.createBuffer({
-            //         label: `vertex buffer`,
-            //         size: positions.byteLength,
-            //         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-            //         mappedAtCreation: false,
-            //     })
-
-            //     device.queue.writeBuffer(vertexBuffer, 0, positions)
-
-            //     indexBuffer = device.createBuffer({
-            //         label: `index buffer`,
-            //         size: indices.byteLength,
-            //         usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-            //         mappedAtCreation: false,
-            //     })
-
-            //     device.queue.writeBuffer(indexBuffer, 0, indices)
-            // }
 
             // === Write camera/transform data ===
             let fov, aspect, near, far, f,
-                matrix_projection, matrix_view, matrix_transform
+                matrix_projection, matrix_transform
             {
                 // Perspective projection matrix
                 {
-                    // fov = Math.PI / 4
-                    // aspect = canvas.width / canvas.height
-                    // near = 0.1
-                    // far = 100.0
                     fov = 35 * Math.PI / 180
-                    aspect = canvas.width / canvas.height // 因为 .dae 里是 0
+                    aspect = canvas.width / canvas.height
                     near = 1
                     far = 1000
                     f = 1 / Math.tan(fov / 2)
-                    matrix_projection = new Float32Array([
-                        f / aspect, 0, 0, 0,
-                        0, f, 0, 0,
-                        0, 0, (far + near) / (near - far), -1,
-                        0, 0, (2 * far * near) / (near - far), 0,
-                    ])
-                }
+                    matrix_projection = mat4.create()
 
-                // View matrix
-                {
-                    let matrix_view_world
-
-                    matrix_view_world = mat4.fromValues(
-                        0.7658986, 0.6429614, 0, 0,
-                        -0.2184546, 0.260224, 0.940511, 0,
-                        0.6047123, -0.7203361, 0.3397631, 0,
-                        105.9, -90.24405, 74.0491, 1
-                    )
-                    matrix_view = mat4.create()
-                    mat4.invert(matrix_view, matrix_view_world)
-                    // matrix_view = new Float32Array([
-                    //     1, 0, 0, 0,
-                    //     0, 1, 0, 0,
-                    //     0, 0, 1, 0,
-                    //     0, 0, -5, 1,
+                    mat4.perspective(matrix_projection, fov, aspect, near, far)
+                    // matrix_projection = new Float32Array([
+                    //     f / aspect, 0, 0, 0,
+                    //     0, f, 0, 0,
+                    //     0, 0, (far + near) / (near - far), -1,
+                    //     0, 0, (2 * far * near) / (near - far), 0,
                     // ])
                 }
 
-                // Transform matrix
+                // View matrix
+                let dist, eye, target, up
+
+                dist = results.size * 1.5
+
+                console.log(`dist: ${dist}`)
+                eye = [0, 0, -dist]
+                target = [0, 0, 0]
+                up = [0, 1, 0]
+
                 {
-                    matrix_transform = new Float32Array([
-                        1, 0, 0, 0,
-                        0, 1, 0, 0,
-                        0, 0, 1, 0,
-                        0, 0, 0, 1,
-                    ])
+                    matrix_view_world = mat4.create()
+                    mat4.lookAt(matrix_view_world, eye, target, up)
+
+                    matrix_view = mat4.create()
+                    mat4.invert(matrix_view, matrix_view_world)
                 }
+
+                // Transform matrix
+                let center 
+                {
+                    matrix_transform = mat4.create()
+                    center = results.center.map(value => -value)
+                    mat4.translate(matrix_transform, matrix_transform, center)
+                }
+
+                console.log(`eye: ${eye}, center: ${center}, dist: ${vec3.distance(eye, center)}, near: ${near}`)
 
                 device.queue.writeBuffer(cameraUniformBuffer, 0, matrix_projection)
                 device.queue.writeBuffer(cameraUniformBuffer, 64, matrix_view)
@@ -217,24 +215,30 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
 
         // === Prepare buffer layout ===
+        vertexBufferLayout = {
+            position: {},
+            normal: {},
+        }
+
         {
-            vertexBufferLayout = {
-                arrayStride: 8 * 4, // 3 position + 3 normal + 2 uv = 8 float32 = 32 bytes
+            vertexBufferLayout.position = {
+                arrayStride: 3 * 4, // 3 * float32 = 32 bytes
                 attributes: [
                     {
-                        shaderLocation: 0, // position, @location(0)
+                        shaderLocation: 0,
                         offset: 0,
-                        format: `float32x3`,
-                    },
+                        format: `float32x3`
+                    }
+                ]
+            }
+
+            vertexBufferLayout.normal = {
+                arrayStride: 3 * 4, // 3 * float32 = 32 bytes
+                attributes: [
                     {
-                        shaderLocation: 1, // normal, @location(1)
-                        offset: 3 * 4,
-                        format: `float32x3`,
-                    },
-                    {
-                        shaderLocation: 2, // uv, @location(2)
-                        offset: 6 * 4,
-                        format: `float32x2`,
+                        shaderLocation: 1,
+                        offset: 0,
+                        format: `float32x3`
                     }
                 ]
             }
@@ -298,7 +302,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             vertex: {
                 module: vertexModule,
                 entryPoint: `vertexMain`,
-                buffers: [vertexBufferLayout],
+                buffers: [vertexBufferLayout.position, vertexBufferLayout.normal],
             },
             fragment: {
                 module: fragmentModule,
@@ -331,7 +335,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare render ===
-    let render
+    let render, matrix_view_world_2
     render = () => {
         let encoder, renderPass
         encoder = device.createCommandEncoder()
@@ -341,10 +345,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                 resolveTarget: context.getCurrentTexture().createView(),
                 loadOp: `clear`,
                 clearValue: {
-                    r: 0.9,
-                    g: 0.9,
-                    b: 0.9,
-                    a: 1.0
+                    r: 0.0,
+                    g: 0.0,
+                    b: 0.0,
+                    a: 0.0
                 },
                 storeOp: `store`,
             }],
@@ -361,17 +365,35 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         for (let mesh of meshBuffers) {
             renderPass.setVertexBuffer(0, mesh.vertexBuffer)
+            renderPass.setVertexBuffer(1, mesh.normalDirBuffer)
             renderPass.setIndexBuffer(mesh.indexBuffer, `uint32`)
             renderPass.drawIndexed(mesh.indexCount)
         }
-        // renderPass.setVertexBuffer(0, vertexBuffer)
-        // renderPass.setIndexBuffer(indexBuffer, `uint32`)
-        // renderPass.drawIndexed(indices.length)
+
+        rotate = mat4.create()
+        mat4.fromYRotation(rotate, yaw)
+
+        matrix_view_world_2 = mat4.create()
+        mat4.multiply(matrix_view_world_2, rotate, matrix_view_world)
+        mat4.invert(matrix_view, matrix_view_world_2)
+
+        device.queue.writeBuffer(cameraUniformBuffer, 64, matrix_view)
 
         renderPass.end()
 
         device.queue.submit([encoder.finish()])
     }
+
+    // === Control ===
+    let yaw, rotate
+    yaw = 0
+    canvas.addEventListener(`mousemove`, (e) => {
+        if (e.buttons == 1) {
+            yaw += e.movementX * 0.005
+            // console.log(`yaw:`, yaw)
+        }
+    })
+
 
     // === Render ===
     let frame
