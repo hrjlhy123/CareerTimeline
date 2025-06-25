@@ -51,8 +51,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         {
             results = await geometryData(`./screenshot/scroll bar_2.dae`)
             // console.log(`results: ${JSON.stringify(results)}`)
-            console.log(`results.size: ${results.size}`)
-            console.log(`results.center: ${typeof (results.center)} ${results.center}`)
+            // console.log(`results.size: ${results.size}`)
+            // console.log(`results.center: ${typeof (results.center)} ${results.center}`)
         }
 
         // === Prepare camera/transform data ===
@@ -174,7 +174,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // View matrix
                 let dist, eye, target, up
 
-                dist = results.size * 5.5
+                dist = results.size * 2
 
                 console.log(`dist: ${dist}`)
                 eye = [0, 0, -dist]

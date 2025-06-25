@@ -1,27 +1,54 @@
 import { cal_item_size, cal_item_center } from "./tools/calculate.js";
 import { mat3, mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js";
 
-const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform) => {
-  let localMatrix, matNode, worldMatrix, instanceGeometry
+const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, parentWorldMatrix = mat4.create()) => {
+  console.log(`nodeID: ${node.getAttribute(`id`)} nodeName: ${node.getAttribute(`name`)}`)
+  let localMatrix, matrix, worldMatrix, instanceGeometry
 
   localMatrix = mat4.create()
 
-  matNode = node.querySelector(`:scope > matrix`)
+  matrix = node.querySelector(`:scope > matrix`)
 
-  if (matNode) {
+  if (matrix) {
     let values
-    values = matNode.textContent.trim().split(/\s+/).map(Number)
+    values = matrix.textContent.trim().split(/\s+/).map(Number)
     localMatrix = mat4.fromValues(...values)
+    mat4.transpose(localMatrix, localMatrix)
+  }
+
+  worldMatrix = mat4.create()
+  mat4.multiply(worldMatrix, parentWorldMatrix, localMatrix)
+  console.log(`worldMatrix:`, worldMatrix, `parentWorldMatrix:`, parentWorldMatrix, `localMatrix:`, localMatrix)
+
+  // === node ===
+  let children = node.querySelectorAll(`:scope > node`)
+  children.forEach(child => {
+    walkNode(child, nodeMap, geometryMap, geometries, normalTransform, worldMatrix)
+  })
+
+  // === instance_node ===
+  let instanceNode
+  instanceNode = node.querySelector(`:scope > instance_node`)
+  if (instanceNode) {
+    console.log(`instanceNodeID: ${instanceNode.getAttribute(`url`)}`)
+    let referenceID, reference
+    referenceID = instanceNode.getAttribute(`url`).replace(`#`, ``)
+    reference = nodeMap.get(referenceID)
+    if (reference) {
+      walkNode(reference, nodeMap, geometryMap, geometries, normalTransform, worldMatrix)
+    }
   }
 
   // === instance_geometry ===
   instanceGeometry = node.querySelector(`:scope > instance_geometry`)
   if (instanceGeometry) {
+    console.log(`instanceGeometryURL: ${instanceGeometry.getAttribute(`url`)}`)
     let geometryID, geometry
 
     geometryID = instanceGeometry.getAttribute(`url`).replace(/^#/, ``)
     geometry = geometryMap.get(geometryID)
     if (geometry) {
+      console.log(`geometryMap.has? ${geometryMap.has(geometryID)} geometryID: ${geometryID} geometry: ${geometry}`)
       let data,
         positions, normals, indices, vertices,
         positionID, position,
@@ -48,14 +75,23 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform) => {
       if (floatArray) {
         data.positions = floatArray.textContent.trim().split(/\s+/).map(Number)
 
-        let position
+        let position, position_old
         for (let i = 0; i < data.positions.length; i += 3) {
           position = vec3.fromValues(
             data.positions[i],
             data.positions[i + 1],
             data.positions[i + 2],
           )
+          position_old = vec3.clone(position)
+          vec3.transformMat4(position, position, worldMatrix)
+          // console.log(`position_old:`, position_old, `position:`, position)
           positions.push(...position)
+
+          // console.log("vec3.transformMat4.toString():", vec3.transformMat4.toString())
+          // let test = vec3.transformMat4(vec3.create(), position_old, worldMatrix)
+          // console.log("position_old:", position_old)
+          // console.log("worldMatrix:", worldMatrix)
+          // console.log("transformed:", test)
         }
       }
 
@@ -73,6 +109,8 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform) => {
       if (floatArray) {
         data.normals = floatArray.textContent.trim().split(/\s+/).map(Number)
 
+        // console.log("raw float_array sample:", data.positions.slice(0, 9)) // 原始值
+
         let normal
         for (let i = 0; i < data.normals.length; i += 3) {
           normal = vec3.fromValues(
@@ -80,10 +118,18 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform) => {
             data.normals[i + 1],
             data.normals[i + 2],
           )
-          vec3.transformMat3(normal, normal, normalTransform)
+          let normalMat4 = mat4.clone(worldMatrix)
+          mat4.invert(normalMat4, normalMat4)
+          mat4.transpose(normalMat4, normalMat4)
+          let localNormalMatrix = mat3.create()
+          mat3.fromMat4(localNormalMatrix, normalMat4)
+          vec3.transformMat3(normal, normal, localNormalMatrix)
+          // vec3.transformMat3(normal, normal, normalTransform)
           vec3.normalize(normal, normal)
           normals.push(...normal)
         }
+
+        // console.log("transformed sample:", positions.slice(0, 9))
       }
 
       // === Get indices ===
@@ -106,30 +152,12 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform) => {
       })
     }
   }
-
-  // === instance_node ===
-  let instanceNode
-  instanceNode = node.querySelector(`:scope > instance_node`)
-  if (instanceNode) {
-    let referenceID, reference
-    referenceID = instanceNode.getAttribute(`url`).replace(`#`, ``)
-    reference = nodeMap.get(referenceID)
-    if (reference) {
-      walkNode(reference, nodeMap, geometryMap, geometries, normalTransform)
-    }
-  }
-
-  // === node ===
-  let children = node.querySelectorAll(`:scope > node`)
-  children.forEach(child => {
-    walkNode(child, nodeMap, geometryMap, geometries, normalTransform)
-  })
 }
 
 export async function geometryData(path) {
   let data,
-    res, xmlString, parser, xmlDoc, root,
-    nodes, nodeMap,
+    res, xmlString, parser, xmlDoc, roots,
+    nodes, nodeMap, node_unit, unit, scale,
     geometries, geometryMap,
     ZupToYup, fixRotation, fullRotation, normalTransform,
     positions
@@ -139,7 +167,8 @@ export async function geometryData(path) {
   xmlString = await res.text()
   parser = new DOMParser()
   xmlDoc = parser.parseFromString(xmlString, `text/xml`)
-  root = xmlDoc.querySelector(`visual_scene > node`)
+  roots = xmlDoc.querySelector(`visual_scene > node`)
+  roots = roots.querySelectorAll(`:scope > node:not([name^="skp_camera"])`)
 
   nodes = xmlDoc.querySelectorAll(`library_nodes > node`)
   nodeMap = new Map()
@@ -147,11 +176,17 @@ export async function geometryData(path) {
     nodeMap.set(node.getAttribute(`id`), node)
   })
 
+  node_unit = xmlDoc.querySelector(`asset > unit`)
+  unit = node_unit ? parseFloat(node_unit.getAttribute(`meter`)) : 1.0
+  scale = mat4.create()
+  mat4.fromScaling(scale, [1 / unit, 1 / unit, 1 / unit])
+
   geometries = xmlDoc.querySelectorAll(`library_geometries > geometry`)
   geometryMap = new Map()
   geometries.forEach((geometry) => {
     geometryMap.set(geometry.getAttribute(`id`), geometry)
   })
+  console.log("geometryMap keys:", [...geometryMap.keys()])
 
   data.geometries = []
 
@@ -161,27 +196,27 @@ export async function geometryData(path) {
   normalTransform = mat3.create()
 
   mat4.fromXRotation(ZupToYup, -Math.PI / 2)
+  console.log(`ZupToYup:`, ZupToYup)
   mat4.fromYRotation(fixRotation, Math.PI / 2)
+  console.log(`fixRotation:`, fixRotation)
   mat4.multiply(fullRotation, fixRotation, ZupToYup)
+  console.log(`fullRotation:`, fullRotation)
   mat3.fromMat4(normalTransform, fullRotation)
+  console.log(`normalTransform:`, normalTransform)
 
-  let identityMatrix
-  identityMatrix = mat4.create()
-
-  walkNode(root, nodeMap, geometryMap, data.geometries, normalTransform)
+  roots.forEach((root) => {
+    walkNode(root, nodeMap, geometryMap, data.geometries, normalTransform, fullRotation)
+  })
 
   positions = data.geometries.flatMap(items => Array.from(items.positions))
 
-  let size
+  let size, center
   {
     size = await cal_item_size(positions)
-  }
-
-  let center
-  {
     center = await cal_item_center(positions)
+    // size = 1
+    // center = [0, 0, 0]
   }
-
 
   console.log(`GET geometryData success!`)
 
