@@ -1,4 +1,4 @@
-import { geometryData } from "./read_dae_1.js";
+import { geometryData } from "./read_dae_2.js";
 import { mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js";
 
 `use strict`;
@@ -49,9 +49,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     {
         // === Prepare model data ===
         {
-            results = await geometryData(`./screenshot/mailbox slot_2.dae`)
-
+            results = await geometryData(`./screenshot/scroll bar_2.dae`)
             // console.log(`results: ${JSON.stringify(results)}`)
+            console.log(`results.size: ${results.size}`)
+            console.log(`results.center: ${typeof (results.center)} ${results.center}`)
         }
 
         // === Prepare camera/transform data ===
@@ -118,7 +119,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         {
             // === Write model data ===
             meshBuffers = results.meshes.map(result => {
-                console.log(Math.max(...result.positions))
+                // console.log(Math.max(...result.positions))
                 vertexBuffer = device.createBuffer({
                     label: `vertex buffer for ${result.name}`,
                     size: result.positions.byteLength,
@@ -173,7 +174,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // View matrix
                 let dist, eye, target, up
 
-                dist = results.size * 1.5
+                dist = results.size * 5.5
 
                 console.log(`dist: ${dist}`)
                 eye = [0, 0, -dist]
@@ -360,14 +361,13 @@ window.addEventListener("DOMContentLoaded", async () => {
             renderPass.drawIndexed(mesh.indexCount)
         }
 
-        rotate = mat4.create()
-        mat4.fromYRotation(rotate, yaw)
-
-        matrix_view_world_2 = mat4.create()
-
-        mat4.multiply(matrix_view_world_2, rotate, matrix_transform)
-
-        device.queue.writeBuffer(transformStorageBuffer, 0, matrix_view_world_2)
+        {
+            rotate = mat4.create()
+            mat4.fromYRotation(rotate, yaw)
+            matrix_view_world_2 = mat4.create()
+            mat4.multiply(matrix_view_world_2, rotate, matrix_transform)
+            device.queue.writeBuffer(transformStorageBuffer, 0, matrix_view_world_2)
+        }
 
         renderPass.end()
 
@@ -383,7 +383,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             // console.log(`yaw:`, yaw)
         }
     })
-
 
     // === Render ===
     let frame

@@ -12,8 +12,8 @@ fn fragmentMain(
 
     let ambient = 0.2;
 
-    let baseColor = vec3f(0.8, 0.8, 0.8);
+    let baseColor = vec3f(1.0, 1.0, 1.0);
 
     let finalColor = baseColor * (ambient + lambert) + specular;
-    return vec4f(finalColor, 1.0);
+    return vec4f(finalColor, 0.5);
 }

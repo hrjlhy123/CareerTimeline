@@ -9,22 +9,24 @@ export async function geometryData(path) {
   parser = new DOMParser()
   xmlDoc = parser.parseFromString(xmlString, `text/xml`)
 
-  let geometries, data_geometries, positions, normals, indices
+  let geometries, 
+      ZupToYup, fixRotation, fullRotation, normalTransform
+
   geometries = xmlDoc.querySelectorAll(`geometry`)
-
-  data_geometries = []
-
-  let ZupToYup, fixRotation, fullRotation, normalTransform
   ZupToYup = mat4.create()
   fixRotation = mat4.create()
   fullRotation = mat4.create()
   normalTransform = mat3.create()
 
   mat4.fromXRotation(ZupToYup, -Math.PI / 2)
-  mat4.fromYRotation(fixRotation, Math.PI/2)
+  mat4.fromYRotation(fixRotation, Math.PI / 2)
   mat4.multiply(fullRotation, fixRotation, ZupToYup)
   mat3.fromMat4(normalTransform, fullRotation)
 
+  let data_geometries, positions, normals, indices
+
+  data_geometries = []
+  
   geometries.forEach((geometry) => {
     let vertices, normalDir,
       positionSourceId, positionSource,
@@ -51,8 +53,8 @@ export async function geometryData(path) {
       for (let i = 0; i < rawPositions.length; i += 3) {
         let p = vec3.fromValues(
           rawPositions[i],
-          rawPositions[i+1],
-          rawPositions[i+2]
+          rawPositions[i + 1],
+          rawPositions[i + 2]
         )
         vec3.transformMat4(p, p, fullRotation)
         positions.push(...p)
