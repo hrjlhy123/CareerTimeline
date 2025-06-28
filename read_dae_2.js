@@ -75,23 +75,15 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, paren
       if (floatArray) {
         data.positions = floatArray.textContent.trim().split(/\s+/).map(Number)
 
-        let position, position_old
+        let position
         for (let i = 0; i < data.positions.length; i += 3) {
           position = vec3.fromValues(
             data.positions[i],
             data.positions[i + 1],
             data.positions[i + 2],
           )
-          position_old = vec3.clone(position)
           vec3.transformMat4(position, position, worldMatrix)
-          // console.log(`position_old:`, position_old, `position:`, position)
           positions.push(...position)
-
-          // console.log("vec3.transformMat4.toString():", vec3.transformMat4.toString())
-          // let test = vec3.transformMat4(vec3.create(), position_old, worldMatrix)
-          // console.log("position_old:", position_old)
-          // console.log("worldMatrix:", worldMatrix)
-          // console.log("transformed:", test)
         }
       }
 
@@ -108,9 +100,6 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, paren
 
       if (floatArray) {
         data.normals = floatArray.textContent.trim().split(/\s+/).map(Number)
-
-        // console.log("raw float_array sample:", data.positions.slice(0, 9)) // 原始值
-
         let normal
         for (let i = 0; i < data.normals.length; i += 3) {
           normal = vec3.fromValues(
@@ -118,18 +107,17 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, paren
             data.normals[i + 1],
             data.normals[i + 2],
           )
-          let normalMat4 = mat4.clone(worldMatrix)
-          mat4.invert(normalMat4, normalMat4)
-          mat4.transpose(normalMat4, normalMat4)
-          let localNormalMatrix = mat3.create()
-          mat3.fromMat4(localNormalMatrix, normalMat4)
+          let localNormalMatrix, worldMatrix_temp
+          
+          worldMatrix_temp = mat4.clone(worldMatrix)
+          mat4.invert(worldMatrix_temp, worldMatrix_temp)
+          mat4.transpose(worldMatrix_temp, worldMatrix_temp)
+          localNormalMatrix = mat3.create()
+          mat3.fromMat4(localNormalMatrix, worldMatrix_temp)
           vec3.transformMat3(normal, normal, localNormalMatrix)
-          // vec3.transformMat3(normal, normal, normalTransform)
           vec3.normalize(normal, normal)
           normals.push(...normal)
         }
-
-        // console.log("transformed sample:", positions.slice(0, 9))
       }
 
       // === Get indices ===
@@ -214,8 +202,6 @@ export async function geometryData(path) {
   {
     size = await cal_item_size(positions)
     center = await cal_item_center(positions)
-    // size = 1
-    // center = [0, 0, 0]
   }
 
   console.log(`GET geometryData success!`)
@@ -226,135 +212,3 @@ export async function geometryData(path) {
     center: center,
   }
 }
-
-// export async function geometryData(path) {
-//   let res, xmlString, parser, xmlDoc
-
-//   res = await fetch(path)
-//   xmlString = await res.text()
-//   parser = new DOMParser()
-//   xmlDoc = parser.parseFromString(xmlString, `text/xml`)
-
-//   let geometries,
-//     ZupToYup, fixRotation, fullRotation, normalTransform
-
-//   geometries = xmlDoc.querySelectorAll(`geometry`)
-//   ZupToYup = mat4.create()
-//   fixRotation = mat4.create()
-//   fullRotation = mat4.create()
-//   normalTransform = mat3.create()
-
-//   mat4.fromXRotation(ZupToYup, -Math.PI / 2)
-//   mat4.fromYRotation(fixRotation, Math.PI / 2)
-//   mat4.multiply(fullRotation, fixRotation, ZupToYup)
-//   mat3.fromMat4(normalTransform, fullRotation)
-
-//   let data_geometries, positions, normals, indices
-
-//   data_geometries = []
-
-//   geometries.forEach((geometry) => {
-//     let vertices, normalDir,
-//       positionSourceId, positionSource,
-//       normalSourceId, normalSource,
-//       floatArray
-
-//     vertices = geometry.querySelector(`vertices input[semantic="POSITION"]`)
-//     normalDir = geometry.querySelector(`vertices input[semantic="NORMAL"]`)
-
-//     if (vertices) {
-//       positionSourceId = vertices.getAttribute(`source`).replace(/^#/, ``)
-//       positionSource = geometry.querySelector(`source[id="${positionSourceId}"]`)
-//     }
-
-//     if (positionSource) {
-//       floatArray = positionSource.querySelector(`float_array`)
-//     }
-
-//     if (floatArray) {
-//       let rawPositions
-//       rawPositions = floatArray.textContent.trim().split(/\s+/).map(Number)
-//       positions = []
-
-//       for (let i = 0; i < rawPositions.length; i += 3) {
-//         let p = vec3.fromValues(
-//           rawPositions[i],
-//           rawPositions[i + 1],
-//           rawPositions[i + 2]
-//         )
-//         vec3.transformMat4(p, p, fullRotation)
-//         positions.push(...p)
-//       }
-//     }
-
-//     indices = []
-//     let triangles = geometry.querySelectorAll(`triangles`)
-//     triangles.forEach((tri) => {
-//       let input = tri.querySelector(`input[semantic="VERTEX"]`)
-
-//       if (input?.getAttribute(`offset`) != `0`) return
-
-//       let p = tri.querySelector(`p`)
-
-//       if (p) {
-//         let data = p.textContent.trim().split(/\s+/).map(Number)
-
-//         indices.push(...data)
-//       }
-//     })
-
-//     if (normalDir) {
-//       normalSourceId = normalDir.getAttribute(`source`).replace(/^#/, ``)
-//       normalSource = geometry.querySelector(`source[id="${normalSourceId}"]`)
-//     }
-
-//     if (normalSource) {
-//       floatArray = normalSource.querySelector(`float_array`)
-//     }
-
-//     let rawNormals
-//     if (floatArray) {
-//       rawNormals = floatArray.textContent.trim().split(/\s+/).map(Number)
-//       normals = []
-
-//       for (let i = 0; i < rawNormals.length; i += 3) {
-//         let n = vec3.fromValues(
-//           rawNormals[i],
-//           rawNormals[i + 1],
-//           rawNormals[i + 2]
-//         )
-//         vec3.transformMat3(n, n, normalTransform)
-//         vec3.normalize(n, n)
-//         normals.push(...n)
-//       }
-//     }
-
-//     data_geometries.push({
-//       positions: new Float32Array(positions),
-//       normals: new Float32Array(normals),
-//       indices: new Uint32Array(indices),
-//       name: geometry.getAttribute(`id`),
-//     })
-//   })
-
-
-//   let size
-//   {
-//     size = await cal_item_size(positions)
-//   }
-
-//   let center
-//   {
-//     positions = data_geometries.flatMap(items => Array.from(items.positions))
-//     center = await cal_item_center(positions)
-//   }
-
-
-//   console.log(`GET geometryData success!`)
-
-//   return {
-//     meshes: data_geometries,
-//     size: size,
-//     center: center,
-//   }
-// }
