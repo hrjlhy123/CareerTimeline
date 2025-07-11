@@ -74,7 +74,9 @@ div.mailboxSlot > canvas {
 
 div.timelineBelt {
   grid-area: timelineBelt;
-  background-color: rgba(0, 0, 255, 0.5);
+  /* background-color: rgba(128, 128, 128); */
+  /* background-color: #f00; */
+  /* background-color: #000; */
 }
 
 div.timelineBelt > canvas {

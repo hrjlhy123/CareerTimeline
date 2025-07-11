@@ -370,6 +370,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 entryPoint: `vertexMain`,
                 buffers: [vertexBufferLayout.position, vertexBufferLayout.normal],
             },
+            /* transparent */
             fragment: {
                 module: fragmentModule,
                 entryPoint: `fragmentMain`,
@@ -378,13 +379,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                         format: canvasFormat,
                         blend: {
                             color: {
-                                srcFactor: `one`,
-                                dstFactor: `one`,
-                                operation: `add`,
                             },
                             alpha: {
                                 srcFactor: `one`,
-                                dstFactor: `one`,
+                                dstFactor: `one-minus-src-alpha`,
                                 operation: `add`,
                             }
                         }
@@ -393,13 +391,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                         format: `rgba16float`,
                         blend: {
                             color: {
-                                srcFactor: `one`,
-                                dstFactor: `one`,
-                                operation: `add`,
                             },
                             alpha: {
                                 srcFactor: `one`,
-                                dstFactor: `one`,
+                                dstFactor: `one-minus-src-alpha`,
                                 operation: `add`,
                             }
                         }
@@ -411,6 +406,24 @@ window.addEventListener("DOMContentLoaded", async () => {
                 depthWriteEnabled: false,
                 depthCompare: `less`,
             },
+            /* opaque */
+            // fragment: {
+            //     module: fragmentModule,
+            //     entryPoint: `fragmentMain`,
+            //     targets: [
+            //         {
+            //             format: canvasFormat,
+            //         },
+            //         {
+            //             format: `rgba16float`,
+            //         }
+            //     ]
+            // },
+            // depthStencil: {
+            //     format: `depth24plus`,
+            //     depthWriteEnabled: true,
+            //     depthCompare: `less`,
+            // },
             multisample: {
                 count: 4,
             }
@@ -446,8 +459,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             colorAttachments: [
                 {
                     view: MSAATexture.createView(),
-                    // resolveTarget: context.getCurrentTexture().createView(),
-                    // view: colorAccumTexture.createView(),
                     resolveTarget: colorResolvedTexture.createView(),
                     loadOp: `clear`,
                     clearValue: {

@@ -10,7 +10,10 @@ fn compositeMain(
     let colorAccum = textureLoad(colorAccumTex, texCoord, 0);
     let alphaAccum = textureLoad(alphaAccumTex, texCoord, 0);
 
-    let finalColor = colorAccum.rgb / max(alphaAccum.a, 0.0001);//avoid 0
+    let finalColor = colorAccum.rgb / max(alphaAccum.a, 0.0001); // avoid 0
     let alpha = textureLoad(alphaAccumTex, texCoord, 0).a;
+    // transparent
     return vec4f(finalColor, alpha);
+    // opaque
+    // return vec4f(finalColor, 1);
 }
