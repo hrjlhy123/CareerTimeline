@@ -14,19 +14,22 @@ fn fragmentMain(
     let lambert = max(dot(normalize(normal), lightDir), 0.0);
     let viewDir = normalize(vec3f(1.0, 1.0, -1.0));
     let halfDir = normalize(lightDir + viewDir);
-    let spec = pow(max(dot(normal, halfDir), 0.0), 128.0); // shininess = 32
-    let specular = vec3f(1.0, 1.0, 1.0) * spec;
+    let spec = pow(max(dot(normal, halfDir), 0.0), 32.0); // shininess = 32
+    let specular = vec3f(0.4, 0.4, 0.4) * spec;
 
     let ambient = 0.4;
-    let baseColor = vec3f(0.8, 0.9, 1.0);
-    let finalColor = baseColor * (ambient + lambert) + specular;
+    let baseColor = vec3f(0.85, 0.95, 1.0);
 
+    
     let alpha = 0.1;
-    // let weight = clamp(pow(alpha + 0.01, 3.5) + 0.01, 0.0, 1.0);
-    let weight = 0.35;
+    let weight1 = 200.0;
+    let weight2 = 0.5;
 
-    output.outColor = vec4f(finalColor * alpha * weight, alpha);
-    output.outAlpha = vec4f(0.0, 0.0, 0.0, alpha * weight);
+
+    let finalColor = baseColor * alpha * weight2 + specular * weight1;
+
+    output.outColor = vec4f(finalColor, 1.0);
+    output.outAlpha = vec4f(0.0, 0.0, 0.0, alpha * weight2);
 
     return output;
 }

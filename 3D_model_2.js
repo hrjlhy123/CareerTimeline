@@ -379,6 +379,9 @@ window.addEventListener("DOMContentLoaded", async () => {
                         format: canvasFormat,
                         blend: {
                             color: {
+                                srcFactor: `one`,
+                                dstFactor: `zero`,
+                                operation: `add`,
                             },
                             alpha: {
                                 srcFactor: `one`,
@@ -391,6 +394,9 @@ window.addEventListener("DOMContentLoaded", async () => {
                         format: `rgba16float`,
                         blend: {
                             color: {
+                                srcFactor: `one`,
+                                dstFactor: `zero`,
+                                operation: `add`,
                             },
                             alpha: {
                                 srcFactor: `one`,
