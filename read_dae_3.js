@@ -1,7 +1,8 @@
+import { collect_positions } from "./tools/collect.js"
 import { cal_item_size, cal_item_center } from "./tools/calculate.js";
 import { mat3, mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js";
 
-const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, parentWorldMatrix = mat4.create()) => {
+const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, parentWorldMatrix = mat4.create(), granularity = `geometry`) => {
   // console.log(`nodeID: ${node.getAttribute(`id`)} nodeName: ${node.getAttribute(`name`)}`)
   let localMatrix, matrix, worldMatrix, instanceGeometry
 
@@ -23,7 +24,7 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, paren
   // === node ===
   let children = node.querySelectorAll(`:scope > node`)
   children.forEach(child => {
-    walkNode(child, nodeMap, geometryMap, geometries, normalTransform, worldMatrix)
+    walkNode(child, nodeMap, geometryMap, geometries, normalTransform, worldMatrix, `instanceNode`)
   })
 
   // === instance_node ===
@@ -35,8 +36,21 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, paren
     referenceID = instanceNode.getAttribute(`url`).replace(`#`, ``)
     reference = nodeMap.get(referenceID)
     if (reference) {
-      // console.log(`referenceID: ${reference.getAttribute(`id`)} referenceName: ${reference.getAttribute(`name`)}`)
-      walkNode(reference, nodeMap, geometryMap, geometries, normalTransform, worldMatrix)
+      // === instanceNode level ===
+      if (granularity == `instanceNode`) {
+        let groundGeometries
+        groundGeometries = []
+        walkNode(reference, nodeMap, geometryMap, groundGeometries, normalTransform, worldMatrix, `geometry`)
+
+        geometries.push({
+          name: reference.getAttribute(`name`) || referenceID,
+          id: referenceID,
+          meshes: groundGeometries,
+        })
+      } else {
+        // console.log(`referenceID: ${reference.getAttribute(`id`)} referenceName: ${reference.getAttribute(`name`)}`)
+        walkNode(reference, nodeMap, geometryMap, geometries, normalTransform, worldMatrix)
+      }
     }
   }
 
@@ -194,11 +208,15 @@ export async function geometryData(path) {
   // console.log(`normalTransform:`, normalTransform)
 
   roots.forEach((root) => {
-    walkNode(root, nodeMap, geometryMap, data.geometries, normalTransform, fullRotation)
+    walkNode(root, nodeMap, geometryMap, data.geometries, normalTransform, fullRotation, `instanceNode`)
   })
 
-  positions = data.geometries.flatMap(items => Array.from(items.positions))
-  console.log(`Number of logical nodes: ${data.geometries.length}`)
+  console.log(`data.geometries:`, data.geometries)
+
+  let count
+
+  ({positions, count} = await collect_positions(data.geometries))
+  console.log(`Number of logical nodes: ${count}`)
 
   let size, center
   {
