@@ -2,7 +2,7 @@ import { collect_positions } from "./tools/collect.js"
 import { cal_item_size, cal_item_center } from "./tools/calculate.js";
 import { mat3, mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js";
 
-const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, parentWorldMatrix = mat4.create(), granularity = `geometry`) => {
+const walkNode = async (node, nodeMap, geometryMap, geometries, normalTransform, parentWorldMatrix = mat4.create(), granularity = `geometry`) => {
   // console.log(`nodeID: ${node.getAttribute(`id`)} nodeName: ${node.getAttribute(`name`)}`)
   let localMatrix, matrix, worldMatrix, instanceGeometry
 
@@ -23,9 +23,12 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, paren
 
   // === node ===
   let children = node.querySelectorAll(`:scope > node`)
-  children.forEach(child => {
-    walkNode(child, nodeMap, geometryMap, geometries, normalTransform, worldMatrix, `instanceNode`)
-  })
+  for (const child of children) {
+    await walkNode(child, nodeMap, geometryMap, geometries, normalTransform, worldMatrix, `instanceNode`)
+  }
+  // children.forEach(child => {
+  //   walkNode(child, nodeMap, geometryMap, geometries, normalTransform, worldMatrix, `instanceNode`)
+  // })
 
   // === instance_node ===
   let instanceNode
@@ -40,16 +43,47 @@ const walkNode = (node, nodeMap, geometryMap, geometries, normalTransform, paren
       if (granularity == `instanceNode`) {
         let groundGeometries
         groundGeometries = []
-        walkNode(reference, nodeMap, geometryMap, groundGeometries, normalTransform, worldMatrix, `geometry`)
+        await walkNode(reference, nodeMap, geometryMap, groundGeometries, normalTransform, worldMatrix, `geometry`)
+
+        let positions
+        positions = [];
+        // console.log(`groundGeometries:`, groundGeometries)
+        groundGeometries.forEach(group => {
+          if (!group.meshes) {
+            if (!group.positions || !group.positions.length) return;
+            for (const val of group.positions) {
+              positions.push(val);
+            }
+          } else {
+            group.meshes.forEach(mesh => {
+              if (!mesh.positions || !mesh.positions.length) return;
+              for (const val of mesh.positions) {
+                positions.push(val);
+              }
+            });
+          }
+        });
+
+        let center, size
+        if (positions.length === 0) {
+          // console.warn(`${reference.getAttribute("name")} has no positions`);
+        } else {
+          // console.log(`${reference.getAttribute(`name`)} positions:`, positions)
+          center = await cal_item_center(positions);
+          size = await cal_item_size(positions);
+          // console.log(`center: ${center}, size: ${size}`);
+        }
 
         geometries.push({
           name: reference.getAttribute(`name`) || referenceID,
           id: referenceID,
           meshes: groundGeometries,
+          size: size,
+          center: center,
         })
       } else {
         // console.log(`referenceID: ${reference.getAttribute(`id`)} referenceName: ${reference.getAttribute(`name`)}`)
-        walkNode(reference, nodeMap, geometryMap, geometries, normalTransform, worldMatrix)
+        await walkNode(reference, nodeMap, geometryMap, geometries, normalTransform, worldMatrix)
       }
     }
   }
@@ -166,13 +200,13 @@ export async function geometryData(path) {
     positions
 
   data = {}
+  console.log(`data:`, data)
   res = await fetch(path)
   xmlString = await res.text()
   parser = new DOMParser()
   xmlDoc = parser.parseFromString(xmlString, `text/xml`)
   roots = xmlDoc.querySelector(`visual_scene > node`)
   roots = roots.querySelectorAll(`:scope > node:not([name^="skp_camera"])`)
-
   nodes = xmlDoc.querySelectorAll(`library_nodes > node`)
   nodeMap = new Map()
   nodes.forEach((node) => {
@@ -192,7 +226,6 @@ export async function geometryData(path) {
   // console.log("geometryMap keys:", [...geometryMap.keys()])
 
   data.geometries = []
-
   ZupToYup = mat4.create()
   fixRotation = mat4.create()
   fullRotation = mat4.create()
@@ -207,16 +240,24 @@ export async function geometryData(path) {
   mat3.fromMat4(normalTransform, fullRotation)
   // console.log(`normalTransform:`, normalTransform)
 
-  roots.forEach((root) => {
-    walkNode(root, nodeMap, geometryMap, data.geometries, normalTransform, fullRotation, `instanceNode`)
-  })
+  // Concurrency: A faster method, but it introduces bugs.
+  // await Promise.all([...roots].map((root) => {
+  //   walkNode(root, nodeMap, geometryMap, data.geometries, normalTransform, fullRotation, `instanceNode`)
+  // }))
 
-  console.log(`data.geometries:`, data.geometries)
+  // Serial
+  for (const root of roots) {
+    await walkNode(root, nodeMap, geometryMap, data.geometries, normalTransform, fullRotation, `instanceNode`)
+  }
+
+  // console.log(`data.geometries:`, data.geometries)
 
   let count
 
-  ({positions, count} = await collect_positions(data.geometries))
-  console.log(`Number of logical nodes: ${count}`)
+  ({ positions, count } = await collect_positions(data.geometries))
+  // console.log(`Number of logical nodes: ${count}`)
+  console.log(`data.geometries:`, data.geometries)
+  console.log(`positions:`, positions)
 
   let size, center
   {

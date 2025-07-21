@@ -14,7 +14,7 @@ fn fragmentMain(
     let lambert = max(dot(normalize(normal), lightDir), 0.0);
     let viewDir = normalize(vec3f(1.0, 1.0, -1.0));
     let halfDir = normalize(lightDir + viewDir);
-    let spec = pow(max(dot(normal, halfDir), 0.0), 32.0); // shininess = 32
+    let spec = pow(max(dot(normal, halfDir), 0.0), 64.0); // shininess = 64
     let specular = vec3f(0.4, 0.4, 0.4) * spec;
 
     let ambient = 0.4;
