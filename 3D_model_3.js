@@ -50,10 +50,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare data ===
-    let instanceCount,
-        cameraUniformBuffer, transformStorageBuffer, rotateBuffer, identityBuffer,
+    let cameraUniformBuffer, transformStorageBuffer, rotateBuffer, identityBuffer,
         globalBindGroupLayout, globalBindGroup,
-        modelBindGroupLayout, identityBindGroup, rotatedBindGroup, 
+        modelBindGroupLayout, identityBindGroup, rotatedBindGroup,
         compositeBindGroupLayout, compositeBindGroup
     {
         // === Prepare model data ===
@@ -61,30 +60,18 @@ window.addEventListener("DOMContentLoaded", async () => {
             results = await geometryData(`./screenshot/scroll bar_2.dae`)
             // console.log(`results: ${JSON.stringify(results)}`)
             // console.log(`results.size: ${results.size}`)
-            // console.log(`results.center: ${typeof (results.center)} ${results.center}`)
+            console.log(`results.center: ${results.center}`)
         }
 
         // === Control 3D components (visible) ===
         {
             let nodes
             nodes = await find_components(results, `Board_Set`)
-            instanceCount = nodes.length
-            // nodes.forEach(node => {
-            //     node.matrix = mat4.create(); // identity
-            // });
+            nodes.forEach(node => {
+                node.visible = true;
+            });
 
             // console.log(`nodes:`, nodes)
-
-            const identityMatrix = mat4.create();
-            identityBuffer = device.createBuffer({
-                size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-            });
-            device.queue.writeBuffer(identityBuffer, 0, new Float32Array(identityMatrix))
-
-            rotateBuffer = device.createBuffer({
-                size: 64,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-            });
         }
 
         // === Prepare camera/transform data ===
@@ -97,6 +84,15 @@ window.addEventListener("DOMContentLoaded", async () => {
                 size: 64, // 1 * mat4x4<f32>
                 usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
             })
+
+            identityBuffer = device.createBuffer({
+                size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+            });
+
+            rotateBuffer = device.createBuffer({
+                size: 64,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            });
 
             globalBindGroupLayout = device.createBindGroupLayout({
                 entries: [
@@ -485,14 +481,100 @@ window.addEventListener("DOMContentLoaded", async () => {
         })
     }
 
+    // === debug ===
+    let cubeVertexBuffer, cubeNormalBuffer, cubeIndexBuffer, cubeIndexCount,
+        debugModelBuffer, debugBindGroup
+    {
+        const cubePositions = new Float32Array([
+            // front
+            -0.5, -0.5, 0.5,
+            0.5, -0.5, 0.5,
+            0.5, 0.5, 0.5,
+            -0.5, 0.5, 0.5,
+            // back
+            -0.5, -0.5, -0.5,
+            0.5, -0.5, -0.5,
+            0.5, 0.5, -0.5,
+            -0.5, 0.5, -0.5,
+        ]);
+
+        const cubeIndices = new Uint32Array([
+            0, 1, 2, 2, 3, 0,  // front
+            1, 5, 6, 6, 2, 1,  // right
+            5, 4, 7, 7, 6, 5,  // back
+            4, 0, 3, 3, 7, 4,  // left
+            3, 2, 6, 6, 7, 3,  // top
+            4, 5, 1, 1, 0, 4,  // bottom
+        ]);
+
+        const cubeNormals = new Float32Array(cubePositions.length); // 先全 0
+
+        cubeVertexBuffer = device.createBuffer({
+            size: cubePositions.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(cubeVertexBuffer, 0, cubePositions);
+
+        cubeNormalBuffer = device.createBuffer({
+            size: cubeNormals.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(cubeNormalBuffer, 0, cubeNormals);
+
+        cubeIndexBuffer = device.createBuffer({
+            size: cubeIndices.byteLength,
+            usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(cubeIndexBuffer, 0, cubeIndices);
+
+        cubeIndexCount = cubeIndices.length;
+
+        debugModelBuffer = device.createBuffer({
+            size: 64,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+        debugBindGroup = device.createBindGroup({
+            layout: modelBindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: debugModelBuffer } },
+            ],
+        });
+    }
+
+
     // === Prepare render ===
     let nodeIndex = 0
     let renderRecursive = (renderPass, group) => {
+        // debug 渲染黑色 cube
+        // {
+        //     if (nodeIndex == 35) {
+        //         // 1) 计算 cube 的 world 矩阵 = 全局 matrix_transform * translate(group.center)
+        //         const modelMatrix = mat4.create();
+        //         mat4.translate(modelMatrix, modelMatrix, group.center);
+
+        //         // 2) 写到 debugModelBuffer
+        //         device.queue.writeBuffer(debugModelBuffer, 0, new Float32Array(modelMatrix));
+
+        //         // 3) 用 debugBindGroup 来画 cube
+        //         renderPass.setBindGroup(1, debugBindGroup);
+        //         renderPass.setVertexBuffer(0, cubeVertexBuffer);
+        //         renderPass.setVertexBuffer(1, cubeNormalBuffer);
+        //         renderPass.setIndexBuffer(cubeIndexBuffer, 'uint32');
+        //         renderPass.drawIndexed(cubeIndexCount, 1);
+        //     }
+        // }
+        let identityMatrix, rotateMatrix, useGroup
         if (!group.meshes) return
-        const rotMat = rotateAroundPointY(mat4.create(), group.center, angle)
-        device.queue.writeBuffer(rotateBuffer, 0, new Float32Array(rotMat))
-        // nodeIndex == 35 ? console.log(`group:`, group) : ''
-        const useGroup = (nodeIndex == 35) ? rotatedBindGroup : identityBindGroup
+        if (nodeIndex == 35) {
+            rotateMatrix = modelRotate(mat4.create(), group.center, [angle, 0, 0])
+            device.queue.writeBuffer(rotateBuffer, 0, new Float32Array(rotateMatrix))
+            console.log(`group:`, group)
+            useGroup = rotatedBindGroup
+        } else {
+            identityMatrix = mat4.create();
+            device.queue.writeBuffer(identityBuffer, 0, new Float32Array(identityMatrix))
+            useGroup = identityBindGroup
+        }
         nodeIndex += 1
         renderPass.setBindGroup(1, useGroup)
         for (const child of group.meshes) {
@@ -508,14 +590,24 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    const rotateAroundPointY = (matrix, center, angle) => {
+    const modelRotate = (matrix, center, angles) => {
         const T1 = mat4.create();
         const T2 = mat4.create();
+        const RX = mat4.create();
+        const RY = mat4.create();
+        const RZ = mat4.create();
         const R = mat4.create();
 
         mat4.translate(T1, T1, center);
         mat4.translate(T2, T2, vec3.negate([], center));
-        mat4.fromYRotation(R, angle);
+
+        mat4.fromXRotation(RX, angles[0]);
+        mat4.fromYRotation(RY, angles[1]);
+        mat4.fromZRotation(RZ, angles[2]);
+
+        // 按 XYZ 顺序旋转
+        mat4.multiply(R, RX, RY);
+        mat4.multiply(R, R, RZ);
 
         mat4.multiply(matrix, T1, R);
         mat4.multiply(matrix, matrix, T2);
@@ -530,23 +622,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     render = async () => {
         // === Control 3D components (Rotate, translate, and scale) ===
         {
-            angle += 0.5 * Math.PI / 180 // +0.5 degrees per frame
-
-            // let matrixData = new Float32Array(16 * instanceCount);
-
-            // let nodes = await find_components(results, `Board_Set`)
-
-            // nodes.forEach((node, i) => {
-            //     mat4.identity(node.matrix);
-
-            //     if (i === 0) {
-            //         mat4.rotateY(node.matrix, node.matrix, angle);
-            //     }
-
-            //     matrixData.set(node.matrix, i * 16);
-            // });
-
-            // device.queue.writeBuffer(transformBuffer, 0, matrixData);
+            angle += 2 * Math.PI / 180 // +0.5 degrees per frame
         }
 
         let encoder, renderPass, compositePass
@@ -594,10 +670,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         renderRecursive(renderPass, results);
 
         {
-            rotate = mat4.create()
-            mat4.fromYRotation(rotate, yaw)
+            globalRotate = mat4.create()
+            mat4.fromYRotation(globalRotate, yaw)
             matrix_view_world_2 = mat4.create()
-            mat4.multiply(matrix_view_world_2, rotate, matrix_transform)
+            mat4.multiply(matrix_view_world_2, globalRotate, matrix_transform)
             device.queue.writeBuffer(transformStorageBuffer, 0, matrix_view_world_2)
         }
 
@@ -626,7 +702,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Control ===
-    let yaw, rotate
+    let yaw, globalRotate
     yaw = 0
     canvas.addEventListener(`mousemove`, (e) => {
         if (e.buttons == 1) {

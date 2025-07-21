@@ -200,7 +200,7 @@ export async function geometryData(path) {
     positions
 
   data = {}
-  console.log(`data:`, data)
+  // console.log(`data:`, data)
   res = await fetch(path)
   xmlString = await res.text()
   parser = new DOMParser()
@@ -256,8 +256,8 @@ export async function geometryData(path) {
 
   ({ positions, count } = await collect_positions(data.geometries))
   // console.log(`Number of logical nodes: ${count}`)
-  console.log(`data.geometries:`, data.geometries)
-  console.log(`positions:`, positions)
+  // console.log(`data.geometries:`, data.geometries)
+  // console.log(`positions:`, positions)
 
   let size, center
   {
