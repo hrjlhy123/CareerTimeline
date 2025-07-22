@@ -149,7 +149,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         // === Prepare rotate buffer/bindGroup/bindGroupLayout ===
         {
             let rotateNodes
-            rotateNodeNames = [`Board`]
+            rotateNodeNames = [`Board_Set`]
             rotateNodes = []
             // console.log(`rotateNodes:`, rotateNodes)
             for (const rotateNodeName of rotateNodeNames) {
@@ -564,12 +564,30 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    // === Bind Mouse Control ===
+    let yaw, globalRotate
+    {
+        yaw = 0
+        canvas.addEventListener(`mousemove`, (e) => {
+            if (e.buttons == 1) {
+                yaw += e.movementX * 0.005
+                // console.log(`yaw:`, yaw)
+            }
+        })
+        // update your global model→world transform first:
+        globalRotate = mat4.create();
+        mat4.fromYRotation(globalRotate, yaw);
+        const worldMatrix = mat4.create();
+        mat4.multiply(worldMatrix, globalRotate, matrix_transform);
+        device.queue.writeBuffer(transformStorageBuffer, 0,
+            new Float32Array(worldMatrix));
+    }
+
     // === Prepare render ===
-    let nodeIndex = 0
-    let renderRecursive = (renderPass, group) => {
+    let renderRecursive = (renderPass, group, parentMatrix, parentBindGroup) => {
         // debug - find center渲染黑色 cube
         // {
-        //     if (nodeIndex == 35) {
+        //     if (group.rotateBuffer) {
         //         // 1) 计算 cube 的 world 矩阵 = 全局 matrix_transform * translate(group.center)
         //         const modelMatrix = mat4.create();
         //         mat4.translate(modelMatrix, modelMatrix, group.center);
@@ -585,21 +603,23 @@ window.addEventListener("DOMContentLoaded", async () => {
         //         renderPass.drawIndexed(cubeIndexCount, 1);
         //     }
         // }
-        let identityMatrix, rotateMatrix, useGroup
+        let localMatrix, rotateMatrix, useBindGroup, useBuffer
         if (!group.meshes) return
+        localMatrix = mat4.clone(parentMatrix)
+        useBindGroup = parentBindGroup
+        useBuffer = group.rotateBuffer ?? identityBuffer
+
         if (group.rotateBuffer) {
-            rotateMatrix = modelRotate(mat4.create(), group.center, [angle, 0, 0])
-            // device.queue.writeBuffer(rotateBuffers[nodeIndex], 0, new Float32Array(rotateMatrix))
-            device.queue.writeBuffer(group.rotateBuffer, 0, new Float32Array(rotateMatrix))
-            // useGroup = rotateBindGroups[nodeIndex]
-            useGroup = group.rotateBindGroup
-        } else {
-            identityMatrix = mat4.create();
-            device.queue.writeBuffer(identityBuffer, 0, new Float32Array(identityMatrix))
-            useGroup = identityBindGroup
+            rotateMatrix = modelRotate(mat4.create(), group.center, [angle, 0, 0]);
+            mat4.multiply(localMatrix, parentMatrix, rotateMatrix);
+
+            device.queue.writeBuffer(group.rotateBuffer, 0, new Float32Array(rotateMatrix));
+            useBindGroup = group.rotateBindGroup;
         }
-        nodeIndex += 1
-        renderPass.setBindGroup(1, useGroup)
+        device.queue.writeBuffer(useBuffer, 0, new Float32Array(localMatrix));
+
+        renderPass.setBindGroup(1, useBindGroup)
+
         for (const child of group.meshes) {
             if (child.positions instanceof Float32Array) {
                 renderPass.setVertexBuffer(0, child.vertexBuffer)
@@ -608,7 +628,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 renderPass.drawIndexed(child.indexCount, 1);
             } else {
                 if (child.visible == false) continue
-                renderRecursive(renderPass, child)
+                renderRecursive(renderPass, child, localMatrix, useBindGroup)
             }
         }
     }
@@ -688,10 +708,13 @@ window.addEventListener("DOMContentLoaded", async () => {
         renderPass.setPipeline(renderPipeline)
         renderPass.setBindGroup(0, globalBindGroup)
 
-        nodeIndex = 0
+        let identity
+        identity = mat4.create()
+        mat4.identity(identity)
 
-        renderRecursive(renderPass, results);
+        renderRecursive(renderPass, results, identity, identityBindGroup);
 
+        // === Mouse Control ===
         {
             globalRotate = mat4.create()
             mat4.fromYRotation(globalRotate, yaw)
@@ -723,16 +746,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         device.queue.submit([encoder.finish()])
     }
-
-    // === Control ===
-    let yaw, globalRotate
-    yaw = 0
-    canvas.addEventListener(`mousemove`, (e) => {
-        if (e.buttons == 1) {
-            yaw += e.movementX * 0.005
-            // console.log(`yaw:`, yaw)
-        }
-    })
 
     // === Render ===
     let frame
