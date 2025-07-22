@@ -50,10 +50,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare data ===
-    let cameraUniformBuffer, transformStorageBuffer, rotateBuffer, identityBuffer,
+    let cameraUniformBuffer, transformStorageBuffer, identityBuffer,
         globalBindGroupLayout, globalBindGroup,
-        modelBindGroupLayout, identityBindGroup, rotatedBindGroup,
-        compositeBindGroupLayout, compositeBindGroup
+        modelBindGroupLayout, identityBindGroup
+    let compositeBindGroupLayout, compositeBindGroup
+    let rotateNodeNames, rotateNodeIndices, rotateNodeElements, rotateBuffers, rotateBindGroups
     {
         // === Prepare model data ===
         {
@@ -63,18 +64,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             console.log(`results.center: ${results.center}`)
         }
 
-        // === Control 3D components (visible) ===
-        {
-            let nodes
-            nodes = await find_components(results, `Board_Set`)
-            nodes.forEach(node => {
-                node.visible = true;
-            });
-
-            // console.log(`nodes:`, nodes)
-        }
-
-        // === Prepare camera/transform data ===
+        // === Prepare camera/transform buffer/bindGroup/bindGroupLayout ===
         {
             cameraUniformBuffer = device.createBuffer({
                 size: 128, // 2 * mat4x4<f32>
@@ -87,12 +77,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             identityBuffer = device.createBuffer({
                 size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-            });
-
-            rotateBuffer = device.createBuffer({
-                size: 64,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-            });
+            })
 
             globalBindGroupLayout = device.createBindGroupLayout({
                 entries: [
@@ -146,11 +131,49 @@ window.addEventListener("DOMContentLoaded", async () => {
             identityBindGroup = device.createBindGroup({
                 layout: modelBindGroupLayout,
                 entries: [{ binding: 0, resource: { buffer: identityBuffer } }],
+            })
+        }
+
+        // === Control 3D components (visible) ===
+        {
+            let nodes
+            nodes = await find_components(results, `Board_Set`)
+            // console.log(`nodes:`, nodes)
+            nodes.forEach(node => {
+                node.visible = true;
             });
 
-            rotatedBindGroup = device.createBindGroup({
-                layout: modelBindGroupLayout,
-                entries: [{ binding: 0, resource: { buffer: rotateBuffer } }],
+            // console.log(`nodes:`, nodes)
+        }
+
+        // === Prepare rotate buffer/bindGroup/bindGroupLayout ===
+        {
+            let rotateNodes
+            rotateNodeNames = [`Board`]
+            rotateNodes = []
+            // console.log(`rotateNodes:`, rotateNodes)
+            for (const rotateNodeName of rotateNodeNames) {
+                rotateNodeElements = await find_components(results, rotateNodeName)
+                rotateNodes.push(rotateNodeElements)
+            }
+            console.log(`rotateNodes:`, rotateNodes)
+            rotateBuffers = {}
+            rotateBindGroups = {}
+            rotateNodes.forEach((rotateNodeElements) => {
+                // console.log(`rotateNodeElements:`, rotateNodeElements)
+                // console.log(`rotateNodeElements[0].name:`, rotateNodeElements[0].name)
+                if (rotateNodeElements[0]) {
+                    for (const index in rotateNodeElements) {
+                        rotateNodeElements[index].rotateBuffer = device.createBuffer({
+                            size: 64,
+                            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+                        });
+                        rotateNodeElements[index].rotateBindGroup = device.createBindGroup({
+                            layout: modelBindGroupLayout,
+                            entries: [{ binding: 0, resource: { buffer: rotateNodeElements[index].rotateBuffer } }],
+                        });
+                    }
+                }
             });
         }
     }
@@ -541,11 +564,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-
     // === Prepare render ===
     let nodeIndex = 0
     let renderRecursive = (renderPass, group) => {
-        // debug 渲染黑色 cube
+        // debug - find center渲染黑色 cube
         // {
         //     if (nodeIndex == 35) {
         //         // 1) 计算 cube 的 world 矩阵 = 全局 matrix_transform * translate(group.center)
@@ -565,11 +587,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         // }
         let identityMatrix, rotateMatrix, useGroup
         if (!group.meshes) return
-        if (nodeIndex == 35) {
+        if (group.rotateBuffer) {
             rotateMatrix = modelRotate(mat4.create(), group.center, [angle, 0, 0])
-            device.queue.writeBuffer(rotateBuffer, 0, new Float32Array(rotateMatrix))
-            console.log(`group:`, group)
-            useGroup = rotatedBindGroup
+            // device.queue.writeBuffer(rotateBuffers[nodeIndex], 0, new Float32Array(rotateMatrix))
+            device.queue.writeBuffer(group.rotateBuffer, 0, new Float32Array(rotateMatrix))
+            // useGroup = rotateBindGroups[nodeIndex]
+            useGroup = group.rotateBindGroup
         } else {
             identityMatrix = mat4.create();
             device.queue.writeBuffer(identityBuffer, 0, new Float32Array(identityMatrix))
@@ -719,4 +742,3 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     frame()
 })
-
