@@ -54,7 +54,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         globalBindGroupLayout, globalBindGroup,
         modelBindGroupLayout, identityBindGroup
     let compositeBindGroupLayout, compositeBindGroup
-    let rotateNodeNames, rotateNodeIndices, rotateNodeElements, rotateBuffers, rotateBindGroups
+    let modelTransformNodeNames, modelTransformNodeElements, modelTransformBuffers, modelTransformBindGroups,
+        modelStates
     {
         // === Prepare model data ===
         {
@@ -142,37 +143,49 @@ window.addEventListener("DOMContentLoaded", async () => {
             nodes.forEach(node => {
                 node.visible = true;
             });
-
             // console.log(`nodes:`, nodes)
         }
 
-        // === Prepare rotate buffer/bindGroup/bindGroupLayout ===
+        // === Prepare model transform buffer/bindGroup/bindGroupLayout ===
         {
-            let rotateNodes
-            rotateNodeNames = [`Board_Set`]
-            rotateNodes = []
-            // console.log(`rotateNodes:`, rotateNodes)
-            for (const rotateNodeName of rotateNodeNames) {
-                rotateNodeElements = await find_components(results, rotateNodeName)
-                rotateNodes.push(rotateNodeElements)
+            let modelTransformNodes
+            modelTransformNodeNames = [`Board_Set`]
+            modelTransformNodes = []
+            // console.log(`modelTransformNodes:`, modelTransformNodes)
+            for (const modelTransformNodeName of modelTransformNodeNames) {
+                modelTransformNodeElements = await find_components(results, modelTransformNodeName)
+                modelTransformNodes.push(modelTransformNodeElements)
             }
-            console.log(`rotateNodes:`, rotateNodes)
-            rotateBuffers = {}
-            rotateBindGroups = {}
-            rotateNodes.forEach((rotateNodeElements) => {
-                // console.log(`rotateNodeElements:`, rotateNodeElements)
-                // console.log(`rotateNodeElements[0].name:`, rotateNodeElements[0].name)
-                if (rotateNodeElements[0]) {
-                    for (const index in rotateNodeElements) {
-                        rotateNodeElements[index].rotateBuffer = device.createBuffer({
+            console.log(`modelTransformNodes:`, modelTransformNodes)
+            modelTransformBuffers = {}
+            modelTransformBindGroups = {}
+            modelStates = []
+            modelTransformNodes.forEach((modelTransformNodeElements) => {
+                // console.log(`modelTransformNodeElements:`, modelTransformNodeElements)
+                // console.log(`modelTransformNodeElements[0].name:`, modelTransformNodeElements[0].name)
+                if (modelTransformNodeElements[0]) {
+                    modelTransformNodeElements.forEach((node, index) => {
+                        node.transformIndex = index
+                        node.modelTransformBuffer = device.createBuffer({
                             size: 64,
                             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
                         });
-                        rotateNodeElements[index].rotateBindGroup = device.createBindGroup({
+                        node.modelTransformBindGroup = device.createBindGroup({
                             layout: modelBindGroupLayout,
-                            entries: [{ binding: 0, resource: { buffer: rotateNodeElements[index].rotateBuffer } }],
+                            entries: [{ binding: 0, resource: { buffer: node.modelTransformBuffer } }],
                         });
-                    }
+                        console.log(`node.id:`, node.id)
+                        // modelStates.set(node.id, {
+                        //     angle: { x: 0, y: 0, z: 0 },
+                        //     translation: { x: 0, y: 0, z: 0 }
+                        // });
+                        modelStates.push({
+                            angle: { x: 0, y: 0, z: 0 },
+                            center: { x: node.center[0], y: node.center[1], z: node.center[2] },
+                            translation: { x: 0, y: 0, z: 0 },
+                            direction: { x: 1, y: 1, z: 1 }
+                        })
+                    })
                 }
             });
         }
@@ -579,15 +592,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         mat4.fromYRotation(globalRotate, yaw);
         const worldMatrix = mat4.create();
         mat4.multiply(worldMatrix, globalRotate, matrix_transform);
-        device.queue.writeBuffer(transformStorageBuffer, 0,
-            new Float32Array(worldMatrix));
+        device.queue.writeBuffer(transformStorageBuffer, 0, new Float32Array(worldMatrix));
     }
 
     // === Prepare render ===
     let renderRecursive = (renderPass, group, parentMatrix, parentBindGroup) => {
         // debug - find center渲染黑色 cube
         // {
-        //     if (group.rotateBuffer) {
+        //     if (group.modelTransformBuffer) {
         //         // 1) 计算 cube 的 world 矩阵 = 全局 matrix_transform * translate(group.center)
         //         const modelMatrix = mat4.create();
         //         mat4.translate(modelMatrix, modelMatrix, group.center);
@@ -603,18 +615,24 @@ window.addEventListener("DOMContentLoaded", async () => {
         //         renderPass.drawIndexed(cubeIndexCount, 1);
         //     }
         // }
-        let localMatrix, rotateMatrix, useBindGroup, useBuffer
+        let localMatrix, modelTransformMatrix, useBindGroup, useBuffer
         if (!group.meshes) return
         localMatrix = mat4.clone(parentMatrix)
-        useBindGroup = parentBindGroup
-        useBuffer = group.rotateBuffer ?? identityBuffer
+        useBindGroup = parentBindGroup ?? identityBindGroup
+        useBuffer = group.modelTransformBuffer ?? identityBuffer
 
-        if (group.rotateBuffer) {
-            rotateMatrix = modelRotate(mat4.create(), group.center, [angle, 0, 0]);
-            mat4.multiply(localMatrix, parentMatrix, rotateMatrix);
+        if (group.modelTransformBuffer) {
+            let state
+            state = modelStates[group.transformIndex]
+            modelTransformMatrix = modelTransform(
+                mat4.create(), group.center,
+                [state.angle.x, state.angle.y, state.angle.z],
+                [state.translation.x, state.translation.y, state.translation.z]
+            )
+            mat4.multiply(localMatrix, parentMatrix, modelTransformMatrix);
 
-            device.queue.writeBuffer(group.rotateBuffer, 0, new Float32Array(rotateMatrix));
-            useBindGroup = group.rotateBindGroup;
+            device.queue.writeBuffer(group.modelTransformBuffer, 0, new Float32Array(modelTransformMatrix));
+            useBindGroup = group.modelTransformBindGroup;
         }
         device.queue.writeBuffer(useBuffer, 0, new Float32Array(localMatrix));
 
@@ -633,39 +651,73 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    const modelRotate = (matrix, center, angles) => {
-        const T1 = mat4.create();
-        const T2 = mat4.create();
+    const modelTransform = (matrix, center, angles, translation) => {
+        const T_center = mat4.create();   // 把原点移到 center
+        const T_center_inv = mat4.create(); // 把原点移回
+        const T_translate = mat4.create(); // 额外平移
         const RX = mat4.create();
         const RY = mat4.create();
         const RZ = mat4.create();
         const R = mat4.create();
 
-        mat4.translate(T1, T1, center);
-        mat4.translate(T2, T2, vec3.negate([], center));
+        // 平移到旋转中心
+        mat4.translate(T_center, T_center, center);
+        mat4.translate(T_center_inv, T_center_inv, vec3.negate([], center));
 
+        // 旋转矩阵
         mat4.fromXRotation(RX, angles[0]);
         mat4.fromYRotation(RY, angles[1]);
         mat4.fromZRotation(RZ, angles[2]);
 
-        // 按 XYZ 顺序旋转
         mat4.multiply(R, RX, RY);
         mat4.multiply(R, R, RZ);
 
-        mat4.multiply(matrix, T1, R);
-        mat4.multiply(matrix, matrix, T2);
+        // 平移矩阵
+        mat4.translate(T_translate, T_translate, translation);
+
+        // 合成矩阵: T_translate * T_center * R * T_center_inv
+        mat4.identity(matrix);
+        mat4.multiply(matrix, matrix, T_translate);
+        mat4.multiply(matrix, matrix, T_center);
+        mat4.multiply(matrix, matrix, R);
+        mat4.multiply(matrix, matrix, T_center_inv);
 
         return matrix;
     }
 
-    let angle,
-        render, matrix_view_world_2
-
-    angle = 0
+    let render, matrix_view_world_2
     render = async () => {
         // === Control 3D components (Rotate, translate, and scale) ===
         {
-            angle += 2 * Math.PI / 180 // +0.5 degrees per frame
+            let r, d
+            r = {
+                x: 0,
+                y: 0,
+                z: 0,
+            }
+            d = {
+                x: 0,
+                y: 0.08,
+                z: 0,
+            }
+
+            modelStates.forEach((state, index) => {
+                state.translation.y += d.y * state.direction.y;
+
+                if (state.translation.y + state.center.y >= 41.907918095588685) {
+                    console.log(`A`)
+                    state.translation.y = 41.907918095588685 - state.center.y
+                    state.direction.y = -1;
+                } else if (state.translation.y + state.center.y <= -4.155076146125795) {
+                    console.log(`B`)
+                    state.translation.y = -4.155076146125795 - state.center.y
+                    state.direction.y = 1;
+                }
+
+                // state.angle.x += r.x * Math.PI / 180;
+                // state.translation.y += d.y;
+                // console.log(`results.center[1]`, results.center[1], `state.center.y:`, state.center.y, `diff:`, results.center[1] - state.center.y)
+            });
         }
 
         let encoder, renderPass, compositePass
