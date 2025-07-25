@@ -259,10 +259,10 @@ export async function geometryData(path) {
   // console.log(`data.geometries:`, data.geometries)
   // console.log(`positions:`, positions)
 
-  let size, center
+  let center, size
   {
-    size = await cal_item_size(positions)
     center = await cal_item_center(positions)
+    size = await cal_item_size(positions)
   }
 
   console.log(`GET geometryData success!:`, {

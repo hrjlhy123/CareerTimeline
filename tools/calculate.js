@@ -29,16 +29,13 @@ export async function cal_item_size(positions) {
 
     ({ minX, maxX, minY, maxY, minZ, maxZ } = await cal_item_xyz(positions))
 
-    let dx, dy, dz,
-        size
+    let dx, dy, dz
 
     dx = maxX - minX
     dy = maxY - minY
     dz = maxZ - minZ
 
-    size = Math.max(dx, dy, dz)
-
-    return size
+    return [dx, dy, dz]
 }
 
 export async function cal_item_center(positions) {

@@ -59,7 +59,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     {
         // === Prepare model data ===
         {
-            results = await geometryData(`./screenshot/scroll bar_2.dae`)
+            results = await geometryData(`./screenshot/scroll bar_3.dae`)
             // console.log(`results: ${JSON.stringify(results)}`)
             // console.log(`results.size: ${results.size}`)
             console.log(`results.center: ${results.center}`)
@@ -77,7 +77,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             })
 
             identityBuffer = device.createBuffer({
-                size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+                size: 64,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
             })
 
             globalBindGroupLayout = device.createBindGroupLayout({
@@ -180,14 +181,18 @@ window.addEventListener("DOMContentLoaded", async () => {
                         //     translation: { x: 0, y: 0, z: 0 }
                         // });
                         let angle_unique = { x: 0, y: 0, z: 0 }
-                        if (index == 0) {
-                            angle_unique.x = Math.PI / 180 * 90
-                        } else if (index == 2) {
-                            angle_unique.x = Math.PI / 180 * 270
-                        } else if (index == 1 || index == 3 || index == 4 || index == 5) {
+                        if (index == 0 || index == 1 || index == 9) {
                             angle_unique.x = Math.PI / 180 * 0
-                        } else {
+                        } else if (index == 2) {
+                            angle_unique.x = Math.PI / 180 * 30
+                        } else if (index == 3) {
+                            angle_unique.x = Math.PI / 180 * 150
+                        } else if (index == 4 || index == 5 || index == 8) {
                             angle_unique.x = Math.PI / 180 * 180
+                        } else if (index == 6) {
+                            angle_unique.x = Math.PI / 180 * 210
+                        } else if (index == 7) {
+                            angle_unique.x = Math.PI / 180 * 330
                         }
                         modelStates.push({
                             angle: { x: 0, y: 0, z: 0 },
@@ -269,7 +274,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // View matrix
                 let dist, eye, target, up
 
-                dist = results.size * 2
+                dist = Math.max(...results.size) * 2
 
                 console.log(`dist: ${dist}`)
                 eye = [0, 0, -dist]
@@ -709,6 +714,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 r, d,
                 y_top, y_bottom, y_top_change, y_bottom_change,
                 z_left, z_right, z_middle,
+                circleCenter, circleRadius, circumference,
                 rotateSpeed, deltaAngle, deltaAngleRad
             r = {
                 x: 0,
@@ -717,8 +723,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
             d = {
                 x: 0,
-                y: 0.08,
-                z: 0.08,
+                y: 0,
+                z: 0,
             }
             // index == 0
 
@@ -754,90 +760,147 @@ window.addEventListener("DOMContentLoaded", async () => {
             z_right = -25.97593307495117
             z_middle = -31.508955001831055
 
+            circleCenter = [
+                { y: y_top_change, z: z_middle },
+                { y: y_bottom_change, z: z_middle },
+            ];
+            circleRadius = y_top - y_top_change
+            circumference = Math.PI * circleRadius * 2
+
+
             rotateSpeed = 90
             deltaAngle = rotateSpeed * deltaTime
             deltaAngleRad = deltaAngle ? deltaAngle * Math.PI / 180 : 0
-            // console.log(`deltaAngleRad:`, deltaAngleRad)
+            // console.log(`deltaAngle:`, deltaAngle, `deltaAngleRad:`, deltaAngleRad)
+            d.y = circleRadius * deltaAngleRad
+            d.z = circleRadius * deltaAngleRad
+            // console.log(circumference / 12 * 2 + (y_top_change - y_bottom_change))
+            // console.log(0.15 * Math.PI * 2 / 12)
+            console.log(`circleRadius:`, circleRadius)
 
             modelStates.forEach((state, index) => {
-                // if (index == 6) {
-                if (state.translation.z + state.center.z >= z_middle) {
-                    if ((state.translation.y + state.center.y >= y_bottom) && (state.translation.y + state.center.y <= y_top)) {
-                        state.direction.y = -1
-                        if (state.translation.y + state.center.y > y_top_change) {
-                            // console.log(`A1`)
-                            state.direction.z = 1
-                            if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= 0 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 1) {
-                                state.angle.x += deltaAngleRad
-                            }
-                        } else if (state.translation.y + state.center.y < y_bottom_change) {
-                            // console.log(`A2`)
-                            state.direction.z = -1
-                            if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= -1 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 0) {
-                                state.angle.x += deltaAngleRad
-                            }
-                        } else {
+                // if (index == 7) {
+                if ((state.translation.y + state.center.y >= y_bottom) && (state.translation.y + state.center.y <= y_top)) {
+                    if (state.translation.y + state.center.y > y_top_change) {
+                        console.log(1)
+                        if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= 0 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 1) {
+                            state.angle.x += deltaAngleRad
+                        }
+                    } else if (state.translation.y + state.center.y < y_bottom_change) {
+                        console.log(2)
+                        if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= -1 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 0) {
+                            state.angle.x += deltaAngleRad
+                        }
+                    } else {
+                        console.log(3)
+                        if (state.translation.z + state.center.z >= z_middle) {
+                            console.log(3.1)
                             state.translation.z = z_right - state.center.z
-                            state.direction.z = 0
                             state.angle.x = Math.PI / 180 * 180 + state.deltaAngle.x
-                            // console.log(`A3`)
-                        }
-                        // console.log(`state.angle.x:`, state.angle.x)
-                        state.translation.z += d.z * state.direction.z
-                    } else {
-                        if (state.translation.y + state.center.y > y_top) {
-                            // console.log(`C1`)
-                            state.translation.y = y_top - state.center.y
-                            state.direction.y = -1
-                            state.angle.x = Math.PI / 180 * 90 + state.deltaAngle.x
-                        } else if (state.translation.y + state.center.y < y_bottom) {
-                            // console.log(`C2`)
-                            state.translation.y = y_bottom - state.center.y
-                            state.direction.y = 1
-                            state.angle.x = Math.PI / 180 * 270 + state.deltaAngle.x
-                        }
-                    }
-                    state.translation.y += d.y * state.direction.y
-                } else {
-                    if ((state.translation.y + state.center.y >= y_bottom) && (state.translation.y + state.center.y <= y_top)) {
-                        state.direction.y = 1
-                        if (state.translation.y + state.center.y > y_top_change) {
-                            // console.log(`B1`)
-                            state.direction.z = 1
-                            if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= 0 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 1) {
-                                state.angle.x += deltaAngleRad
-                            }
-                        } else if (state.translation.y + state.center.y < y_bottom_change) {
-                            // console.log(`B2`)
-                            state.direction.z = -1
-                            if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= -1 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 0) {
-                                state.angle.x += deltaAngleRad
-                            }
                         } else {
+                            console.log(3.2)
                             state.translation.z = z_left - state.center.z
-                            state.direction.z = 0
                             state.angle.x = Math.PI / 180 * 0 + state.deltaAngle.x
-                            // console.log(`B3`)
-                        }
-                        // console.log(`state.angle.x:`, state.angle.x)
-                        state.translation.z += d.z * state.direction.z
-                    } else {
-                        if (state.translation.y + state.center.y > y_top) {
-                            // console.log(`C1`)
-                            state.translation.y = y_top - state.center.y
-                            state.direction.y = -1
-                            state.angle.x = Math.PI / 180 * 90 + state.deltaAngle.x
-                        } else if (state.translation.y + state.center.y < y_bottom) {
-                            // console.log(`C2`)
-                            state.translation.y = y_bottom - state.center.y
-                            state.direction.y = 1
-                            state.angle.x = Math.PI / 180 * 270 + state.deltaAngle.x
                         }
                     }
-                    state.translation.y += d.y * state.direction.y
+                    state.direction.z = Math.sin(state.angle.x - state.deltaAngle.x)
+                    state.translation.z += d.z * state.direction.z
+                } else {
+                    if (state.translation.y + state.center.y > y_top) {
+                        console.log(4)
+                        state.translation.y = y_top - state.center.y
+                        state.direction.y = 1
+                        state.angle.x = Math.PI / 180 * 90 + state.deltaAngle.x
+                    } else if (state.translation.y + state.center.y < y_bottom) {
+                        console.log(5)
+                        state.translation.y = y_bottom - state.center.y
+                        state.direction.y = -1
+                        state.angle.x = Math.PI / 180 * 270 + state.deltaAngle.x
+                    }
                 }
-                // console.log(`state.angle.x:`, state.angle.x)
-                // console.log(`Math.sin(state.angle.x - state.deltaAngle.x).toFixed(2):`, Math.sin(state.angle.x - state.deltaAngle.x).toFixed(2))
+                state.direction.y = Math.cos(state.angle.x - state.deltaAngle.x)
+                state.translation.y += d.y * state.direction.y
+                // if (state.translation.z + state.center.z >= z_middle) {
+                //     if ((state.translation.y + state.center.y >= y_bottom) && (state.translation.y + state.center.y <= y_top)) {
+                //         if (state.translation.y + state.center.y >= y_top_change) {
+                //             // console.log(`A1`)
+                //             // state.direction.y = 1
+                //             // state.direction.z = -1
+                //             if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= 0 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 1) {
+                //                 state.angle.x += deltaAngleRad
+                //             }
+                //         } else if (state.translation.y + state.center.y < y_bottom_change) {
+                //             // console.log(`A2`)
+                //             // state.direction.y = -1
+                //             // state.direction.z = -1
+                //             if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= -1 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 0) {
+                //                 state.angle.x += deltaAngleRad
+                //             }
+                //         } else {
+                //             // console.log(`A3`)
+                //             state.translation.z = z_right - state.center.z
+                //             // state.direction.y = -1
+                //             // state.direction.z = 0
+                //             state.angle.x = Math.PI / 180 * 180 + state.deltaAngle.x
+                //         }
+                //         state.direction.z = Math.sin(state.angle.x - state.deltaAngle.x)
+                //         state.translation.z += d.z * state.direction.z
+                //     } else {
+                //         if (state.translation.y + state.center.y >= y_top) {
+                //             // console.log(`A-C1`)
+                //             state.translation.y = y_top - state.center.y
+                //             state.direction.y = 1
+                //             state.angle.x = Math.PI / 180 * 90 + state.deltaAngle.x
+                //         } else if (state.translation.y + state.center.y <= y_bottom) {
+                //             // console.log(`A-C2`)
+                //             state.translation.y = y_bottom - state.center.y
+                //             state.direction.y = -1
+                //             state.angle.x = Math.PI / 180 * 270 + state.deltaAngle.x
+                //         }
+                //     }
+                //     state.direction.y = Math.cos(state.angle.x - state.deltaAngle.x)
+                //     state.translation.y += d.y * state.direction.y
+                // } else {
+                //     if ((state.translation.y + state.center.y >= y_bottom) && (state.translation.y + state.center.y <= y_top)) {
+                //         if (state.translation.y + state.center.y > y_top_change) {
+                //             // console.log(`B1`)
+                //             // state.direction.y = 1
+                //             // state.direction.z = 1
+                //             if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= 0 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 1) {
+                //                 state.angle.x += deltaAngleRad
+                //             }
+                //         } else if (state.translation.y + state.center.y < y_bottom_change) {
+                //             // console.log(`B2`)
+                //             // state.direction.y = 1
+                //             // state.direction.z = -1
+                //             if (Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) >= -1 && Math.sin(state.angle.x + deltaAngleRad - state.deltaAngle.x) <= 0) {
+                //                 state.angle.x += deltaAngleRad
+                //             }
+                //         } else {
+                //             // console.log(`B3`)
+                //             state.translation.z = z_left - state.center.z
+                //             // state.direction.y = 1
+                //             // state.direction.z = 0
+                //             state.angle.x = Math.PI / 180 * 0 + state.deltaAngle.x
+                //         }
+                //         state.direction.z = Math.sin(state.angle.x - state.deltaAngle.x)
+                //         state.translation.z += d.z * state.direction.z
+                //     } else {
+                //         if (state.translation.y + state.center.y >= y_top) {
+                //             // console.log(`B-C1`)
+                //             state.translation.y = y_top - state.center.y
+                //             state.direction.y = 1
+                //             state.angle.x = Math.PI / 180 * 90 + state.deltaAngle.x
+                //         } else if (state.translation.y + state.center.y <= y_bottom) {
+                //             // console.log(`B-C2`)
+                //             state.translation.y = y_bottom - state.center.y
+                //             state.direction.y = -1
+                //             state.angle.x = Math.PI / 180 * 270 + state.deltaAngle.x
+                //         }
+                //     }
+                //     state.direction.y = Math.cos(state.angle.x - state.deltaAngle.x)
+                //     state.translation.y += d.y * state.direction.y
+                // }
                 // }
             });
         }
