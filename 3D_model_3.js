@@ -650,7 +650,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         device.queue.writeBuffer(transformStorageBuffer, 0, new Float32Array(worldMatrix));
 
         window.addEventListener(`wheel`, (event) => {
-            deltaAngle += event.deltaY * scrollSpeed
+            deltaAngle -= event.deltaY * scrollSpeed
             deltaAngle = Math.max(rangeAngle[0], Math.min(rangeAngle[1], deltaAngle))
         })
     }
