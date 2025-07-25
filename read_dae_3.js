@@ -1,5 +1,5 @@
 import { collect_positions } from "./tools/collect.js"
-import { cal_item_size, cal_item_center } from "./tools/calculate.js";
+import { cal_item_size, cal_item_center_simple, cal_item_center } from "./tools/calculate.js";
 import { mat3, mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js";
 
 const walkNode = async (node, nodeMap, geometryMap, geometries, normalTransform, parentWorldMatrix = mat4.create(), granularity = `geometry`) => {
@@ -261,7 +261,7 @@ export async function geometryData(path) {
 
   let center, size
   {
-    center = await cal_item_center(positions)
+    center = await cal_item_center_simple(positions)
     size = await cal_item_size(positions)
   }
 
