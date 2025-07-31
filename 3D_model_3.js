@@ -1,9 +1,11 @@
 import { find_components } from "./tools/find.js";
+import { worldToCanvasPos, getCanvasBounds } from "./tools/calculate.js"
 import { geometryData } from "./read_dae_3.js"
 import { mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js"
 
 `use strict`;
-
+// 3D component states
+let modelStates
 window.addEventListener("DOMContentLoaded", async () => {
     // === WebGPU init ===
 
@@ -40,6 +42,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         canvas.width = canvas.clientWidth * dpr
         canvas.height = canvas.clientHeight * dpr
+        console.log(`canvas size:`, canvas.width, canvas.height)
 
         context.configure({
             device: device,
@@ -54,8 +57,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         globalBindGroupLayout, globalBindGroup,
         modelBindGroupLayout, identityBindGroup
     let compositeBindGroupLayout, compositeBindGroup
-    let modelTransformNodeNames, modelTransformNodeElements, modelTransformBuffers, modelTransformBindGroups,
-        modelStates
+    let modelTransformNodeNames, modelTransformNodeElements
     {
         // === Prepare model data ===
         {
@@ -158,8 +160,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                 modelTransformNodes.push(modelTransformNodeElements)
             }
             console.log(`modelTransformNodes:`, modelTransformNodes)
-            modelTransformBuffers = {}
-            modelTransformBindGroups = {}
             modelStates = []
             modelTransformNodes.forEach((modelTransformNodeElements) => {
                 // console.log(`modelTransformNodeElements:`, modelTransformNodeElements)
@@ -176,24 +176,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                             entries: [{ binding: 0, resource: { buffer: node.modelTransformBuffer } }],
                         });
                         console.log(`node.id:`, node.id)
-                        // modelStates.set(node.id, {
-                        //     angle: { x: 0, y: 0, z: 0 },
-                        //     translation: { x: 0, y: 0, z: 0 }
-                        // });
                         let angle_unique = { x: 0, y: 0, z: 0 }
-                        // if (index == 0 || index == 1 || index == 9) {
-                        //     angle_unique.x = Math.PI / 180 * 0
-                        // } else if (index == 2) {
-                        //     angle_unique.x = Math.PI / 180 * 30
-                        // } else if (index == 3) {
-                        //     angle_unique.x = Math.PI / 180 * 150
-                        // } else if (index == 4 || index == 5 || index == 8) {
-                        //     angle_unique.x = Math.PI / 180 * 180
-                        // } else if (index == 6) {
-                        //     angle_unique.x = Math.PI / 180 * 210
-                        // } else if (index == 7) {
-                        //     angle_unique.x = Math.PI / 180 * 330
-                        // }
                         if (index == 1) {
                             angle_unique.x = Math.PI / 180 * 330
                         } else if (index == 0) {
@@ -562,6 +545,41 @@ window.addEventListener("DOMContentLoaded", async () => {
         })
     }
 
+    // === transform ===
+    const modelTransform = (matrix, center, angles, translation) => {
+        const T_center = mat4.create();   // 把原点移到 center
+        const T_center_inv = mat4.create(); // 把原点移回
+        const T_translate = mat4.create(); // 额外平移
+        const RX = mat4.create();
+        const RY = mat4.create();
+        const RZ = mat4.create();
+        const R = mat4.create();
+
+        // 平移到旋转中心
+        mat4.translate(T_center, T_center, center);
+        mat4.translate(T_center_inv, T_center_inv, vec3.negate([], center));
+
+        // 旋转矩阵
+        mat4.fromXRotation(RX, angles[0]);
+        mat4.fromYRotation(RY, angles[1]);
+        mat4.fromZRotation(RZ, angles[2]);
+
+        mat4.multiply(R, RX, RY);
+        mat4.multiply(R, R, RZ);
+
+        // 平移矩阵
+        mat4.translate(T_translate, T_translate, translation);
+
+        // 合成矩阵: T_translate * T_center * R * T_center_inv
+        mat4.identity(matrix);
+        mat4.multiply(matrix, matrix, T_translate);
+        mat4.multiply(matrix, matrix, T_center);
+        mat4.multiply(matrix, matrix, R);
+        mat4.multiply(matrix, matrix, T_center_inv);
+
+        return matrix;
+    }
+
     // === debug ===
     let cubeVertexBuffer, cubeNormalBuffer, cubeIndexBuffer, cubeIndexCount,
         debugModelBuffer, debugBindGroup
@@ -623,13 +641,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Bind Mouse Control ===
-    const wheelResistance = () => {
-        if (Math.abs(deltaAngle) < 0.01) {
-            deltaAngle = 0
-            return
-        }
-        deltaAngle *= 0.97  // 每帧逐渐衰减
-    }
     let yaw, globalRotate, deltaAngle, scrollSpeed, rangeAngle
     deltaAngle = 0
     scrollSpeed = 0.01
@@ -653,6 +664,13 @@ window.addEventListener("DOMContentLoaded", async () => {
             deltaAngle -= event.deltaY * scrollSpeed
             deltaAngle = Math.max(rangeAngle[0], Math.min(rangeAngle[1], deltaAngle))
         })
+    }
+    const wheelResistance = () => {
+        if (Math.abs(deltaAngle) < 0.01) {
+            deltaAngle = 0
+            return
+        }
+        deltaAngle *= 0.97  // 每帧逐渐衰减
     }
 
     // === Prepare render ===
@@ -715,40 +733,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    const modelTransform = (matrix, center, angles, translation) => {
-        const T_center = mat4.create();   // 把原点移到 center
-        const T_center_inv = mat4.create(); // 把原点移回
-        const T_translate = mat4.create(); // 额外平移
-        const RX = mat4.create();
-        const RY = mat4.create();
-        const RZ = mat4.create();
-        const R = mat4.create();
-
-        // 平移到旋转中心
-        mat4.translate(T_center, T_center, center);
-        mat4.translate(T_center_inv, T_center_inv, vec3.negate([], center));
-
-        // 旋转矩阵
-        mat4.fromXRotation(RX, angles[0]);
-        mat4.fromYRotation(RY, angles[1]);
-        mat4.fromZRotation(RZ, angles[2]);
-
-        mat4.multiply(R, RX, RY);
-        mat4.multiply(R, R, RZ);
-
-        // 平移矩阵
-        mat4.translate(T_translate, T_translate, translation);
-
-        // 合成矩阵: T_translate * T_center * R * T_center_inv
-        mat4.identity(matrix);
-        mat4.multiply(matrix, matrix, T_translate);
-        mat4.multiply(matrix, matrix, T_center);
-        mat4.multiply(matrix, matrix, R);
-        mat4.multiply(matrix, matrix, T_center_inv);
-
-        return matrix;
-    }
-
     let render, matrix_view_world_2
     render = async (deltaTime) => {
         // === Control 3D components (Rotate, translate, and scale) ===
@@ -803,15 +787,15 @@ window.addEventListener("DOMContentLoaded", async () => {
             z_right = -25.258892059326172
             z_middle = -31.50895881652832
 
-            circleCenter = [
-                { y: y_top_change, z: z_middle },
-                { y: y_bottom_change, z: z_middle },
-            ];
+            // circleCenter = [
+            //     { y: y_top_change, z: z_middle },
+            //     { y: y_bottom_change, z: z_middle },
+            // ];
             circleRadius = y_top - y_top_change
-            circumference = Math.PI * circleRadius * 2
+            // circumference = Math.PI * circleRadius * 2
             // console.log(circleRadius * Math.PI / (y_top_change - y_bottom_change))
 
-            rotateSpeed = 90
+            // rotateSpeed = 90
             // deltaAngle = 1
             // deltaAngle = rotateSpeed * deltaTime
             deltaAngleRad = deltaAngle ? deltaAngle * Math.PI / 180 : 0
@@ -822,7 +806,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             modelStates.forEach((state, index) => {
                 // if (index == 8) {
-                state.time = (state.time || 0) + deltaTime
+                // state.time = (state.time || 0) + deltaTime
                 if ((state.translation.y + state.center.y >= y_bottom) && (state.translation.y + state.center.y <= y_top)) {
                     state.angle.x += deltaAngleRad
                     state.direction.z = Math.sin(state.angle.x - state.deltaAngle.x)
@@ -869,7 +853,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     state.frameCount = (state.frameCount || 0) + deltaAngle
                 }
                 // console.log(`state.frameCount:totalFrames:`, state.frameCount, `:`, totalFrames)
-                if (state.frameCount >= totalFrames || state.frameCount <= -totalFrames) {
+                if (state.frameCount >= totalFrames || state.frameCount <= -totalFrames || state.frameCount == 0) {
                     state.translation.y = 0
                     state.translation.z = 0
                     state.angle.x = 0
@@ -959,14 +943,31 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Render ===
-    let frame, lastTime, deltaTime
+    let frame, lastTime, deltaTime,
+        modelMatrix, bounds, center
     lastTime = performance.now()
-    frame = (now) => {
+    frame = async (now) => {
         deltaTime = (now - lastTime) / 1000
         lastTime = now
         wheelResistance()
         render(deltaTime)
+
+        // Get screen coordinates
+        modelMatrix = await modelTransform(mat4.create(), results.center, [0, 0, 0], [0, 0, 0]);
+        bounds = await getCanvasBounds(results.center, matrix_view, matrix_projection, matrix_transform, canvas);
+        center = [(bounds.minX + bounds.maxX) / 2, (bounds.minY + bounds.maxY) / 2];
+
+        console.log(`图形中心在 canvas 上位置:`, center);
+        console.log(`图形投影边界:`, bounds);
+
         requestAnimationFrame(frame)
     }
     frame()
+
 })
+
+// === export data ===
+export async function getModelStates() {
+    // console.log(`modelStates:`, modelStates)
+    return modelStates
+}
