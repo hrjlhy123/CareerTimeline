@@ -1,17 +1,17 @@
 import { find_components } from "./tools/find.js";
-import { worldToCanvasPos, getCanvasBounds } from "./tools/calculate.js"
 import { geometryData } from "./read_dae_3.js"
 import { mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js"
 
-`use strict`;
+"use strict";
 // 3D component states
-let modelStates
+let results, modelStates, matrix_view, matrix_projection, matrix_transform, matrix_world, canvas
 window.addEventListener("DOMContentLoaded", async () => {
     // === WebGPU init ===
 
-    let canvas, context, adapter, device, // GPUEnv
-        canvasFormat, alphaMode, dpr, // GPUConfig
-        results // Custom
+    // let canvas, 
+    let context, adapter, device, // GPUEnv
+        canvasFormat, alphaMode, dpr // GPUConfig
+        // results // Custom
 
     {
         navigator.gpu
@@ -187,11 +187,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                             angle_unique.x = Math.PI / 180 * 180
                         }
                         modelStates.push({
-                            angle: { x: 0, y: 0, z: 0 },
+                            angle: { rx: 0, ry: 0, rz: 0 },
                             center: { x: node.center[0], y: node.center[1], z: node.center[2] },
                             translation: { x: 0, y: 0, z: 0 },
                             direction: { x: 1, y: 1, z: 1 },
-                            deltaAngle: { x: angle_unique.x, y: 0, z: 0 },
+                            deltaAngle: { rx: angle_unique.x, ry: 0, rz: 0 },
                             frameCount: 0
                         })
                     })
@@ -202,9 +202,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Prepare buffer ===
-    let vertexBufferLayout,
-        matrix_projection, matrix_transform,
-        matrix_view, matrix_view_world // view
+    let vertexBufferLayout
+    // matrix_projection, matrix_transform
+    // matrix_view
 
     {
         // === Prepare buffer data ===
@@ -275,11 +275,15 @@ window.addEventListener("DOMContentLoaded", async () => {
                 up = [0, 1, 0]
 
                 {
-                    matrix_view_world = mat4.create()
-                    mat4.lookAt(matrix_view_world, eye, target, up)
+                    // matrix_view_world = mat4.create()
+                    // mat4.lookAt(matrix_view_world, eye, target, up)
+                    // console.log(`matrix_view_world:`, matrix_view_world)
 
+                    // matrix_view = mat4.create()
+                    // mat4.invert(matrix_view, matrix_view_world)
                     matrix_view = mat4.create()
-                    mat4.invert(matrix_view, matrix_view_world)
+                    mat4.lookAt(matrix_view, eye, target, up)
+                    // console.log(`matrix_view:`, matrix_view)
                 }
 
                 // Transform matrix
@@ -653,12 +657,12 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // console.log(`yaw:`, yaw)
             }
         })
-        // update your global model→world transform first:
-        globalRotate = mat4.create();
-        mat4.fromYRotation(globalRotate, yaw);
-        const worldMatrix = mat4.create();
-        mat4.multiply(worldMatrix, globalRotate, matrix_transform);
-        device.queue.writeBuffer(transformStorageBuffer, 0, new Float32Array(worldMatrix));
+        // // update your global model→world transform first:
+        // globalRotate = mat4.create();
+        // mat4.fromYRotation(globalRotate, yaw);
+        // const worldMatrix = mat4.create();
+        // mat4.multiply(worldMatrix, globalRotate, matrix_transform);
+        // device.queue.writeBuffer(transformStorageBuffer, 0, new Float32Array(worldMatrix));
 
         window.addEventListener(`wheel`, (event) => {
             deltaAngle -= event.deltaY * scrollSpeed
@@ -703,12 +707,12 @@ window.addEventListener("DOMContentLoaded", async () => {
             let state
             state = modelStates[group.transformIndex]
             // if (group.transformIndex == 1) {
-            //     console.log(`state.angle.x:`, state.angle.x)
+            //     console.log(`state.angle.rx:`, state.angle.rx)
             // }
 
             modelTransformMatrix = modelTransform(
                 mat4.create(), group.center,
-                [state.angle.x, state.angle.y, state.angle.z],
+                [state.angle.rx, state.angle.ry, state.angle.rz],
                 [state.translation.x, state.translation.y, state.translation.z]
             )
             mat4.multiply(localMatrix, parentMatrix, modelTransformMatrix);
@@ -733,7 +737,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    let render, matrix_view_world_2
+    let render
     render = async (deltaTime) => {
         // === Control 3D components (Rotate, translate, and scale) ===
         {
@@ -808,40 +812,40 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // if (index == 8) {
                 // state.time = (state.time || 0) + deltaTime
                 if ((state.translation.y + state.center.y >= y_bottom) && (state.translation.y + state.center.y <= y_top)) {
-                    state.angle.x += deltaAngleRad
-                    state.direction.z = Math.sin(state.angle.x - state.deltaAngle.x)
+                    state.angle.rx += deltaAngleRad
+                    state.direction.z = Math.sin(state.angle.rx - state.deltaAngle.rx)
                     if (state.translation.y + state.center.y > y_top_change) {
                         // console.log(1)
-                        state.direction.y = Math.cos(state.angle.x - state.deltaAngle.x)
+                        state.direction.y = Math.cos(state.angle.rx - state.deltaAngle.rx)
                     } else if (state.translation.y + state.center.y < y_bottom_change) {
                         // console.log(2)
-                        state.direction.y = Math.cos(state.angle.x - state.deltaAngle.x)
+                        state.direction.y = Math.cos(state.angle.rx - state.deltaAngle.rx)
                     } else {
                         // console.log(3)
                         if (state.translation.z + state.center.z >= z_middle) {
                             // console.log(3.1)
                             state.translation.z = z_right - state.center.z
                             state.direction.y = -1
-                            state.angle.x = Math.PI / 180 * 180 + state.deltaAngle.x
+                            state.angle.rx = Math.PI / 180 * 180 + state.deltaAngle.rx
                         } else {
                             // console.log(3.2)
                             state.translation.z = z_left - state.center.z
                             state.direction.y = 1
-                            state.angle.x = Math.PI / 180 * 0 + state.deltaAngle.x
+                            state.angle.rx = Math.PI / 180 * 0 + state.deltaAngle.rx
                         }
                     }
                 } else {
                     // console.log(4)
-                    state.direction.y = Math.cos(state.angle.x - state.deltaAngle.x)
+                    state.direction.y = Math.cos(state.angle.rx - state.deltaAngle.rx)
                     state.direction.z = 0
                     if (state.translation.y + state.center.y > y_top) {
                         // console.log(4.1)
                         state.translation.y = y_top - state.center.y
-                        state.angle.x = Math.PI / 180 * 90 + state.deltaAngle.x
+                        state.angle.rx = Math.PI / 180 * 90 + state.deltaAngle.rx
                     } else if (state.translation.y + state.center.y < y_bottom) {
                         // console.log(4.2)
                         state.translation.y = y_bottom - state.center.y
-                        state.angle.x = Math.PI / 180 * 270 + state.deltaAngle.x
+                        state.angle.rx = Math.PI / 180 * 270 + state.deltaAngle.rx
                     }
                 }
                 state.translation.y += d.y * state.direction.y
@@ -913,9 +917,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         {
             globalRotate = mat4.create()
             mat4.fromYRotation(globalRotate, yaw)
-            matrix_view_world_2 = mat4.create()
-            mat4.multiply(matrix_view_world_2, globalRotate, matrix_transform)
-            device.queue.writeBuffer(transformStorageBuffer, 0, matrix_view_world_2)
+            matrix_world = mat4.create()
+            mat4.multiply(matrix_world, globalRotate, matrix_transform)
+            device.queue.writeBuffer(transformStorageBuffer, 0, matrix_world)
         }
 
         renderPass.end()
@@ -943,23 +947,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     // === Render ===
-    let frame, lastTime, deltaTime,
-        modelMatrix, bounds, center
+    let frame, lastTime, deltaTime
     lastTime = performance.now()
     frame = async (now) => {
         deltaTime = (now - lastTime) / 1000
         lastTime = now
         wheelResistance()
         render(deltaTime)
-
-        // Get screen coordinates
-        modelMatrix = await modelTransform(mat4.create(), results.center, [0, 0, 0], [0, 0, 0]);
-        bounds = await getCanvasBounds(results.center, matrix_view, matrix_projection, matrix_transform, canvas);
-        center = [(bounds.minX + bounds.maxX) / 2, (bounds.minY + bounds.maxY) / 2];
-
-        console.log(`图形中心在 canvas 上位置:`, center);
-        console.log(`图形投影边界:`, bounds);
-
         requestAnimationFrame(frame)
     }
     frame()
@@ -967,7 +961,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 })
 
 // === export data ===
-export async function getModelStates() {
-    // console.log(`modelStates:`, modelStates)
-    return modelStates
+export async function getData() {
+    let data = {
+        results: results,
+        modelStates: modelStates,
+        matrix_view: matrix_view,
+        matrix_projection: matrix_projection,
+        matrix_transform: matrix_transform,
+        matrix_world: matrix_world,
+        canvas: canvas,
+    }
+    // console.log(`data:`, data)
+    return data
 }

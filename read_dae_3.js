@@ -2,6 +2,7 @@ import { collect_positions } from "./tools/collect.js"
 import { cal_item_size, cal_item_center_simple, cal_item_center } from "./tools/calculate.js";
 import { mat3, mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js";
 
+"use strict";
 const walkNode = async (node, nodeMap, geometryMap, geometries, normalTransform, parentWorldMatrix = mat4.create(), granularity = `geometry`) => {
   // console.log(`nodeID: ${node.getAttribute(`id`)} nodeName: ${node.getAttribute(`name`)}`)
   let localMatrix, matrix, worldMatrix, instanceGeometry
