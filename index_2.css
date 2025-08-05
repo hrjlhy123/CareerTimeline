@@ -85,6 +85,7 @@ div.timelineBelt > canvas {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  z-index: -1;
 }
 
 div.timelineBelt > ul {
@@ -93,6 +94,15 @@ div.timelineBelt > ul {
   margin: 0;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+div.timelineBelt > ul:has(li:hover) ~ canvas.mailboxSlot {
+  filter: blur(2px);
+  transition: all 0.5s ease;
 }
 
 ul > li[data-date] {
@@ -104,6 +114,8 @@ ul > li[data-date] {
   height: 5px;
   background-color: #900;
   cursor: pointer;
+  pointer-events: all;
+  z-index: 1;
 }
 
 li[data-date] > span {
@@ -112,14 +124,14 @@ li[data-date] > span {
   left: 0;
   font-family: fantasy;
   font-size: 6rem;
-  width: 210px;
-  height: 115px;
-  border-radius: 25px;
+  width: 203px;
+  height: 107px;
+  border-radius: 40px;
   transform: translate(-50%, -50%);
   color: rgba(255, 255, 255, 0.5);
-  text-shadow: 1px 1px 0.5px rgba(0, 0, 0, 0.1), 2px 2px 0.5px rgba(0, 0, 0, 0.08),
-    3px 3px 0.5px rgba(0, 0, 0, 0.06), 4px 4px 0.5px rgba(0, 0, 0, 0.04),
-    5px 5px 0.5px rgba(0, 0, 0, 0.02);
+  text-shadow: 1px 1px 0.5px rgba(0, 0, 0, 0.1),
+    2px 2px 0.5px rgba(0, 0, 0, 0.08), 3px 3px 0.5px rgba(0, 0, 0, 0.06),
+    4px 4px 0.5px rgba(0, 0, 0, 0.04), 5px 5px 0.5px rgba(0, 0, 0, 0.02);
   backdrop-filter: blur(2px);
   transition: all 0.25s ease;
   display: flex;
@@ -129,41 +141,100 @@ li[data-date] > span {
 }
 
 li[data-date] > span:hover {
-  color: rgba(255, 255, 255, 0.6);
-  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.2), 2px 2px 0px rgba(0, 0, 0, 0.16),
-    3px 3px 0px rgba(0, 0, 0, 0.12), 4px 4px 0px rgba(0, 0, 0, 0.08),
-    5px 5px 0px rgba(0, 0, 0, 0.04), 0 0 8px rgba(255, 255, 255, 0.6),
-    0 0 12px rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(4px);
-  background-color: rgba(0, 0, 0, 0.05);
+  /* color: rgba(255, 255, 255, 0.6); */
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.1), 2px 2px 0px rgba(0, 0, 0, 0.08),
+    3px 3px 0px rgba(0, 0, 0, 0.06), 4px 4px 0px rgba(0, 0, 0, 0.04),
+    5px 5px 0px rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(0px);
+  /* background-color: rgba(255, 255, 255, 0.75); */
+  /* border: 4px double rgba(0, 0, 0, 0.2); */
+  box-shadow: 
+  inset 2px 2px 4px rgba(0, 0, 0, 0.15), /* 内部阴影 */ 
+  inset -2px -2px 4px rgba(255, 255, 255, 0.15), /* 内部高光 */
+  0 0 80px rgba(255, 255, 255, 1);
+  border: 4px solid #fff;
+  /* box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.3); */
 }
 
 li[data-date="2017"] > span {
   background-color: rgba(255, 0, 0, 0.05); /* 红 */
 }
+li[data-date="2017"] > span:hover {
+  color: rgba(255, 153, 153, 0.75);
+  background-color: rgba(255, 0, 0, 0.2);
+  border-color: rgba(255, 153, 153, 0.5);
+}
+
 li[data-date="2018"] > span {
   background-color: rgba(255, 127, 0, 0.05); /* 橙 */
 }
+li[data-date="2018"] > span:hover {
+  color: rgba(255, 204, 153, 0.75);
+  background-color: rgba(255, 127, 0, 0.2);
+  border-color: rgba(255, 204, 153, 0.5);
+}
+
 li[data-date="2019"] > span {
   background-color: rgba(255, 255, 0, 0.05); /* 黄 */
 }
+li[data-date="2019"] > span:hover {
+  color: rgba(255, 255, 153, 0.75);
+  background-color: rgba(255, 255, 0, 0.2);
+  border-color: rgba(255, 255, 153, 0.5);
+}
+
 li[data-date="2020"] > span {
   background-color: rgba(0, 255, 0, 0.05); /* 绿 */
 }
+li[data-date="2020"] > span:hover {
+  color: rgba(153, 255, 153, 0.75);
+  background-color: rgba(0, 255, 0, 0.2);
+  border-color: rgba(153, 255, 153, 0.5);
+}
+
 li[data-date="2021"] > span {
   background-color: rgba(0, 255, 255, 0.05); /* 青 */
 }
+li[data-date="2021"] > span:hover {
+  color: rgba(153, 255, 255, 0.75);
+  background-color: rgba(0, 255, 255, 0.2);
+  border-color: rgba(153, 255, 255, 0.5);
+}
+
 li[data-date="2022"] > span {
   background-color: rgba(0, 127, 255, 0.05); /* 蓝 */
 }
+li[data-date="2022"] > span:hover {
+  color: rgba(153, 204, 255, 0.75);
+  background-color: rgba(0, 127, 255, 0.2);
+  border-color: rgba(153, 204, 255, 0.5);
+}
+
 li[data-date="2023"] > span {
   background-color: rgba(139, 0, 255, 0.05); /* 靛紫 */
 }
+li[data-date="2023"] > span:hover {
+  color: rgba(203, 153, 255, 0.75);
+  background-color: rgba(139, 0, 255, 0.2);
+  border-color: rgba(203, 153, 255, 0.5);
+}
+
 li[data-date="2024"] > span {
   background-color: rgba(255, 0, 255, 0.05); /* 紫红 */
 }
+li[data-date="2024"] > span:hover {
+  color: rgba(255, 153, 255, 0.75);
+  background-color: rgba(255, 0, 255, 0.2);
+  border-color: rgba(255, 153, 255, 0.5);
+}
+
 li[data-date="2025"] > span {
   background-color: rgba(255, 20, 147, 0.05); /* 桃红 */
+}
+li[data-date="2025"] > span:hover {
+  color: rgba(255, 161, 221, 0.75);
+  background-color: rgba(255, 20, 147, 0.2);
+  border-color: rgba(255, 161, 221, 0.5);
 }
 
 div.projectShowcase {

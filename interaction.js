@@ -99,7 +99,7 @@ frame = async () => {
             `;
             // console.log(`z > data.results.center[2]:`, z > data.results.center[2])
             // if (index == 1) {
-                if (data.modelStates[index].center.z + data.modelStates[index].translation.z < data.results.center[2] - 5) {
+                if (data.modelStates[index].center.z + data.modelStates[index].translation.z < data.results.center[2] - 0.5) {
                     item.style.visibility = `initial`
                 } else {
                     item.style.visibility = `hidden`
