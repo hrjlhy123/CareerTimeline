@@ -24,10 +24,14 @@ div.mainFrame {
   position: absolute;
   top: 0;
   left: 0;
-  inset: 1%;
+  /* inset: 1%; */
+  width: 100%;
+  height: 100%;
+  padding: 1%;
+  box-sizing: border-box;
   display: grid;
   grid:
-    "title mailboxSlot mailboxSlot mailboxSlot mailboxSlot mailboxSlot"
+    "title projectShowcase projectShowcase projectShowcase projectShowcase projectShowcase"
     "timelineBelt projectShowcase projectShowcase projectShowcase projectShowcase projectShowcase"
     "timelineBelt projectShowcase projectShowcase projectShowcase projectShowcase projectShowcase"
     "timelineBelt projectShowcase projectShowcase projectShowcase projectShowcase projectShowcase";
@@ -36,6 +40,25 @@ div.mainFrame {
   border-radius: 10px;
   border: 4px solid #000;
 }
+
+div.mainFrame > div {
+  z-index: 2;
+}
+
+div.mainFrame > div.mailboxSlot,
+div.mainFrame > div.projectShowcase {
+  z-index: 0;
+}
+
+/* div.mainFrame > div.baffle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  z-index: 1;
+} */
 
 div.title {
   grid-area: title;
@@ -100,7 +123,7 @@ div.timelineBelt > ul {
   z-index: 1;
 }
 
-div.timelineBelt > ul:has(li:hover) ~ canvas.mailboxSlot {
+div.timelineBelt > ul:has(li:hover) ~ canvas.timelineBelt {
   filter: blur(2px);
   transition: all 0.5s ease;
 }
@@ -148,11 +171,10 @@ li[data-date] > span:hover {
   backdrop-filter: blur(0px);
   /* background-color: rgba(255, 255, 255, 0.75); */
   /* border: 4px double rgba(0, 0, 0, 0.2); */
-  box-shadow: 
-  inset 2px 2px 4px rgba(0, 0, 0, 0.15), /* 内部阴影 */ 
-  inset -2px -2px 4px rgba(255, 255, 255, 0.15), /* 内部高光 */
-  0 0 80px rgba(255, 255, 255, 1);
-  border: 4px solid #fff;
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.15),
+    /* 内部阴影 */ inset -2px -2px 4px rgba(255, 255, 255, 0.15),
+    /* 内部高光 */ 0 0 80px rgba(255, 255, 255, 0.75);
+  border: 10px solid #fff;
   /* box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.3); */
 }
 
@@ -162,7 +184,7 @@ li[data-date="2017"] > span {
 li[data-date="2017"] > span:hover {
   color: rgba(255, 153, 153, 0.75);
   background-color: rgba(255, 0, 0, 0.2);
-  border-color: rgba(255, 153, 153, 0.5);
+  border-color: rgba(255, 153, 153, 0.65);
 }
 
 li[data-date="2018"] > span {
@@ -171,7 +193,7 @@ li[data-date="2018"] > span {
 li[data-date="2018"] > span:hover {
   color: rgba(255, 204, 153, 0.75);
   background-color: rgba(255, 127, 0, 0.2);
-  border-color: rgba(255, 204, 153, 0.5);
+  border-color: rgba(255, 204, 153, 0.65);
 }
 
 li[data-date="2019"] > span {
@@ -180,7 +202,7 @@ li[data-date="2019"] > span {
 li[data-date="2019"] > span:hover {
   color: rgba(255, 255, 153, 0.75);
   background-color: rgba(255, 255, 0, 0.2);
-  border-color: rgba(255, 255, 153, 0.5);
+  border-color: rgba(255, 255, 153, 0.65);
 }
 
 li[data-date="2020"] > span {
@@ -189,7 +211,7 @@ li[data-date="2020"] > span {
 li[data-date="2020"] > span:hover {
   color: rgba(153, 255, 153, 0.75);
   background-color: rgba(0, 255, 0, 0.2);
-  border-color: rgba(153, 255, 153, 0.5);
+  border-color: rgba(153, 255, 153, 0.65);
 }
 
 li[data-date="2021"] > span {
@@ -198,7 +220,7 @@ li[data-date="2021"] > span {
 li[data-date="2021"] > span:hover {
   color: rgba(153, 255, 255, 0.75);
   background-color: rgba(0, 255, 255, 0.2);
-  border-color: rgba(153, 255, 255, 0.5);
+  border-color: rgba(153, 255, 255, 0.65);
 }
 
 li[data-date="2022"] > span {
@@ -207,7 +229,7 @@ li[data-date="2022"] > span {
 li[data-date="2022"] > span:hover {
   color: rgba(153, 204, 255, 0.75);
   background-color: rgba(0, 127, 255, 0.2);
-  border-color: rgba(153, 204, 255, 0.5);
+  border-color: rgba(153, 204, 255, 0.65);
 }
 
 li[data-date="2023"] > span {
@@ -216,7 +238,7 @@ li[data-date="2023"] > span {
 li[data-date="2023"] > span:hover {
   color: rgba(203, 153, 255, 0.75);
   background-color: rgba(139, 0, 255, 0.2);
-  border-color: rgba(203, 153, 255, 0.5);
+  border-color: rgba(203, 153, 255, 0.65);
 }
 
 li[data-date="2024"] > span {
@@ -225,7 +247,7 @@ li[data-date="2024"] > span {
 li[data-date="2024"] > span:hover {
   color: rgba(255, 153, 255, 0.75);
   background-color: rgba(255, 0, 255, 0.2);
-  border-color: rgba(255, 153, 255, 0.5);
+  border-color: rgba(255, 153, 255, 0.65);
 }
 
 li[data-date="2025"] > span {
@@ -234,18 +256,316 @@ li[data-date="2025"] > span {
 li[data-date="2025"] > span:hover {
   color: rgba(255, 161, 221, 0.75);
   background-color: rgba(255, 20, 147, 0.2);
-  border-color: rgba(255, 161, 221, 0.5);
+  border-color: rgba(255, 161, 221, 0.65);
 }
 
 div.projectShowcase {
+  position: relative;
   padding: 1%;
   grid-area: projectShowcase;
   background-color: rgba(255, 255, 0, 0.5);
+  background-color: #ddd;
 }
 
-iframe.projectShowcase {
-  width: 100%;
-  height: 100%;
+div.projectShowcase > div.iframe-wrapper {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  width: 96%;
+  height: 96%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: rotateZ(0deg);
+  transform-origin: 0 50%;
+  transition: transform 0.3s ease-out, filter 0.5s ease-out;
+  transform: translateX(0%);
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(2) {
+  z-index: 1;
+  width: 96%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(3) {
+  z-index: 2;
+  width: 94%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(4) {
+  z-index: 3;
+  width: 92%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(5) {
+  z-index: 4;
+  width: 90%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(6) {
+  z-index: 5;
+  width: 88%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(7) {
+  z-index: 6;
+  width: 86%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(8) {
+  z-index: 7;
+  width: 84%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(9) {
+  z-index: 8;
+  width: 82%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(10) {
+  z-index: 9;
+  width: 80%;
+}
+
+div.projectShowcase > .iframe-wrapper:nth-of-type(11) {
+  z-index: 10;
+  width: 78%;
+}
+
+/* div.projectShowcase > .iframe-wrapper:not(:nth-last-of-type(1)) {
+  filter: opacity(0.25);
+} */
+
+div.projectShowcase > div.iframe-wrapper:hover {
+  box-shadow: 0 0 80px rgba(255, 255, 255, 0.75);
+  z-index: 15;
+  /* filter: opacity(1); */
+}
+
+/* Optional hover effect */
+div.projectShowcase > div.iframe-wrapper:hover ~ .iframe-wrapper {
+  transform: rotateZ(-3deg);
+  filter: opacity(0.25);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-6deg);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-9deg);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-12deg);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-15deg);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-18deg);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-21deg);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-24deg);
+}
+
+div.projectShowcase
+  > .iframe-wrapper:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-27deg);
+}
+
+div.iframe-wrapper > iframe {
+  display: none;
+  position: absolute;
   border-radius: 5px;
   border: 2px solid #900;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ddd;
+}
+
+div.iframe-wrapper > div.iframe-mask {
+  position: absolute;
+  z-index: 0;
+  top: 25%;
+  left: 25%;
+  /* width: 100%; */
+  height: 50%;
+  background: url("./screenshot/playingcards_horizontal.svg") center center /
+    contain no-repeat;
+  pointer-events: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  aspect-ratio: 3 / 2;
+  opacity: 0.5;
+  filter: grayscale(0.25);
+  transition: opacity 0.5s ease-out;
+  visibility: hidden;
+}
+
+div.projectShowcase > div.hotzone {
+  z-index: 0;
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  width: 98%;
+  height: 96%;
+  clip-path: polygon(50% 100%, 100% 100%, 100% 0%, 50% 0%);
+  /* background-color: #f00; */
+}
+
+div.projectShowcase > div.hotzone:hover {
+  clip-path: initial;
+}
+
+div.projectShowcase > div.hotzone:hover ~ .iframe-wrapper {
+  transform: rotateZ(12deg);
+  /* filter: blur(4px); */
+  box-shadow: initial;
+  pointer-events: none;
+}
+
+div.projectShowcase > div.hotzone:hover ~ .iframe-wrapper ~ .iframe-wrapper {
+  transform: rotateZ(9deg);
+}
+
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(6deg);
+}
+
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(3deg);
+}
+
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(0deg);
+}
+
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-3deg);
+}
+
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-6deg);
+}
+
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-9deg);
+}
+
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-12deg);
+}
+
+div.projectShowcase > div.hotzone:hover ~ .iframe-wrapper > .iframe-mask {
+  visibility: initial;
+  z-index: 1;
+  opacity: 0.075;
 }
