@@ -10,6 +10,10 @@ body {
   position: relative;
 }
 
+div {
+  border-radius: 5px;
+}
+
 img.conceptDesign {
   position: absolute;
   top: 0;
@@ -38,7 +42,7 @@ div.mainFrame {
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(4, 1fr);
   border-radius: 10px;
-  border: 4px solid #000;
+  /* border: 4px solid #000; */
 }
 
 div.mainFrame > div {
@@ -125,7 +129,7 @@ div.timelineBelt > ul {
 
 div.timelineBelt > ul:has(li:hover) ~ canvas.timelineBelt {
   filter: blur(2px);
-  transition: all 0.5s ease;
+  transition: all 0.5s ease-out;
 }
 
 ul > li[data-date] {
@@ -268,119 +272,145 @@ div.projectShowcase {
 }
 
 div.projectShowcase > div.iframe-wrapper {
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
   position: absolute;
   top: 2%;
   left: 2%;
-  width: 96%;
+  width: 78%;
   height: 96%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transform: rotateZ(0deg);
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); */
   transform-origin: 0 50%;
   transition: transform 0.3s ease-out, filter 0.5s ease-out;
-  transform: translateX(0%);
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(2) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(2) {
   z-index: 1;
-  width: 96%;
+  left: 20%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(3) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(3) {
   z-index: 2;
-  width: 94%;
+  left: 18%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(4) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(4) {
   z-index: 3;
-  width: 92%;
+  left: 16%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(5) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(5) {
   z-index: 4;
-  width: 90%;
+  left: 14%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(6) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(6) {
   z-index: 5;
-  width: 88%;
+  left: 12%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(7) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(7) {
   z-index: 6;
-  width: 86%;
+  left: 10%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(8) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(8) {
   z-index: 7;
-  width: 84%;
+  left: 8%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(9) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(9) {
   z-index: 8;
-  width: 82%;
+  left: 6%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(10) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(10) {
   z-index: 9;
-  width: 80%;
+  left: 4%;
 }
 
-div.projectShowcase > .iframe-wrapper:nth-of-type(11) {
+div.projectShowcase.active > .iframe-wrapper:nth-of-type(11) {
   z-index: 10;
-  width: 78%;
+  left: 2%;
 }
 
 /* div.projectShowcase > .iframe-wrapper:not(:nth-last-of-type(1)) {
   filter: opacity(0.25);
 } */
 
-div.projectShowcase > div.iframe-wrapper:hover {
+div.projectShowcase.active > div.iframe-wrapper {
+  transform: scale(1);
+}
+
+div.projectShowcase.active > .iframe-wrapper > iframe {
+  opacity: 1;
+  z-index: 1;
+}
+
+div.projectShowcase.active > .iframe-wrapper > .iframe-mask {
+  z-index: 0;
+}
+
+div.projectShowcase.active > div.iframe-wrapper:hover {
   box-shadow: 0 0 80px rgba(255, 255, 255, 0.75);
-  z-index: 15;
+  z-index: 20;
+  /* filter: blur(0px); */
   /* filter: opacity(1); */
 }
 
+/* div.projectShowcase > div.iframe-wrapper:not(:hover):nth-last-of-type(1) {
+  filter: blur(0px) grayscale(0);
+} */
+
 /* Optional hover effect */
-div.projectShowcase > div.iframe-wrapper:hover ~ .iframe-wrapper {
+div.projectShowcase.active > div.iframe-wrapper:hover ~ .iframe-wrapper {
+  z-index: 19;
   transform: rotateZ(-3deg);
-  filter: opacity(0.25);
+  /* filter: opacity(0.25); */
+  /* filter: blur(1px) grayscale(0.5); */
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 18;
   transform: rotateZ(-6deg);
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 17;
   transform: rotateZ(-9deg);
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 16;
   transform: rotateZ(-12deg);
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 15;
   transform: rotateZ(-15deg);
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -388,10 +418,11 @@ div.projectShowcase
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 14;
   transform: rotateZ(-18deg);
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -400,10 +431,11 @@ div.projectShowcase
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 13;
   transform: rotateZ(-21deg);
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -413,10 +445,11 @@ div.projectShowcase
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 12;
   transform: rotateZ(-24deg);
 }
 
-div.projectShowcase
+div.projectShowcase.active
   > .iframe-wrapper:hover
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -427,59 +460,57 @@ div.projectShowcase
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
+  z-index: 11;
   transform: rotateZ(-27deg);
 }
 
 div.iframe-wrapper > iframe {
-  display: none;
-  position: absolute;
   border-radius: 5px;
-  border: 2px solid #900;
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); */
   z-index: 1;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-  background-color: #ddd;
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out, filter 0s;
+  background: #fff;
 }
 
 div.iframe-wrapper > div.iframe-mask {
   position: absolute;
   z-index: 0;
-  top: 25%;
-  left: 25%;
-  /* width: 100%; */
-  height: 50%;
-  background: url("./screenshot/playingcards_horizontal.svg") center center /
-    contain no-repeat;
-  pointer-events: none;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  aspect-ratio: 3 / 2;
-  opacity: 0.5;
-  filter: grayscale(0.25);
-  transition: opacity 0.5s ease-out;
-  visibility: hidden;
+  width: 100%;
+  height: 100%;
+  /* opacity: 0.25; */
+  opacity: 1;
+  background: #ddd;
+  /* pointer-events: none; */
+  transition: all 0s, opacity 0.5s ease-out;
+  backdrop-filter: blur(2px);
+  /* visibility: hidden; */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
-div.projectShowcase > div.hotzone {
+div.projectShowcase.active > div.hotzone {
   z-index: 0;
   position: absolute;
-  top: 2%;
-  left: 2%;
-  width: 98%;
-  height: 96%;
-  clip-path: polygon(50% 100%, 100% 100%, 100% 0%, 50% 0%);
-  /* background-color: #f00; */
-}
-
-div.projectShowcase > div.hotzone:hover {
+  /* top: 2%; */
+  top: 0%;
+  left: 0%;
+  width: 100%;
+  /* height: 96%; */
+  height: 100%;
+  /* clip-path: polygon(50% 100%, 100% 100%, 100% 0%, 50% 0%); */
   clip-path: initial;
+  background-color: #f00;
 }
 
-div.projectShowcase > div.hotzone:hover ~ .iframe-wrapper {
+/* div.projectShowcase.active > div.hotzone:hover {
+  clip-path: initial;
+} */
+
+/* div.projectShowcase > div.hotzone:hover ~ .iframe-wrapper {
   transform: rotateZ(12deg);
-  /* filter: blur(4px); */
-  box-shadow: initial;
   pointer-events: none;
 }
 
@@ -564,8 +595,154 @@ div.projectShowcase
   transform: rotateZ(-12deg);
 }
 
+div.projectShowcase
+  > div.hotzone:hover
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: rotateZ(-15deg);
+}
+
+div.projectShowcase > div.hotzone:hover ~ .iframe-wrapper > iframe {
+  transform: scale(0.4);
+  opacity: 0;
+  z-index: 0;
+}
+
 div.projectShowcase > div.hotzone:hover ~ .iframe-wrapper > .iframe-mask {
   visibility: initial;
+  top: 25%;
+  left: 25%;
+  width: calc(40vh / 2 * 3);
+  height: 40vh;
   z-index: 1;
-  opacity: 0.075;
+  opacity: 1;
+  filter: blur(4px);
+  background: url("./screenshot/playingcards_horizontal.svg") center center /
+    contain no-repeat;
+  border-radius: 25px;
+  aspect-ratio: 3 / 2;
+  filter: grayscale(0.25);
+} */
+
+div.projectShowcase:not(.active) > div.iframe-wrapper {
+  transform: scale(0.4) rotateZ(12deg);
+  /* pointer-events: none; */
+}
+
+div.projectShowcase:not(.active) > div.iframe-wrapper ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(9deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(6deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(3deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(0deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(-3deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(-6deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(-9deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(-12deg);
+}
+
+div.projectShowcase:not(.active)
+  > div.iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4) rotateZ(-15deg);
+}
+
+div.projectShowcase:not(.active) > div.iframe-wrapper > iframe {
+  /* transform: scale(0.4); */
+  opacity: 0;
+  z-index: 0;
+}
+
+div.projectShowcase:not(.active) > div.iframe-wrapper > div.iframe-mask {
+  visibility: initial;
+  /* top: 25%;
+  left: 25%; */
+  /* width: calc(40vh / 2 * 3);
+  height: 40vh; */
+  z-index: 1;
+  opacity: 1;
+  filter: blur(4px);
+  background: url("./screenshot/playingcards_horizontal.svg") center center /
+    contain no-repeat;
+  border-radius: 50px;
+  aspect-ratio: 3 / 2;
+  filter: grayscale(0.25);
 }
