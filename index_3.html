@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Container Query Test - Aspect Ratio</title>
+        <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .iframe-wrapper {
+      width: 80%;
+      height: 60vh;
+      resize: both;
+      overflow: auto;
+      container: card / size; /* ✅ 设置容器名称和类型 */
+      border: 2px dashed black;
+      padding: 1rem;
+    }
+
+    div.projectShowcase:not(.active) > div.iframe-wrapper > div.iframe-mask {
+      width: 100%;
+      height: 100%;
+      background: url("./screenshot/playingcards_horizontal.svg") center center / contain no-repeat;
+    }
+
+    /* 横向容器（宽 > 高）时变绿色 */
+    @container card (aspect-ratio > 1) {
+      .iframe-mask {
+        background: url("./screenshot/playingcards_horizontal.svg") center center / contain no-repeat !important;
+      }
+    }
+
+    /* 纵向容器（宽 < 高）时变红色 */
+    @container card (aspect-ratio < 1) {
+      .iframe-mask {
+        background: url("./screenshot/playingcards.svg") center center / contain no-repeat !important;
+      }
+    }
+
+    /* 宽高相等时为蓝色（可选） */
+    @container card (aspect-ratio = 1) {
+      .iframe-mask {
+        background: blue;
+      }
+    }
+  </style>
+    </head>
+    <body>
+        <h2>Container Query: Aspect Ratio</h2>
+        <p>Try resizing the box diagonally ↘️ to change its aspect ratio</p>
+        <div class="projectShowcase">
+            <div class="iframe-wrapper">
+                <div class="iframe-mask"></div>
+            </div>
+            <div class="iframe-wrapper">
+                <div class="iframe-mask"></div>
+            </div>
+            <div class="iframe-wrapper">
+                <div class="iframe-mask"></div>
+            </div>
+        </div>
+    </body>
+</html>

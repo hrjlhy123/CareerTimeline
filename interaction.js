@@ -114,46 +114,115 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     frame()
 
+    let sleep = (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     let projectShowcase = document.querySelector('div.projectShowcase');
     let iframeWrappers = document.querySelectorAll(`div.iframe-wrapper`)
     let hotzone = document.querySelector(`div.hotzone`)
     let iframeMask = document.querySelectorAll(`div.iframe-mask`)
-    iframeWrappers.forEach(async (item, index) => {
-        // console.log(`index:`, index)
-        item.addEventListener(`mouseover`, async () => {
-            console.log(`mouseover index: ${index - 1}, ${index}, ${index + 1} display, other hide`)
-            iframeWrappers.forEach(async (item2, index2) => {
-                if (index2 === index - 2 || index2 === index - 1 || index2 === index || index2 === index + 1 || index2 === index + 2) {
-                    iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`iframe`).style.display = `initial` : ``  // 显示当前和相邻的
-                    // iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`.iframe-mask`).style.boxShadow = `0 4px 8px rgba(0, 0, 0, 0.5)` : ``
-                } else {
-                    iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`iframe`).style.display = `none` : ``    // 隐藏其他的
-                    // iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`.iframe-mask`).style.boxShadow = `none` : ``
-                }
-            });
-        })
-    })
+    // iframeWrappers.forEach(async (item, index) => {
+    //     // console.log(`index:`, index)
+    //     // iframeWrappers[index].querySelector(`iframe`).style.display = `none`;
+    //     item.addEventListener(`mouseover`, async () => {
+    //         if (item.classList.contains('active')) {
+    //             // item.classList.add(`hover`)
+    //             if (index != iframeWrappers.length - 1) {
+    //                 console.log(`mouseover index: ${index - 1}, ${index}, ${index + 1} display, other hide`)
+    //                 iframeWrappers.forEach(async (item2, index2) => {
+    //                     if (true) {
+    //                         iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`iframe`).style.display = `` : ``  // 显示当前和相邻的
+    //                     } else {
+    //                         iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`iframe`).style.display = `none` : ``    // 隐藏其他的
+    //                     }
+    //                 });
+    //             } else {
+    //                 iframeWrappers.forEach(async (item2, index) => {
+    //                     iframeWrappers[index].querySelector(`iframe`).style.display = ``
+    //                 })
+    //             }
+    //         }
+    //     })
+    //     item.addEventListener(`mouseout`, async () => {
+    //         if (item.classList.contains('active')) {
+    //             // item.classList.remove(`hover`)
+    //         }
+    //     })
+    // })
+
     hotzone.addEventListener(`mouseover`, async () => {
-        iframeWrappers.forEach(async (iframe, index) => {
-            iframeWrappers[index].querySelector(`iframe`).style.display = `initial`
-            // iframeWrappers[index].querySelector(`iframe-mask`).style.boxShadow = `0 4px 8px rgba(0, 0, 0, 0.5)`
+        iframeWrappers.forEach(async (item, index) => {
+            iframeWrappers[index].querySelector(`iframe`).style.display = ``
         })
     })
 
     hotzone.addEventListener(`click`, async () => {
         projectShowcase.classList.remove('active');
+        hotzone.style.pointerEvents = `none`
+        setTimeout(() => {
+            hotzone.style.pointerEvents = `initial`
+        }, 500)
+        iframeWrappers.forEach(async (item2, index2) => {
+            iframeWrappers[index2].classList.remove(`active`)
+            iframeWrappers[index2].style.pointerEvents = `none`;
+            // iframeWrappers[index2].querySelector(`iframe`).style.display = `none`;
+            setTimeout(() => {
+                iframeWrappers[index2].style.pointerEvents = `initial`;
+                // iframeWrappers[index2].querySelector(`iframe`).style.display = ``;
+            }, 500);
+        })
     })
 
     iframeMask.forEach(async (item, index) => {
         item.addEventListener(`click`, async () => {
-            // alert(`clicked`)
-            projectShowcase.classList.add('active');
+            projectShowcase.classList.add(`active`);
+            hotzone.style.pointerEvents = `none`
+            setTimeout(() => {
+                hotzone.style.pointerEvents = `initial`
+            }, 2000)
+            console.log(`iframeWrappers.length:`, iframeWrappers.length)
+            iframeWrappers.forEach((item2, index2) => {
+                // iframeWrappers[index2].querySelector(`iframe`).style.display = `none`;
+            })
+            for (let index2 = iframeWrappers.length - 1; index2 >= 0; index2--) {
+                iframeWrappers[index2].classList.add(`active`)
+                // iframeWrappers[index2].style.pointerEvents = `none`;
+                // iframeWrappers[index2].querySelector(`iframe`).style.display = `initial`;
+                setTimeout(() => {
+                    // iframeWrappers[index2].style.pointerEvents = `initial`;
+                    // iframeWrappers[index2].querySelector(`iframe`).style.display = ``;
+                }, 400);
+                await sleep(200);
+            }
         })
     })
+
     let i = 0
     setInterval(() => {
         iframeWrappers[6].querySelector(`iframe`).src = `https://www.hrjlhy.com/Beijing%20Human%20Resource%20Service%20Industry%20Association/sign_in(` + (i % 4 + 1) + `).html`
         i++
     }, 2500);
+
+
+    const ws = new WebSocket(`wss://localhost:443`)
+    ws.onopen = () => {
+        console.log(`✅ WebSocket connected`)
+        getUsers()
+    }
+
+    ws.onmessage = (event) => {
+        // const msg = JSON.parse(event.data)
+        const msg = event.data
+        console.log(`📦 msg:`, msg)
+        if (msg.type == `getUsers`) {
+            console.log(`📦 用户数据： ${msg.data}`)
+        }
+    }
+
+    const getUsers = () => {
+        ws.send(JSON.stringify({ type: `getUsers` }))
+        ws.send(JSON.stringify({ type: `users` }))
+    }
 
 })
