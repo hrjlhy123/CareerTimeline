@@ -18,23 +18,6 @@ const options = {
 
 const httpsServer = https.createServer(options, app)
 const wss = new WebSocketServer({ server: httpsServer });
-
-wss.on('connection', function connection(ws) {
-    console.log('✅ New client connected');
-
-    ws.on('message', function message(data) {
-        console.log('📨 Received:', data.toString());
-
-        // 回传消息
-        ws.send(`Server received: ${data}`);
-    });
-
-    ws.on('close', () => {
-        console.log('❌ Client disconnected');
-    });
-});
-
-
 const uri = `mongodb://localhost:27017`
 const dbName = `careerTimeline`
 let db
@@ -55,11 +38,23 @@ MongoClient.connect(uri)
                 const msg = JSON.parse(data.toString());
                 console.log('📨 Received:', msg);
 
-                if (msg.type === 'users') {
-                    const users = await db.collection('users').find().toArray();
+                if (msg.type === 'projects') {
+                    const { year } = msg;
+
+                    let query = {};
+                    if (year) {
+                        query.year = parseInt(year);  // year 可以是字符串
+                    }
+
+                    const projects = await db.collection('projects')
+                        .find(query)
+                        .project({ _id: 0, name: 1, URLs: 1 })
+                        .toArray();
+
                     ws.send(JSON.stringify({
-                        type: 'users',
-                        data: users
+                        type: 'projects',
+                        year: year || 'all',
+                        data: projects
                     }));
                 }
             });

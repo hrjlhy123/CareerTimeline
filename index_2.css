@@ -271,7 +271,16 @@ div.projectShowcase {
   background-color: #ddd;
 }
 
-div.projectShowcase > div.iframe-wrapper {
+div.projectShowcase > div.hotzone {
+}
+
+div.projectShowcase > div.playzone {
+  display: relative;
+  width: 100%;
+  height: 100%;
+}
+
+div.playzone > div.iframe-wrapper {
   display: flex;
   flex-grow: 1;
   justify-content: center;
@@ -288,79 +297,94 @@ div.projectShowcase > div.iframe-wrapper {
   transition: transform 0.3s ease-out, filter 0.5s ease-out, left 0.2s ease-out;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(2) {
+/* div.projectShowcase > div.iframe-wrapper {
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  width: 78%;
+  height: 96%;
+  transform-origin: 0 50%;
+  border-radius: 50px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.03);
+  transition: transform 0.3s ease-out, filter 0.5s ease-out, left 0.2s ease-out;
+} */
+
+div.playzone > .iframe-wrapper.active:nth-of-type(1) {
   z-index: 1;
   left: 20%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(3) {
+div.playzone > .iframe-wrapper.active:nth-of-type(2) {
   z-index: 2;
   left: 18%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(4) {
+div.playzone > .iframe-wrapper.active:nth-of-type(3) {
   z-index: 3;
   left: 16%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(5) {
+div.playzone > .iframe-wrapper.active:nth-of-type(4) {
   z-index: 4;
   left: 14%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(6) {
+div.playzone > .iframe-wrapper.active:nth-of-type(5) {
   z-index: 5;
   left: 12%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(7) {
+div.playzone > .iframe-wrapper.active:nth-of-type(6) {
   z-index: 6;
   left: 10%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(8) {
+div.playzone > .iframe-wrapper.active:nth-of-type(7) {
   z-index: 7;
   left: 8%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(9) {
+div.playzone > .iframe-wrapper.active:nth-of-type(8) {
   z-index: 8;
   left: 6%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(10) {
+div.playzone > .iframe-wrapper.active:nth-of-type(9) {
   z-index: 9;
   left: 4%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active:nth-of-type(11) {
+div.playzone > .iframe-wrapper.active:nth-of-type(10) {
   z-index: 10;
   left: 2%;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active > iframe {
+.iframe-wrapper.active > iframe {
   display: initial;
   z-index: 1;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active > .iframe-mask {
+.iframe-wrapper.active > .iframe-mask {
   z-index: 0;
 }
 
-div.projectShowcase.active > div.iframe-wrapper.active:hover {
+div.playzone > div.iframe-wrapper.active:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 0 80px rgba(255, 255, 255, 0.75);
   z-index: 20;
 }
 
 /* Optional hover effect */
-div.projectShowcase.active
-  > div.iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active {
+div.playzone > div.iframe-wrapper.active:hover ~ .iframe-wrapper.active {
   z-index: 19;
   transform: scale(1) rotateZ(-3deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active {
@@ -368,7 +392,7 @@ div.projectShowcase.active
   transform: scale(1) rotateZ(-6deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active
@@ -377,7 +401,7 @@ div.projectShowcase.active
   transform: scale(1) rotateZ(-9deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active
@@ -387,7 +411,7 @@ div.projectShowcase.active
   transform: scale(1) rotateZ(-12deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active
@@ -398,7 +422,7 @@ div.projectShowcase.active
   transform: scale(1) rotateZ(-15deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active
@@ -410,7 +434,7 @@ div.projectShowcase.active
   transform: scale(1) rotateZ(-18deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active
@@ -423,7 +447,7 @@ div.projectShowcase.active
   transform: scale(1) rotateZ(-21deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active
@@ -437,7 +461,7 @@ div.projectShowcase.active
   transform: scale(1) rotateZ(-24deg) !important;
 }
 
-div.projectShowcase.active
+div.playzone
   > .iframe-wrapper.active:hover
   ~ .iframe-wrapper.active
   ~ .iframe-wrapper.active
@@ -458,7 +482,7 @@ div.iframe-wrapper > iframe {
   /* z-index: 1; */
   width: 100%;
   height: 100%;
-  transform: scale(0.95);
+  transform: scale(0.97);
   border: 2px double #000;
   box-sizing: border-box;
   opacity: 1;
@@ -497,16 +521,20 @@ div.projectShowcase.active > div.hotzone {
   /* background-color: #f00; */
 }
 
-div.projectShowcase:not(.active) > div.iframe-wrapper {
+div.projectShowcase:not(.active) > .playzone > .iframe-wrapper {
   transform: scale(0.4) rotateZ(12deg);
   /* left: 10%; */
 }
 
-div.projectShowcase:not(.active) > .iframe-wrapper ~ .iframe-wrapper {
+div.projectShowcase:not(.active)
+  > .playzone
+  > .iframe-wrapper
+  ~ .iframe-wrapper {
   transform: scale(0.4) rotateZ(9deg);
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
@@ -514,6 +542,7 @@ div.projectShowcase:not(.active)
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -522,6 +551,7 @@ div.projectShowcase:not(.active)
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -531,6 +561,7 @@ div.projectShowcase:not(.active)
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -541,6 +572,7 @@ div.projectShowcase:not(.active)
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -552,6 +584,7 @@ div.projectShowcase:not(.active)
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -564,6 +597,7 @@ div.projectShowcase:not(.active)
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
@@ -577,6 +611,7 @@ div.projectShowcase:not(.active)
 }
 
 div.projectShowcase:not(.active)
+  > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper

@@ -10,6 +10,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         coordinates,
         angle
 
+    li = document.querySelectorAll('li[data-date]');
     angle = {
         local: { rx: 0, ry: 0, rz: 0 },
         global: { rx: 0, ry: 0, rz: 0 },
@@ -17,7 +18,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     frame = async () => {
         data = await getData()
-        li = document.querySelectorAll('li[data-date]');
         if (data.results && data.modelStates && data.matrix_view && data.matrix_projection && data.matrix_transform && data.matrix_world && data.canvas) {
             // console.log(`data:`, data)
             li.forEach(async (item, index) => {
@@ -114,115 +114,122 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     frame()
 
-    let sleep = (ms) => {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+    let year
+    li.forEach((item, index) => {
+        console.log(`li:`, item)
+        item.addEventListener(`click`, async (event) => {
+            year = item.getAttribute('data-date');
+            projectShowcase.classList.remove('active');
+            await getProjects(year)
+        })
+    });
 
     let projectShowcase = document.querySelector('div.projectShowcase');
     let iframeWrappers = document.querySelectorAll(`div.iframe-wrapper`)
     let hotzone = document.querySelector(`div.hotzone`)
-    let iframeMask = document.querySelectorAll(`div.iframe-mask`)
-    // iframeWrappers.forEach(async (item, index) => {
-    //     // console.log(`index:`, index)
-    //     // iframeWrappers[index].querySelector(`iframe`).style.display = `none`;
-    //     item.addEventListener(`mouseover`, async () => {
-    //         if (item.classList.contains('active')) {
-    //             // item.classList.add(`hover`)
-    //             if (index != iframeWrappers.length - 1) {
-    //                 console.log(`mouseover index: ${index - 1}, ${index}, ${index + 1} display, other hide`)
-    //                 iframeWrappers.forEach(async (item2, index2) => {
-    //                     if (true) {
-    //                         iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`iframe`).style.display = `` : ``  // 显示当前和相邻的
-    //                     } else {
-    //                         iframeWrappers[index2] ? iframeWrappers[index2].querySelector(`iframe`).style.display = `none` : ``    // 隐藏其他的
-    //                     }
-    //                 });
-    //             } else {
-    //                 iframeWrappers.forEach(async (item2, index) => {
-    //                     iframeWrappers[index].querySelector(`iframe`).style.display = ``
-    //                 })
-    //             }
-    //         }
-    //     })
-    //     item.addEventListener(`mouseout`, async () => {
-    //         if (item.classList.contains('active')) {
-    //             // item.classList.remove(`hover`)
-    //         }
-    //     })
-    // })
+    let iframeMasks = document.querySelectorAll(`div.iframe-mask`)
+    const bindIframeEvents = () => {
+        projectShowcase = document.querySelector('div.projectShowcase');
+        iframeWrappers = document.querySelectorAll(`div.iframe-wrapper`);
+        hotzone = document.querySelector(`div.hotzone`);
+        iframeMasks = document.querySelectorAll(`div.iframe-mask`);
 
-    hotzone.addEventListener(`mouseover`, async () => {
-        iframeWrappers.forEach(async (item, index) => {
-            iframeWrappers[index].querySelector(`iframe`).style.display = ``
-        })
-    })
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    hotzone.addEventListener(`click`, async () => {
-        projectShowcase.classList.remove('active');
-        hotzone.style.pointerEvents = `none`
-        setTimeout(() => {
-            hotzone.style.pointerEvents = `initial`
-        }, 500)
-        iframeWrappers.forEach(async (item2, index2) => {
-            iframeWrappers[index2].classList.remove(`active`)
-            iframeWrappers[index2].style.pointerEvents = `none`;
-            // iframeWrappers[index2].querySelector(`iframe`).style.display = `none`;
+        hotzone.addEventListener(`mouseover`, () => {
+            iframeWrappers.forEach((item) => {
+                item.querySelector(`iframe`).style.display = '';
+            });
+        });
+
+        hotzone.addEventListener(`click`, () => {
+            projectShowcase.classList.remove('active');
+            hotzone.style.pointerEvents = `none`;
             setTimeout(() => {
-                iframeWrappers[index2].style.pointerEvents = `initial`;
-                // iframeWrappers[index2].querySelector(`iframe`).style.display = ``;
+                hotzone.style.pointerEvents = `initial`;
             }, 500);
-        })
-    })
 
-    iframeMask.forEach(async (item, index) => {
-        item.addEventListener(`click`, async () => {
-            projectShowcase.classList.add(`active`);
-            hotzone.style.pointerEvents = `none`
-            setTimeout(() => {
-                hotzone.style.pointerEvents = `initial`
-            }, 2000)
-            console.log(`iframeWrappers.length:`, iframeWrappers.length)
-            iframeWrappers.forEach((item2, index2) => {
-                // iframeWrappers[index2].querySelector(`iframe`).style.display = `none`;
-            })
-            for (let index2 = iframeWrappers.length - 1; index2 >= 0; index2--) {
-                iframeWrappers[index2].classList.add(`active`)
-                // iframeWrappers[index2].style.pointerEvents = `none`;
-                // iframeWrappers[index2].querySelector(`iframe`).style.display = `initial`;
+            iframeWrappers.forEach((wrapper) => {
+                wrapper.classList.remove(`active`);
+                wrapper.style.pointerEvents = `none`;
                 setTimeout(() => {
-                    // iframeWrappers[index2].style.pointerEvents = `initial`;
-                    // iframeWrappers[index2].querySelector(`iframe`).style.display = ``;
-                }, 400);
-                await sleep(200);
-            }
-        })
-    })
+                    wrapper.style.pointerEvents = `initial`;
+                }, 500);
+            });
+        });
 
-    let i = 0
-    setInterval(() => {
-        iframeWrappers[6].querySelector(`iframe`).src = `https://www.hrjlhy.com/Beijing%20Human%20Resource%20Service%20Industry%20Association/sign_in(` + (i % 4 + 1) + `).html`
-        i++
-    }, 2500);
+        iframeMasks.forEach((mask, index) => {
+            mask.addEventListener(`click`, async () => {
+                projectShowcase.classList.add(`active`);
+                hotzone.style.pointerEvents = `none`;
+                setTimeout(() => {
+                    hotzone.style.pointerEvents = `initial`;
+                }, 2000);
 
+                for (let i = iframeWrappers.length - 1; i >= 0; i--) {
+                    iframeWrappers[i].classList.add(`active`);
+                    await sleep(200);
+                }
+            });
+        });
+    };
+
+    bindIframeEvents()
+
+    // let i = 0
+    // setInterval(() => {
+    //     iframeWrappers[6].querySelector(`iframe`).src = `https://www.hrjlhy.com/Beijing%20Human%20Resource%20Service%20Industry%20Association/sign_in(` + (i % 4 + 1) + `).html`
+    //     i++
+    // }, 2500);
+
+    const renderProjects = (projects) => {
+        const hotzone = document.querySelector('.hotzone');
+        const playzone = document.querySelector('.playzone');
+
+        // ✅ 清空
+        hotzone.innerHTML = '';
+        playzone.innerHTML = '';
+
+        projects.forEach(({ name, URLs }) => {
+            const firstURL = URLs?.[0] || 'about:blank';
+            const isMobile = name.trim().endsWith('(mobile)');
+            const iframeClass = isMobile ? 'projectShowcase mobile' : 'projectShowcase';
+
+            playzone.insertAdjacentHTML('beforeend', `
+            <div class="iframe-wrapper">
+                <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
+                <div class="iframe-mask"></div>
+            </div>
+        `);
+
+            hotzone.insertAdjacentHTML('beforeend', `
+            <div class="hotzone-label">${name}</div>
+        `);
+        });
+
+        // ✅ 重新绑定事件
+        bindIframeEvents();
+    };
 
     const ws = new WebSocket(`wss://localhost:443`)
     ws.onopen = () => {
-        console.log(`✅ WebSocket connected`)
-        getUsers()
-    }
+        console.log('✅ Connected to server');
+    };
 
     ws.onmessage = (event) => {
-        // const msg = JSON.parse(event.data)
-        const msg = event.data
-        console.log(`📦 msg:`, msg)
-        if (msg.type == `getUsers`) {
-            console.log(`📦 用户数据： ${msg.data}`)
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'projects') {
+            console.log(`📦 Projects in ${msg.year}:`, msg.data);
+            // 示例输出格式: [{ name: "...", urls: [...] }, ...]
+            renderProjects(msg.data.reverse())
         }
-    }
+    };
 
-    const getUsers = () => {
-        ws.send(JSON.stringify({ type: `getUsers` }))
-        ws.send(JSON.stringify({ type: `users` }))
-    }
+    const getProjects = async (year) => {
+        ws.send(JSON.stringify({
+            type: 'projects',
+            ...(year ? { year } : {}) // 如果有 year 就发送 year，没有就不发送
+        }));
+    };
 
 })
