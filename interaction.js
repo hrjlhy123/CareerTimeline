@@ -117,8 +117,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     let year
     li.forEach((item, index) => {
-        // console.log(`li:`, item)
         item.addEventListener(`click`, async (event) => {
+            item.parentNode.querySelectorAll('.checked').forEach(el => el.classList.remove('checked'));
+            item.classList.add('checked');
             year = item.getAttribute('data-date');
             projectShowcase.classList.remove('active');
             await getProjects(year)
@@ -225,9 +226,60 @@ window.addEventListener("DOMContentLoaded", async () => {
         items.slice(0, start).forEach(el => el.style.removeProperty('--i'));
     };
 
+    /* Unsupervised AI content */
+    // —— 全局轮播管理 —— //
+    const _IFRAME_ROTATORS = new Set();
+
+    function _clearAllRotators() {
+        for (const r of _IFRAME_ROTATORS) {
+            if (r.firstTimeout) clearTimeout(r.firstTimeout);
+            if (r.intervalId) clearInterval(r.intervalId);
+        }
+        _IFRAME_ROTATORS.clear();
+    }
+
+    function _attachRotator(iframe, urls, delay = 5000, jitter = 800) {
+        const list = (urls || []).filter(Boolean);
+        if (list.length <= 1) return; // 只有一个 URL 就不轮播
+
+        let i = 0;
+        iframe.dataset.urlIndex = '0';
+
+        const tick = () => {
+            i = (i + 1) % list.length;
+            iframe.src = list[i];
+            iframe.dataset.urlIndex = String(i);
+        };
+
+        const rot = { firstTimeout: null, intervalId: null };
+
+        // 首次切换稍微随机一下，避免所有同时换
+        const firstDelay = Math.floor(Math.random() * jitter);
+        rot.firstTimeout = setTimeout(() => {
+            tick();
+            rot.intervalId = setInterval(tick, delay);
+        }, firstDelay);
+
+        // 悬停暂停 / 离开继续
+        const pause = () => {
+            if (rot.firstTimeout) { clearTimeout(rot.firstTimeout); rot.firstTimeout = null; }
+            if (rot.intervalId) { clearInterval(rot.intervalId); rot.intervalId = null; }
+        };
+        const resume = () => {
+            if (!rot.intervalId) rot.intervalId = setInterval(tick, delay);
+        };
+        iframe.addEventListener('mouseenter', pause);
+        iframe.addEventListener('mouseleave', resume);
+
+        // 记录并在外部可统一清理
+        _IFRAME_ROTATORS.add(rot);
+    }
+
     const renderProjects = (year, projects) => {
         const hotzoneList = document.querySelector('.hotzone-list');
         const playzone = document.querySelector('.playzone');
+
+        _clearAllRotators()
 
         if (year != `all`) {
             // ✅ 清空
@@ -248,8 +300,15 @@ window.addEventListener("DOMContentLoaded", async () => {
                 <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
                 <div class="iframe-mask"></div>
             </div>
-        `);
+                `);
+
+                // 给刚插入的 iframe 开启轮播
+                const wrapper = playzone.lastElementChild;
+                const iframeEl = wrapper.querySelector('iframe');
+                _attachRotator(iframeEl, URLs, 4000); // 这里的 5000 就是 5 秒
             });
+
+
 
             applyStackVars(playzone, projects.length);
 
@@ -299,12 +358,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const MESSAGES = [
             { type: 'text', text: "My name is Jack Hao." },
+            { type: 'text', text: "Self-driven and creative." },
             { type: 'text', text: "Let's talk if you're interested." },
-            { type: 'text', text: "Seeking employment in the US" },
+            { type: 'text', text: "Working with WebGPU." },
             { type: 'text', text: "Open to full-time opportunities." },
-            { type: 'text', text: "Seeking sponsorship for the green card." },
+            { type: 'text', text: "Seeking green card sponsorship." },
             { type: 'text', text: "3-year OPT after June 2026." },
-            { type: 'text', text: "I can play Age of Empires IV." },
+            { type: 'text', text: "Play Age of Empires IV." },
             { type: 'email', text: email },
             { type: 'phone', text: phone }
         ];
