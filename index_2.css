@@ -49,10 +49,10 @@ div.mainFrame > div {
   z-index: 2;
 }
 
-div.mainFrame > div.mailboxSlot,
+/* div.mainFrame > div.mailboxSlot,
 div.mainFrame > div.projectShowcase {
   z-index: 0;
-}
+} */
 
 /* div.mainFrame > div.baffle {
   position: absolute;
@@ -69,16 +69,18 @@ div.title {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(255, 0, 0, 0.5);
+  /* background-color: rgba(255, 0, 0, 0.5); */
+  background-color: #ddd;
 }
 
 span.title {
   padding: 5px;
-  font-size: xxx-large;
+  font-size: xx-large;
   display: inline-block;
   text-align: center;
+  font-family: monospace;
   border-radius: 5px;
-  border: 2px solid #900;
+  /* border: 2px solid #900; */
 }
 
 div.mailboxSlot {
@@ -139,7 +141,7 @@ ul > li[data-date] {
   list-style: none;
   width: 5px;
   height: 5px;
-  background-color: #900;
+  /* background-color: #900; */
   cursor: pointer;
   pointer-events: all;
   z-index: 1;
@@ -185,82 +187,163 @@ li[data-date] > span:hover {
 li[data-date="2017"] > span {
   background-color: rgba(255, 0, 0, 0.05); /* 红 */
 }
+div.playzone[data-date="2017"] > div.iframe-wrapper {
+  background-color: rgba(255, 0, 0, 0.03);
+}
+div.playzone[data-date="2017"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(-200deg);
+}
 li[data-date="2017"] > span:hover {
   color: rgba(255, 153, 153, 0.75);
   background-color: rgba(255, 0, 0, 0.2);
   border-color: rgba(255, 153, 153, 0.65);
 }
+div.playzone[data-date="2017"] > div.iframe-wrapper.active {
+  background-color: rgba(255, 0, 0, 0.07);
+}
 
 li[data-date="2018"] > span {
   background-color: rgba(255, 127, 0, 0.05); /* 橙 */
+}
+div.playzone[data-date="2018"] > div.iframe-wrapper {
+  background-color: rgba(255, 127, 0, 0.03);
+}
+div.playzone[data-date="2018"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(-160deg);
 }
 li[data-date="2018"] > span:hover {
   color: rgba(255, 204, 153, 0.75);
   background-color: rgba(255, 127, 0, 0.2);
   border-color: rgba(255, 204, 153, 0.65);
 }
+div.playzone[data-date="2018"] > div.iframe-wrapper.active {
+  background-color: rgba(255, 127, 0, 0.15);
+}
 
 li[data-date="2019"] > span {
   background-color: rgba(255, 255, 0, 0.05); /* 黄 */
+}
+div.playzone[data-date="2019"] > div.iframe-wrapper {
+  background-color: rgba(255, 255, 0, 0.03);
+}
+div.playzone[data-date="2019"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(-120deg);
 }
 li[data-date="2019"] > span:hover {
   color: rgba(255, 255, 153, 0.75);
   background-color: rgba(255, 255, 0, 0.2);
   border-color: rgba(255, 255, 153, 0.65);
 }
+div.playzone[data-date="2019"] > div.iframe-wrapper.active {
+  background-color: rgba(255, 255, 0, 0.1);
+}
 
 li[data-date="2020"] > span {
   background-color: rgba(0, 255, 0, 0.05); /* 绿 */
+}
+div.playzone[data-date="2020"] > div.iframe-wrapper {
+  background-color: rgba(0, 255, 0, 0.03);
+}
+div.playzone[data-date="2020"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(-80deg);
 }
 li[data-date="2020"] > span:hover {
   color: rgba(153, 255, 153, 0.75);
   background-color: rgba(0, 255, 0, 0.2);
   border-color: rgba(153, 255, 153, 0.65);
 }
+div.playzone[data-date="2020"] > div.iframe-wrapper.active {
+  background-color: rgba(0, 255, 0, 0.05);
+}
 
 li[data-date="2021"] > span {
   background-color: rgba(0, 255, 255, 0.05); /* 青 */
+}
+div.playzone[data-date="2021"] > div.iframe-wrapper {
+  background-color: rgba(0, 255, 255, 0.03);
+}
+div.playzone[data-date="2021"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(-40deg);
 }
 li[data-date="2021"] > span:hover {
   color: rgba(153, 255, 255, 0.75);
   background-color: rgba(0, 255, 255, 0.2);
   border-color: rgba(153, 255, 255, 0.65);
 }
+div.playzone[data-date="2021"] > div.iframe-wrapper.active {
+  background-color: rgba(0, 255, 255, 0.07);
+}
 
 li[data-date="2022"] > span {
   background-color: rgba(0, 127, 255, 0.05); /* 蓝 */
+}
+div.playzone[data-date="2022"] > div.iframe-wrapper {
+  background-color: rgba(0, 127, 255, 0.03);
+}
+div.playzone[data-date="2022"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(0deg);
 }
 li[data-date="2022"] > span:hover {
   color: rgba(153, 204, 255, 0.75);
   background-color: rgba(0, 127, 255, 0.2);
   border-color: rgba(153, 204, 255, 0.65);
 }
+div.playzone[data-date="2022"] > div.iframe-wrapper.active {
+  background-color: rgba(0, 127, 255, 0.2);
+}
 
 li[data-date="2023"] > span {
   background-color: rgba(139, 0, 255, 0.05); /* 靛紫 */
+}
+div.playzone[data-date="2023"] > div.iframe-wrapper {
+  background-color: rgba(139, 0, 255, 0.03);
+}
+div.playzone[data-date="2023"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(40deg);
 }
 li[data-date="2023"] > span:hover {
   color: rgba(203, 153, 255, 0.75);
   background-color: rgba(139, 0, 255, 0.2);
   border-color: rgba(203, 153, 255, 0.65);
 }
+div.playzone[data-date="2023"] > div.iframe-wrapper.active {
+  background-color: rgba(139, 0, 255, 0.2);
+}
 
 li[data-date="2024"] > span {
   background-color: rgba(255, 0, 255, 0.05); /* 紫红 */
+}
+div.playzone[data-date="2024"] > div.iframe-wrapper {
+  background-color: rgba(255, 0, 255, 0.03);
+}
+div.playzone[data-date="2024"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(80deg);
 }
 li[data-date="2024"] > span:hover {
   color: rgba(255, 153, 255, 0.75);
   background-color: rgba(255, 0, 255, 0.2);
   border-color: rgba(255, 153, 255, 0.65);
 }
+div.playzone[data-date="2024"] > div.iframe-wrapper.active {
+  background-color: rgba(255, 0, 255, 0.2);
+}
 
 li[data-date="2025"] > span {
   background-color: rgba(255, 20, 147, 0.05); /* 桃红 */
+}
+div.playzone[data-date="2025"] > div.iframe-wrapper {
+  background-color: rgba(255, 20, 147, 0.03);
+}
+div.playzone[data-date="2025"] > .iframe-wrapper > .iframe-mask {
+  filter: hue-rotate(120deg);
 }
 li[data-date="2025"] > span:hover {
   color: rgba(255, 161, 221, 0.75);
   background-color: rgba(255, 20, 147, 0.2);
   border-color: rgba(255, 161, 221, 0.65);
+}
+div.playzone[data-date="2025"] > div.iframe-wrapper.active {
+  background-color: rgba(255, 20, 147, 0.2);
 }
 
 div.projectShowcase {
@@ -272,12 +355,44 @@ div.projectShowcase {
 }
 
 div.projectShowcase > div.hotzone {
+  position: absolute;
+  top: 0%;
+  left: 0%;
+  width: 100%;
+  height: 100%;
+  padding: 1%;
+  cursor: pointer;
+}
+
+div.projectShowcase.active > div.hotzone {
+  z-index: 0;
+}
+
+div.hotzone > ol.hotzone-list {
+  font-size: 14px;
+  font-weight: 900;
+  font-family: monospace;
+  height: 22%;
+  column-count: 6; /* 每列大致宽度，浏览器会自动算列数 */
+  column-gap: 2vw;
+  column-fill: auto; /* 先塞满当前列，再开下一列（固定高度时生效） */
+  position: relative;
+  left: -2vw;
+}
+
+.hotzone-list li {
+  break-inside: avoid; /* 避免一条被拆到两列 */
+  text-overflow: ellipsis;
 }
 
 div.projectShowcase > div.playzone {
   display: relative;
   width: 100%;
   height: 100%;
+  /* 可调常量 */
+  --step-left: 2%; /* 每个卡片向左的步进 */
+  --left-base: 2%; /* 最右边那张的 left 起点 */
+  --z-base: 1; /* z-index 起点 */
 }
 
 div.playzone > div.iframe-wrapper {
@@ -293,84 +408,16 @@ div.playzone > div.iframe-wrapper {
   transform-origin: 0 50%;
   border-radius: 50px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease-out, filter 0.5s ease-out, left 0.2s ease-out;
 }
 
-/* div.projectShowcase > div.iframe-wrapper {
-  display: flex;
-  flex-grow: 1;
-  justify-content: center;
-  align-items: center;
+div.playzone > div.iframe-wrapper.active {
   position: absolute;
-  top: 2%;
-  left: 2%;
-  width: 78%;
-  height: 96%;
-  transform-origin: 0 50%;
-  border-radius: 50px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-  background: rgba(0, 0, 0, 0.03);
-  transition: transform 0.3s ease-out, filter 0.5s ease-out, left 0.2s ease-out;
-} */
-
-div.playzone > .iframe-wrapper.active:nth-of-type(1) {
-  z-index: 1;
-  left: 20%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(2) {
-  z-index: 2;
-  left: 18%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(3) {
-  z-index: 3;
-  left: 16%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(4) {
-  z-index: 4;
-  left: 14%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(5) {
-  z-index: 5;
-  left: 12%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(6) {
-  z-index: 6;
-  left: 10%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(7) {
-  z-index: 7;
-  left: 8%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(8) {
-  z-index: 8;
-  left: 6%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(9) {
-  z-index: 9;
-  left: 4%;
-}
-
-div.playzone > .iframe-wrapper.active:nth-of-type(10) {
-  z-index: 10;
-  left: 2%;
-}
-
-.iframe-wrapper.active > iframe {
-  display: initial;
-  z-index: 1;
-}
-
-.iframe-wrapper.active > .iframe-mask {
-  z-index: 0;
+  backdrop-filter: blur(1px);
+  /* i 从 1 开始：1→最右，越大越靠左 */
+  left: calc(var(--left-base) + (var(--i) - 1) * var(--step-left));
+  z-index: calc(var(--z-base) + (var(--count) - var(--i)));
 }
 
 div.playzone > div.iframe-wrapper.active:hover {
@@ -478,8 +525,6 @@ div.playzone
 
 div.iframe-wrapper > iframe {
   border-radius: 5px;
-  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); */
-  /* z-index: 1; */
   width: 100%;
   height: 100%;
   transform: scale(0.97);
@@ -489,7 +534,6 @@ div.iframe-wrapper > iframe {
   display: none;
   z-index: 0;
   background: #fff;
-  /* outline: 8px ridge rgb(170 50 220 / 0.6); */
   border-radius: 50px;
   transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 }
@@ -504,33 +548,25 @@ div.iframe-wrapper > div.iframe-mask {
   width: 100%;
   height: 100%;
   opacity: 1;
-  transition: opacity 0.5s ease-out;
-  backdrop-filter: blur(2px);
-  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); */
   cursor: pointer;
-}
-
-div.projectShowcase.active > div.hotzone {
-  z-index: 0;
-  position: absolute;
-  top: 0%;
-  left: 0%;
-  width: 100%;
-  height: 100%;
-  clip-path: initial;
-  /* background-color: #f00; */
+  transform: scale(0.95);
+  z-index: 1;
+  aspect-ratio: 3 / 2;
+  transition: opacity 0.5s ease-out;
 }
 
 div.projectShowcase:not(.active) > .playzone > .iframe-wrapper {
-  transform: scale(0.4) rotateZ(12deg);
-  /* left: 10%; */
+  left: 10%;
+  top: 30%;
+  transform: scale(0.4)
+    rotateZ(calc(12deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
   > .playzone
   > .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(9deg);
+  transform: scale(0.4) rotateZ(calc(9deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
@@ -538,16 +574,7 @@ div.projectShowcase:not(.active)
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(6deg);
-}
-
-div.projectShowcase:not(.active)
-  > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(3deg);
+  transform: scale(0.4) rotateZ(calc(6deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
@@ -555,9 +582,8 @@ div.projectShowcase:not(.active)
   > .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
-  ~ .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(0deg);
+  transform: scale(0.4) rotateZ(calc(3deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
@@ -566,9 +592,8 @@ div.projectShowcase:not(.active)
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
-  ~ .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(-3deg);
+  transform: scale(0.4) rotateZ(calc(0deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
@@ -578,9 +603,9 @@ div.projectShowcase:not(.active)
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
-  ~ .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(-6deg);
+  transform: scale(0.4)
+    rotateZ(calc(-3deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
@@ -591,9 +616,9 @@ div.projectShowcase:not(.active)
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
-  ~ .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(-9deg);
+  transform: scale(0.4)
+    rotateZ(calc(-6deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
@@ -605,9 +630,9 @@ div.projectShowcase:not(.active)
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
-  ~ .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(-12deg);
+  transform: scale(0.4)
+    rotateZ(calc(-9deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
@@ -620,121 +645,43 @@ div.projectShowcase:not(.active)
   ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper
+  ~ .iframe-wrapper {
+  transform: scale(0.4)
+    rotateZ(calc(-12deg - var(--rand-global) * 30deg - 45deg));
+}
+
+div.projectShowcase:not(.active)
+  > .playzone
+  > .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
+  ~ .iframe-wrapper
   ~ .iframe-wrapper
   ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(-15deg);
+  transform: scale(0.4)
+    rotateZ(calc(-15deg - var(--rand-global) * 30deg - 45deg));
 }
 
-/* div.projectShowcase.active > .iframe-wrapper.active {
-  transform: scale(1);
+.iframe-wrapper.active > iframe {
+  z-index: 1;
 }
 
-div.projectShowcase.active > .iframe-wrapper.active ~ .iframe-wrapper {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-}
-
-div.projectShowcase.active
-  > .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
-  transform: scale(1);
-} */
-
-div.iframe-wrapper.active > iframe {
+.iframe-wrapper.active > iframe.show {
   display: initial;
 }
 
-div.iframe-wrapper > div.iframe-mask {
-  visibility: initial;
-  width: 100%;
-  transform: scale(0.95);
-  z-index: 1;
-  opacity: 1;
-  /* filter: blur(4px); */
-  /* border-radius: 50px; */
-  aspect-ratio: 3 / 2;
+.iframe-wrapper.active > .iframe-mask {
+  z-index: 0;
 }
 
-/* div.projectShowcase.active > .iframe-wrapper > .iframe-mask {
-  transform: scale(0.9);
-} */
+div.projectShowcase.active .iframe-mask {
+  /* transform: scale(0.9); */
+  display: none;
+}
 
 .iframe-wrapper {
   container: card / size;
@@ -752,4 +699,93 @@ div.iframe-wrapper > div.iframe-mask {
     background: url("./screenshot/playingcards.svg") center center / contain
       no-repeat;
   }
+}
+
+/* Unsupervised AI content */
+
+/* 泡泡主体（--float 注入平移） */
+.hole {
+  position: fixed;
+  z-index: 8;
+  left: var(--x);
+  top: var(--y);
+  width: calc(var(--r) * 2);
+  height: calc(var(--r) * 2);
+  border-radius: 50%;
+  pointer-events: auto; /* 要能接收 hover/move 事件 */
+  opacity: 0;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.18)) blur(0px);
+  transform: translate(-50%, -50%) var(--float, translate(0, 0)) scale(0.7);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.28s ease;
+  will-change: transform;
+  /* 文风统一变量（按半径自适应） */
+  --fs: clamp(13px, calc(var(--r) * 0.19), 18px);
+  --lh: 1.15;
+  --ink: #0f1114;
+}
+.hole.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) var(--float, translate(0, 0)) scale(1);
+}
+.hole.hide {
+  transform: translate(-50%, -50%) var(--float, translate(0, 0)) scale(1.05);
+  opacity: 0;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.18)) blur(10px);
+  transition: transform 0.025s ease-in-out, opacity 0.1s ease-in-out,
+    filter 0.1s ease-in-out;
+}
+
+/* 凹陷阴影 */
+.hole::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  mix-blend-mode: multiply;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.18);
+}
+
+/* 文案风格统一 */
+.hole .inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 10%;
+  pointer-events: auto;
+  font-size: var(--fs);
+  line-height: var(--lh);
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--ink);
+  text-wrap: balance;
+  word-break: break-word;
+  hyphens: auto;
+}
+.line {
+  margin: 0;
+}
+.btn {
+  display: inline-block;
+  font: inherit;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0.28em 0.6em;
+  border-radius: 1em;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.hole .line a:hover,
+.hole .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22),
+    0 4px 10px rgba(0, 0, 0, 0.12);
+}
+.hole .line a:active,
+.hole .btn:active {
+  transform: translateY(0);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
 }

@@ -657,6 +657,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // === Bind Mouse Control ===
     let yaw, globalRotate, deltaAngle, scrollSpeed, rangeAngle
+    let lastX = null;
     deltaAngle = 0
     scrollSpeed = 0.01
     rangeAngle = [-10, 10]
@@ -668,6 +669,61 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // console.log(`yaw:`, yaw)
             }
         })
+
+        // 把所有鼠标位移统一进队列，逐帧消化
+        let pending = 0;
+        let animating = false;
+
+        const speed = 0.00035;   // 像素 → 弧度 的比例
+        const maxPerFrame = 75;  // 每帧最多消化多少像素（平滑关键参数）
+        const minYaw = 0;
+        const maxYaw = Math.PI / 6;
+
+        function clamp(v, lo, hi) {
+            return Math.max(lo, Math.min(hi, v));
+        }
+
+        function step() {
+            if (Math.abs(pending) < 0.01) { // 足够小就停
+                pending = 0;
+                animating = false;
+                return;
+            }
+
+            // 本帧拿一小口像素量来转
+            const take = Math.sign(pending) * Math.min(Math.abs(pending), maxPerFrame);
+            pending -= take;
+
+            // 方向：向右移动 → yaw 减小（你之前的反向规则）
+            yaw -= take * speed;
+            yaw = clamp(yaw, minYaw, maxYaw);
+
+            requestAnimationFrame(step);
+        }
+
+        function kick() {
+            if (!animating) {
+                animating = true;
+                requestAnimationFrame(step);
+            }
+        }
+
+        document.body.addEventListener('mousemove', (e) => {
+            if (lastX !== null) {
+                const dx = e.clientX - lastX;
+
+                // 统一进队列；想“只对>100的做平滑”也行：
+                // if (Math.abs(dx) > 100) pending += dx; else yaw -= dx * speed;
+                pending += dx;
+
+                kick();
+            }
+            lastX = e.clientX;
+        });
+
+        document.body.addEventListener('mouseleave', () => {
+            lastX = null; // 防止回到页面时第一下跳变
+        });
         // // update your global model→world transform first:
         // globalRotate = mat4.create();
         // mat4.fromYRotation(globalRotate, yaw);

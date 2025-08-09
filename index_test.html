@@ -1,67 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Container Query Test - Aspect Ratio</title>
-        <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Click-to-Hole Contact (floating bubble, hover pause & follow)</title>
+<style>
+  :root{ --hole-z: 99; }
+  html,body{
+    height:100%; margin:0;
+    background: radial-gradient(1100px 700px at 20% 10%, #eef3ff 0%, #f9fbff 45%, #f6f8fc 60%, #f2f4f8 100%);
+    font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Microsoft Yahei",sans-serif; color:#111;
+  }
+  .page{ min-height:100%; display:grid; place-items:center; }
+  .page h1{ margin:0; opacity:.55; font-size:clamp(28px,5vw,56px); }
+
+  /* 泡泡主体（--float 注入平移） */
+  .hole{
+    position:fixed; z-index:var(--hole-z);
+    left:var(--x); top:var(--y);
+    width:calc(var(--r)*2); height:calc(var(--r)*2);
+    border-radius:50%;
+    pointer-events:auto;          /* 要能接收 hover/move 事件 */
+    opacity:0;
+    filter: drop-shadow(0 10px 22px rgba(0,0,0,.18)) blur(0px);
+    transform: translate(-50%,-50%) var(--float, translate(0,0)) scale(.7);
+    transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .28s ease;
+    will-change: transform;
+    /* 文风统一变量（按半径自适应） */
+    --fs: clamp(13px, calc(var(--r) * 0.19), 18px);
+    --lh: 1.15;
+    --ink: #0f1114;
+  }
+  .hole.show{
+    opacity:1;
+    transform: translate(-50%,-50%) var(--float, translate(0,0)) scale(1);
+  }
+  .hole.hide{
+    transform: translate(-50%,-50%) var(--float, translate(0,0)) scale(1.05);
+    opacity: 0;
+    filter: drop-shadow(0 10px 22px rgba(0,0,0,.18)) blur(10px);
+    transition: transform .025s ease-in-out, opacity .1s ease-in-out, filter .1s ease-in-out;
+  }
+
+  /* 凹陷阴影 */
+  .hole::before{
+    content:""; position:absolute; inset:0; border-radius:50%;
+    mix-blend-mode:multiply;
+    box-shadow: inset 0 0 24px rgba(0,0,0,.18);
+  }
+
+  /* 文案风格统一 */
+  .hole .inner{
+    position:absolute; inset:0; border-radius:50%;
+    display:grid; place-items:center; text-align:center; padding:10%;
+    pointer-events:auto;
+    font-size: var(--fs);
+    line-height: var(--lh);
+    font-weight: 800;
+    letter-spacing: .2px;
+    color: var(--ink);
+    text-wrap: balance;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  .line{ margin:0; }
+  .btn{
+    display:inline-block; font:inherit; color:var(--ink);
+    text-decoration:none; padding:.28em .6em; border-radius:1em;
+    background: rgba(255,255,255,.2);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .hole .line a:hover, .hole .btn:hover{
+    transform: translateY(-1px);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.22), 0 4px 10px rgba(0,0,0,.12);
+  }
+  .hole .line a:active, .hole .btn:active{
+    transform: translateY(0);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.28);
+  }
+
+  .hint{ position:fixed; right:12px; top:12px; color:#222; opacity:.35; font-weight:700; user-select:none; }
+</style>
+</head>
+<body>
+  <div class="page"><h1>Click near the right edge →</h1></div>
+  <div class="hint">Right side clicks spawn a hole (hover to pause & follow)</div>
+
+<script>
+(() => {
+  const RIGHT_ZONE = 0.6;          // 右侧触发阈值
+  const TTL_BASE   = 4200;         // 基础 TTL
+  const TTL_JITTER = 2000;         // 0~2000ms 随机
+  const MAX        = 6;            // 同屏最多
+
+  const email = "hrjlhy@gmail.com";
+  const phone = "+1 (206) 551-4288";
+
+  const MESSAGES = [
+    { type:'text',  text:"My name is Jack Hao." },
+    { type:'text',  text:"Let's talk if you're interested." },
+    { type:'text',  text:"Seeking employment in the US" },
+    { type:'text',  text:"Open to full-time opportunities." },
+    { type:'text',  text:"Seeking sponsorship for the green card." },
+    { type:'text',  text:"3-year OPT after June 2026." },
+    { type:'text',  text:"I can play Age of Empires IV." },
+    { type:'email', text:email },
+    { type:'phone', text:phone }
+  ];
+
+  const holes  = new Set();
+  const states = new Map(); // el -> {x,y,r, t0, ax1.., up, timerId, dieAt, remaining, hover, mx,my}
+
+  window.addEventListener('click', e => {
+    if (e.clientX < innerWidth * RIGHT_ZONE) return;
+    spawnHole(e.clientX, e.clientY);
+  });
+
+  function spawnHole(x, y){
+    if (holes.size >= MAX){
+      const oldest = holes.values().next().value;
+      removeHole(oldest);
     }
 
-    .iframe-wrapper {
-      width: 80%;
-      height: 60vh;
-      resize: both;
-      overflow: auto;
-      container: card / size; /* ✅ 设置容器名称和类型 */
-      border: 2px dashed black;
-      padding: 1rem;
-    }
+    const r = 56 + (120 - 56) * Math.pow(Math.random(), 0.35); // 偏大分布
 
-    div.projectShowcase:not(.active) > div.iframe-wrapper > div.iframe-mask {
-      width: 100%;
-      height: 100%;
-      background: url("./screenshot/playingcards_horizontal.svg") center center / contain no-repeat;
-    }
+    const msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
 
-    /* 横向容器（宽 > 高）时变绿色 */
-    @container card (aspect-ratio > 1) {
-      .iframe-mask {
-        background: url("./screenshot/playingcards_horizontal.svg") center center / contain no-repeat !important;
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.style.setProperty('--x', x + 'px');
+    hole.style.setProperty('--y', y + 'px');
+    hole.style.setProperty('--r', r + 'px');
+
+    // 一行内容
+    let lineHTML = '';
+    if (msg.type === 'email') {
+      lineHTML = `<span>Email: </span><a class="btn" href="mailto:${msg.text}">${msg.text}</a>`;
+    } else if (msg.type === 'phone') {
+      const tel = msg.text.replace(/[^+\d]/g,'');
+      lineHTML = `<span>Phone: </span><a class="btn" href="tel:${tel}">${msg.text}</a>`;
+    } else {
+      lineHTML = `${escapeHTML(msg.text)}`;
+    }
+    hole.innerHTML = `<div class="inner"><p class="line">${lineHTML}</p></div>`;
+
+    document.body.appendChild(hole);
+    holes.add(hole);
+
+    // 随机运动参数
+    const now = performance.now();
+    const ttl = TTL_BASE + Math.floor(Math.random()*TTL_JITTER);
+    const st = {
+      x, y, r,
+      t0: now,
+      ax1: rnd(3, 9),   ax2: rnd(1, 5),
+      ay1: rnd(2, 8),   ay2: rnd(1, 4),
+      fx1: rnd(0.3, 0.7), fx2: rnd(0.9, 1.6),
+      fy1: rnd(0.4, 0.9), fy2: rnd(1.0, 1.8),
+      p1: rnd(0, Math.PI*2), p2: rnd(0, Math.PI*2),
+      p3: rnd(0, Math.PI*2), p4: rnd(0, Math.PI*2),
+      up: rnd(10, 22),
+      hover: false, mx: x, my: y,
+      dieAt: now + ttl, remaining: ttl, timerId: null
+    };
+    st.timerId = setTimeout(() => removeHole(hole), ttl);
+    states.set(hole, st);
+
+    requestAnimationFrame(() => hole.classList.add('show'));
+
+    // 悬停控制：暂停/恢复 TTL + 鼠标跟随
+    const onEnter = (ev) => {
+      const s = states.get(hole); if (!s) return;
+      s.hover = true;
+      s.mx = ev.clientX; s.my = ev.clientY;
+      // 暂停 TTL
+      const t = performance.now();
+      s.remaining = Math.max(0, s.dieAt - t);
+      if (s.timerId) { clearTimeout(s.timerId); s.timerId = null; }
+    };
+    const onMove = (ev) => {
+      const s = states.get(hole); if (!s || !s.hover) return;
+      s.mx = ev.clientX; s.my = ev.clientY;
+    };
+    const onLeave = () => {
+      const s = states.get(hole); if (!s) return;
+      s.hover = false;
+      // 恢复 TTL
+      if (s.remaining > 0 && !s.timerId){
+        s.dieAt = performance.now() + s.remaining;
+        s.timerId = setTimeout(() => removeHole(hole), s.remaining);
       }
-    }
+    };
+    hole.addEventListener('mouseenter', onEnter);
+    hole.addEventListener('mousemove',  onMove);
+    hole.addEventListener('mouseleave', onLeave);
 
-    /* 纵向容器（宽 < 高）时变红色 */
-    @container card (aspect-ratio < 1) {
-      .iframe-mask {
-        background: url("./screenshot/playingcards.svg") center center / contain no-repeat !important;
+    // 清理
+    hole.addEventListener('transitionend', () => {
+      if (hole.classList.contains('hide')) {
+        hole.remove();
+        holes.delete(hole);
+        const s = states.get(hole);
+        if (s?.timerId) clearTimeout(s.timerId);
+        states.delete(hole);
       }
-    }
+    });
 
-    /* 宽高相等时为蓝色（可选） */
-    @container card (aspect-ratio = 1) {
-      .iframe-mask {
-        background: blue;
+    kick();
+  }
+
+  function removeHole(h) {
+    h.classList.add('hide');
+  }
+
+  // RAF：更新每个泡泡的 --float（translate）
+  let raf = 0;
+  function kick(){ if (!raf) raf = requestAnimationFrame(loop); }
+  function loop(now){
+    raf = 0;
+    for (const el of holes){
+      const s = states.get(el);
+      if (!s || el.classList.contains('hide')) continue;
+
+      const t = (now - s.t0) / 1000; // 秒
+
+      let tx, ty;
+      if (!s.hover){
+        // 常规：向上 + 随机噪声
+        const jitterX = s.ax1 * Math.sin(s.fx1 * t + s.p1)
+                      + s.ax2 * Math.sin(s.fx2 * t + s.p2);
+        const jitterY = s.ay1 * Math.sin(s.fy1 * t + s.p3)
+                      + s.ay2 * Math.sin(s.fy2 * t + s.p4);
+        tx = jitterX;
+        ty = -(s.up * t) + jitterY;
+      }else{
+        // 悬停：围绕鼠标为中心随机漂动，且不超过半径
+        // 鼠标相对泡泡初始中心的位移
+        const dx = s.mx - s.x;
+        const dy = s.my - s.y;
+        // 基础吸附向鼠标（缓和 0.85）系数调小更“黏”鼠标、调大更松
+        let bx = dx * 0.05, by = dy * 0.05;
+        // 小幅噪声
+        const amp = Math.min(14, s.r * 0.35);
+        bx += amp * Math.sin(s.fx1 * t + s.p1) * 0.6;
+        by += amp * Math.sin(s.fy1 * t + s.p3) * 0.6;
+        // 限制不超过半径（留出 6px 边界）
+        const maxLen = Math.max(0, s.r - 6);
+        const len = Math.hypot(bx, by) || 1;
+        const k = Math.min(1, maxLen / len);
+        tx = bx * k;
+        ty = by * k;
       }
+
+      el.style.setProperty('--float', `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px)`);
     }
-  </style>
-    </head>
-    <body>
-        <h2>Container Query: Aspect Ratio</h2>
-        <p>Try resizing the box diagonally ↘️ to change its aspect ratio</p>
-        <div class="projectShowcase">
-            <div class="iframe-wrapper">
-                <div class="iframe-mask"></div>
-            </div>
-            <div class="iframe-wrapper">
-                <div class="iframe-mask"></div>
-            </div>
-            <div class="iframe-wrapper">
-                <div class="iframe-mask"></div>
-            </div>
-        </div>
-    </body>
+    if (holes.size) kick();
+  }
+
+  // utils
+  const rnd = (min,max) => Math.random()*(max-min)+min;
+  function escapeHTML(s){
+    return s.replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'
+    }[c]));
+  }
+})();
+</script>
+</body>
 </html>
