@@ -39,7 +39,7 @@ import { geometryData } from "./read_dae";
     // === Prepare data ===
     let positions, indices
     {
-        result = await geometryData(`./screenshot/mailbox slot.dae`)
+        result = await geometryData(`./resources/mailbox slot.dae`)
 
         positions = result.positions
         indices = result.indices

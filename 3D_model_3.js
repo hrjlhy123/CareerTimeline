@@ -61,7 +61,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     {
         // === Prepare model data ===
         {
-            results = await geometryData(`./screenshot/scroll bar_4.dae`)
+            results = await geometryData(`./resources/scroll bar_4.dae`)
             // console.log(`results: ${JSON.stringify(results)}`)
             // console.log(`results.size: ${results.size}`)
             console.log(`results.center: ${results.center}`)

@@ -1,4 +1,4 @@
-// fetch("./screenshot/mailbox slot.dae")
+// fetch("./resources/mailbox slot.dae")
 //   .then((res) => res.text()) // 或 .then(res => res.xml() 用 DOMParser)
 //   .then((xmlString) => {
 //     const parser = new DOMParser();

@@ -720,14 +720,14 @@ div.projectShowcase.active .iframe-mask {
 
 @container card (aspect-ratio > 1) {
   div.iframe-wrapper:not(.active) > div.iframe-mask {
-    background: url("./screenshot/playingcards_horizontal.svg") center center /
+    background: url("./resources/playingcards_horizontal.svg") center center /
       contain no-repeat;
   }
 }
 
 @container card (aspect-ratio < 1) {
   div.iframe-wrapper:not(.active) > div.iframe-mask {
-    background: url("./screenshot/playingcards.svg") center center / contain
+    background: url("./resources/playingcards.svg") center center / contain
       no-repeat;
   }
 }

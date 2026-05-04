@@ -1,0 +1,16 @@
+{
+  "name": "Jack Hao Portfolio",
+  "short_name": "Jack Hao",
+  "description": "AI, WebGPU, and full-stack developer portfolio of Jack Hao.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/resources/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

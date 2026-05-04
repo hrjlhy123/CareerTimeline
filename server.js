@@ -7,6 +7,8 @@ import https from "https";
 import { WebSocketServer } from 'ws';
 import { MongoClient } from "mongodb";
 
+import "dotenv/config";
+
 const app = express()
 app.use(cors())
 app.use(express.static(`/`))
@@ -18,8 +20,10 @@ const options = {
 
 const httpsServer = https.createServer(options, app)
 const wss = new WebSocketServer({ server: httpsServer });
-const uri = `mongodb://localhost:27017`
-const dbName = `careerTimeline`
+// const uri = `mongodb://localhost:27017`
+const uri = process.env.MONGODB_URI;
+const dbName = process.env.MONGODB_DB || `careerTimeline`
+const collectionName = process.env.MONGODB_COLLECTION || "projects";
 let db
 
 MongoClient.connect(uri)
@@ -45,8 +49,8 @@ MongoClient.connect(uri)
                     if (year) {
                         query.year = parseInt(year);  // year 可以是字符串
                     }
-
-                    const projects = await db.collection('projects')
+                    console.log("Using DB:", dbName, "Collection:", collectionName, "Query:", query);
+                    const projects = await db.collection(collectionName)
                         .find(query)
                         .project({ _id: 0, name: 1, URLs: 1 })
                         .toArray();
