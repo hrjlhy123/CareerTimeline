@@ -1,3 +1,11 @@
+:root {
+  --bubble-fill: rgba(255, 255, 255, 0.08);
+  --bubble-glow: rgba(255, 255, 255, 0.08);
+  --bubble-inner-shadow: rgba(0, 0, 0, 0.08);
+  --bubble-outer-shadow: rgba(0, 0, 0, 0.16);
+  --bubble-ink: #0f1114;
+}
+
 html,
 body {
   margin: 0;
@@ -23,20 +31,25 @@ img.conceptDesign {
 div.mainFrame {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 1%;
+  width: 99%;
+  height: 98%;
+  margin: 0.5%;
+  padding: 0.5%;
   box-sizing: border-box;
 
   display: grid;
   grid-template-columns: 3fr 10fr;
   grid-template-rows: 4fr 9fr;
   grid-template-areas:
-    "title projectList"
+    "title projectShowcase"
     "timelineBelt projectShowcase";
 
   background-color: #ddd;
   border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+
+  overflow: hidden;
+  
 }
 
 div.mainFrame > div {
@@ -80,9 +93,6 @@ div.mailboxSlot > canvas {
 
 div.timelineBelt {
   grid-area: timelineBelt;
-  /* background-color: rgba(128, 128, 128); */
-  /* background-color: #f00; */
-  /* background-color: #000; */
   position: relative;
 }
 
@@ -117,7 +127,6 @@ ul > li[data-date] {
   list-style: none;
   width: 5px;
   height: 5px;
-  /* background-color: #900; */
   cursor: pointer;
   pointer-events: all;
   z-index: 1;
@@ -360,18 +369,62 @@ div.playzone[data-date="2025"] > div.iframe-wrapper.active {
   background-color: rgba(255, 20, 147, 0.2);
 }
 
-div.projectList > div.hotzone {
-  /* position: absolute; */
-  /* top: 0%;
-  left: 0%;
-  width: 100%;
-  height: 100%;
-  padding: 1%;
-  cursor: pointer; */
+div.projectShowcase {
+  position: relative;
+  grid-area: projectShowcase;
 }
 
-div.projectList.active > div.hotzone {
-  z-index: 0;
+.project-label {
+  position: relative;
+  z-index: 2;
+}
+
+.project-cell-blob {
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  width: 0;
+  height: 0;
+
+  border-radius: 999px;
+
+  background: var(--bubble-fill);
+  /* border: 1px solid var(--bubble-border); */
+
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.18),
+    0 0 24px var(--bubble-glow),
+    inset 0 0 18px rgba(255, 255, 255, 0.18),
+    inset 0 0 24px var(--bubble-inner-shadow);
+
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+
+  transform-origin: center center;
+  will-change: transform, width, height, opacity;
+  transition: opacity 260ms ease;
+}
+
+.project-cell-blob.is-visible {
+  opacity: 1;
+}
+
+.project-cell-blob::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 24px var(--bubble-inner-shadow);
+  pointer-events: none;
+}
+
+div.projectShowcase > div.hotzone {
+  position: relative;
+
+  isolation: isolate;
+  /* z-index: 2; */
 }
 
 div.hotzone > ol.hotzone-list {
@@ -383,11 +436,10 @@ div.hotzone > ol.hotzone-list {
 
   display: grid;
   grid-auto-flow: column;
-  grid-template-rows: repeat(5, auto);
+  grid-template-rows: repeat(4, auto);
   grid-auto-columns: minmax(230px, 18vw);
 
   column-gap: clamp(20px, 2vw, 42px);
-  row-gap: 2px;
 
   position: relative;
   left: -2vw;
@@ -398,13 +450,24 @@ div.hotzone > ol.hotzone-list {
   padding-left: 2rem;
   padding-right: 4rem;
 
-  /* scrollbar-width: none; */
+  counter-reset: project;
+  list-style: none;
 
-  list-style-position: inside;
+  margin: 0;
+
+  z-index: 2;
 }
 
 div.hotzone > ol.hotzone-list::-webkit-scrollbar {
   display: none;
+}
+
+ol.hotzone-list > li::before {
+  content: counter(project) ".";
+  flex: 0 0 2.4em;
+  text-align: right;
+  margin-right: 0.5em;
+  font-weight: 900;
 }
 
 ol.hotzone-list > li {
@@ -413,26 +476,89 @@ ol.hotzone-list > li {
 
   white-space: normal;
   overflow-wrap: break-word;
-  line-height: 1.25;
 
   break-inside: avoid;
+
+  counter-increment: project;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  position: relative;
+  z-index: 2;
+  margin: 2px 0;
+
+  cursor: pointer;
 }
 
-div.projectShowcase {
-  position: relative;
-  padding: 1%;
-  grid-area: projectShowcase;
-  background-color: rgba(255, 255, 0, 0.5);
+.project-droplet {
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  width: 0;
+  height: 0;
+
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      rgba(255, 255, 255, 0.85),
+      transparent 32%
+    ),
+    rgba(255, 246, 120, 0.48);
+
+  box-shadow:
+    0 0 18px rgba(255, 255, 160, 0.65),
+    0 0 42px rgba(255, 255, 180, 0.32),
+    inset 0 0 12px rgba(255, 255, 255, 0.55);
+
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+
+  transform-origin: center;
+  will-change: transform, width, height, opacity;
+}
+
+.project-droplet.is-visible {
+  opacity: 1;
+}
+
+.project-droplet::before,
+.project-droplet::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 246, 120, 0.38);
+  box-shadow: 0 0 20px rgba(255, 255, 180, 0.35);
+}
+
+.project-droplet::before {
+  width: 38%;
+  height: 48%;
+  left: -8%;
+  top: 22%;
+}
+
+.project-droplet::after {
+  width: 30%;
+  height: 34%;
+  right: -5%;
+  bottom: 12%;
 }
 
 div.projectShowcase > div.playzone {
-  display: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  /* 可调常量 */
-  --step-left: 2%; /* 每个卡片向左的步进 */
-  --left-base: 2%; /* 最右边那张的 left 起点 */
-  --z-base: 1; /* z-index 起点 */
+  --step-left: 2%;
+  --left-base: 2%;
+  --z-base: 1;
+  pointer-events: none;
 }
 
 div.playzone > div.iframe-wrapper {
@@ -444,15 +570,17 @@ div.playzone > div.iframe-wrapper {
   top: 2%;
   left: 2%;
   width: 78%;
-  height: 96%;
+  height: 87%;
   transform-origin: 0 50%;
-  border-radius: 50px;
+  border-radius: 40px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
   background: rgba(0, 0, 0, 0.05);
   transition:
     transform 0.3s ease-out,
     filter 0.5s ease-out,
     left 0.2s ease-out;
+  pointer-events: auto;
+  backdrop-filter: blur(1px);
 }
 
 div.playzone > div.iframe-wrapper.active {
@@ -750,97 +878,112 @@ div.projectShowcase.active .iframe-mask {
 
 /* Unsupervised AI content */
 
-/* 泡泡主体（--float 注入平移） */
-.hole {
+/* Floating bubble */
+.bubble {
   position: fixed;
   z-index: 8;
   left: var(--x);
   top: var(--y);
+
   width: calc(var(--r) * 2);
   height: calc(var(--r) * 2);
   border-radius: 50%;
-  pointer-events: auto; /* 要能接收 hover/move 事件 */
+
+  background: var(--bubble-fill);
+  box-shadow:
+    0 10px 22px var(--bubble-outer-shadow),
+    0 0 28px var(--bubble-glow),
+    inset 0 0 24px var(--bubble-inner-shadow);
+
+  pointer-events: auto;
   opacity: 0;
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.18)) blur(0px);
+
   transform: translate(-50%, -50%) var(--float, translate(0, 0)) scale(0.7);
   transition:
     transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.28s ease;
-  will-change: transform;
-  /* 文风统一变量（按半径自适应） */
+    opacity 0.28s ease,
+    filter 0.18s ease;
+
+  will-change: transform, opacity;
+  filter: blur(0px);
+
   --fs: clamp(13px, calc(var(--r) * 0.19), 18px);
   --lh: 1.15;
-  --ink: #0f1114;
+  --ink: var(--bubble-ink);
 }
-.hole.show {
+
+.bubble.show {
   opacity: 1;
   transform: translate(-50%, -50%) var(--float, translate(0, 0)) scale(1);
 }
-.hole.hide {
-  transform: translate(-50%, -50%) var(--float, translate(0, 0)) scale(1.05);
+
+.bubble.hide {
   opacity: 0;
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.18)) blur(10px);
+  transform: translate(-50%, -50%) var(--float, translate(0, 0)) scale(1.05);
+  filter: blur(10px);
   transition:
-    transform 0.025s ease-in-out,
+    transform 0.08s ease-in-out,
     opacity 0.1s ease-in-out,
     filter 0.1s ease-in-out;
 }
 
-/* 凹陷阴影 */
-.hole::before {
-  content: "";
+/* Inner content */
+.bubble .inner {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  mix-blend-mode: multiply;
-  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.18);
-}
+  border-radius: inherit;
 
-/* 文案风格统一 */
-.hole .inner {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
   display: grid;
   place-items: center;
-  text-align: center;
+
   padding: 10%;
+  text-align: center;
+
   pointer-events: auto;
+
   font-size: var(--fs);
   line-height: var(--lh);
   font-weight: 800;
   letter-spacing: 0.2px;
   color: var(--ink);
+
   text-wrap: balance;
   word-break: break-word;
   hyphens: auto;
 }
+
 .line {
   margin: 0;
 }
+
 .btn {
   display: inline-block;
   font: inherit;
   color: var(--ink);
   text-decoration: none;
+
   padding: 0.28em 0.6em;
   border-radius: 1em;
+
   background: rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
     background 0.15s ease;
 }
-.hole .line a:hover,
-.hole .btn:hover {
+
+.bubble .line a:hover,
+.bubble .btn:hover {
   transform: translateY(-1px);
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.22),
     0 4px 10px rgba(0, 0, 0, 0.12);
 }
-.hole .line a:active,
-.hole .btn:active {
+
+.bubble .line a:active,
+.bubble .btn:active {
   transform: translateY(0);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
 }

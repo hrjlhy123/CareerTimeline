@@ -292,8 +292,8 @@ window.addEventListener("DOMContentLoaded", async () => {
                 const isMobile = name.trim().endsWith('(mobile)');
                 const iframeClass = isMobile ? 'projectShowcase mobile' : 'projectShowcase';
 
-                hotzoneList.insertAdjacentHTML('beforeend', `<li></li>`)
-                hotzoneList.lastElementChild.textContent = name;
+                hotzoneList.insertAdjacentHTML('beforeend', `<li><span class="project-label"></span></li>`)
+                hotzoneList.lastElementChild.lastElementChild.textContent = name;
 
                 playzone.insertAdjacentHTML('beforeend', `
             <div class="iframe-wrapper">
@@ -314,8 +314,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         } else {
             projects.forEach(({ name, URLs }) => {
-                hotzoneList.insertAdjacentHTML('beforeend', `<li></li>`)
-                hotzoneList.lastElementChild.textContent = name;
+                hotzoneList.insertAdjacentHTML('beforeend', `<li><span class="project-label"></span></li>`)
+                hotzoneList.lastElementChild.lastElementChild.textContent = name;
             })
         }
         // ✅ 重新绑定事件
@@ -369,7 +369,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             { type: 'phone', text: phone }
         ];
 
-        const holes = new Set();
+        const bubbles = new Set();
         const states = new Map(); // el -> {x,y,r, t0, ax1.., up, timerId, dieAt, remaining, hover, mx,my}
 
         hotzone.addEventListener('click', e => {
@@ -378,8 +378,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
 
         function spawnHole(x, y) {
-            if (holes.size >= MAX) {
-                const oldest = holes.values().next().value;
+            if (bubbles.size >= MAX) {
+                const oldest = bubbles.values().next().value;
                 removeHole(oldest);
             }
 
@@ -387,11 +387,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
 
-            const hole = document.createElement('div');
-            hole.className = 'hole';
-            hole.style.setProperty('--x', x + 'px');
-            hole.style.setProperty('--y', y + 'px');
-            hole.style.setProperty('--r', r + 'px');
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.style.setProperty('--x', x + 'px');
+            bubble.style.setProperty('--y', y + 'px');
+            bubble.style.setProperty('--r', r + 'px');
 
             // 一行内容
             let lineHTML = '';
@@ -403,10 +403,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             } else {
                 lineHTML = `${escapeHTML(msg.text)}`;
             }
-            hole.innerHTML = `<div class="inner"><p class="line">${lineHTML}</p></div>`;
+            bubble.innerHTML = `<div class="inner"><p class="line">${lineHTML}</p></div>`;
 
-            document.body.appendChild(hole);
-            holes.add(hole);
+            document.body.appendChild(bubble);
+            bubbles.add(bubble);
 
             // 随机运动参数
             const now = performance.now();
@@ -427,14 +427,14 @@ window.addEventListener("DOMContentLoaded", async () => {
                 anchorX: 0, anchorY: 0,
                 lastTx: 0, lastTy: 0
             };
-            st.timerId = setTimeout(() => removeHole(hole), ttl);
-            states.set(hole, st);
+            st.timerId = setTimeout(() => removeHole(bubble), ttl);
+            states.set(bubble, st);
 
-            requestAnimationFrame(() => hole.classList.add('show'));
+            requestAnimationFrame(() => bubble.classList.add('show'));
 
             // 悬停控制：暂停/恢复 TTL + 鼠标跟随
             const onEnter = (ev) => {
-                const s = states.get(hole); if (!s) return;
+                const s = states.get(bubble); if (!s) return;
                 s.hover = true;
                 s.mx = ev.clientX; s.my = ev.clientY;
                 // 暂停 TTL
@@ -443,11 +443,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 if (s.timerId) { clearTimeout(s.timerId); s.timerId = null; }
             };
             const onMove = (ev) => {
-                const s = states.get(hole); if (!s || !s.hover) return;
+                const s = states.get(bubble); if (!s || !s.hover) return;
                 s.mx = ev.clientX; s.my = ev.clientY;
             };
             const onLeave = () => {
-                const s = states.get(hole); if (!s) return;
+                const s = states.get(bubble); if (!s) return;
                 s.hover = false;
 
                 // NEW: 用当前最后一帧的位置作为新的起点，并重置时间
@@ -458,21 +458,21 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // 恢复 TTL
                 if (s.remaining > 0 && !s.timerId) {
                     s.dieAt = performance.now() + s.remaining;
-                    s.timerId = setTimeout(() => removeHole(hole), s.remaining);
+                    s.timerId = setTimeout(() => removeHole(bubble), s.remaining);
                 }
             };
-            hole.addEventListener('mouseenter', onEnter);
-            hole.addEventListener('mousemove', onMove);
-            hole.addEventListener('mouseleave', onLeave);
+            bubble.addEventListener('mouseenter', onEnter);
+            bubble.addEventListener('mousemove', onMove);
+            bubble.addEventListener('mouseleave', onLeave);
 
             // 清理
-            hole.addEventListener('transitionend', () => {
-                if (hole.classList.contains('hide')) {
-                    hole.remove();
-                    holes.delete(hole);
-                    const s = states.get(hole);
+            bubble.addEventListener('transitionend', () => {
+                if (bubble.classList.contains('hide')) {
+                    bubble.remove();
+                    bubbles.delete(bubble);
+                    const s = states.get(bubble);
                     if (s?.timerId) clearTimeout(s.timerId);
-                    states.delete(hole);
+                    states.delete(bubble);
                 }
             });
 
@@ -488,7 +488,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         function kick() { if (!raf) raf = requestAnimationFrame(loop); }
         function loop(now) {
             raf = 0;
-            for (const el of holes) {
+            for (const el of bubbles) {
                 const s = states.get(el);
                 if (!s || el.classList.contains('hide')) continue;
 
@@ -522,7 +522,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 s.lastTx = tx;
                 s.lastTy = ty;
             }
-            if (holes.size) kick();
+            if (bubbles.size) kick();
         }
 
         // utils
@@ -533,4 +533,179 @@ window.addEventListener("DOMContentLoaded", async () => {
             }[c]));
         }
     })();
+
+    function initProjectCellBlob() {
+        const host = document.querySelector(".projectList");
+        const list = host?.querySelector(".hotzone-list");
+
+        if (!host || !list) return;
+        if (host.querySelector(".project-cell-blob")) return;
+
+        // Wrap li text so the blob can target the actual text area more accurately.
+        for (const li of list.querySelectorAll("li")) {
+            if (!li.querySelector(".project-label")) {
+                const label = document.createElement("span");
+                label.className = "project-label";
+
+                while (li.firstChild) {
+                    label.appendChild(li.firstChild);
+                }
+
+                li.appendChild(label);
+            }
+        }
+
+        const blob = document.createElement("span");
+        blob.className = "project-cell-blob";
+        blob.setAttribute("aria-hidden", "true");
+        host.prepend(blob);
+
+        const config = {
+            stiffness: 0.025, // smaller = slower
+            damping: 0.87,    // larger = more elastic
+        };
+
+        const state = {
+            x: 0,
+            y: 0,
+            w: 0,
+            h: 0,
+            vx: 0,
+            vy: 0,
+            vw: 0,
+            vh: 0,
+        };
+
+        const target = {
+            x: 0,
+            y: 0,
+            w: 0,
+            h: 0,
+        };
+
+        let activeLi = null;
+        let initialized = false;
+        let visible = false;
+        let rafId = 0;
+
+        const clamp = (value, min, max) => {
+            return Math.min(Math.max(value, min), max);
+        };
+
+        function springValue(current, velocity, destination) {
+            velocity += (destination - current) * config.stiffness;
+            velocity *= config.damping;
+            current += velocity;
+
+            return [current, velocity];
+        }
+
+        function setTargetFromLi(li) {
+            const targetElement = li.querySelector(".project-label") || li;
+            const liRect = targetElement.getBoundingClientRect();
+            const hostRect = host.getBoundingClientRect();
+
+            const paddingX = 8;
+            const paddingY = 8;
+
+            target.x = liRect.left - hostRect.left - paddingX / 2 - 38;
+            target.y = liRect.top - hostRect.top - paddingY;
+            target.w = liRect.width - paddingX * 2 + 38 * 2;
+            target.h = liRect.height + paddingY * 2;
+
+            if (!initialized) {
+                state.x = target.x;
+                state.y = target.y;
+                state.w = target.w;
+                state.h = target.h;
+                initialized = true;
+            }
+        }
+
+        function renderDroplet() {
+            rafId = 0;
+
+            [state.x, state.vx] = springValue(state.x, state.vx, target.x);
+            [state.y, state.vy] = springValue(state.y, state.vy, target.y);
+            [state.w, state.vw] = springValue(state.w, state.vw, target.w);
+            [state.h, state.vh] = springValue(state.h, state.vh, target.h);
+
+            const speed = Math.hypot(state.vx, state.vy);
+
+            const stretchX = clamp(1 + speed * 0.012, 1, 1.22);
+            const squashY = clamp(1 - speed * 0.004, 0.88, 1);
+
+            blob.style.width = `${state.w}px`;
+            blob.style.height = `${state.h}px`;
+
+            blob.style.transform = `
+    translate3d(${state.x}px, ${state.y}px, 0)
+    scale(${stretchX}, ${squashY})
+  `;
+
+            const distance =
+                Math.abs(target.x - state.x) +
+                Math.abs(target.y - state.y) +
+                Math.abs(target.w - state.w) +
+                Math.abs(target.h - state.h);
+
+            const stillMoving =
+                distance > 0.35 ||
+                Math.abs(state.vx) > 0.25 ||
+                Math.abs(state.vy) > 0.25 ||
+                Math.abs(state.vw) > 0.25 ||
+                Math.abs(state.vh) > 0.25;
+
+            if (visible || stillMoving) {
+                rafId = requestAnimationFrame(renderDroplet);
+            }
+        }
+
+        function start() {
+            if (!rafId) {
+                rafId = requestAnimationFrame(renderDroplet);
+            }
+        }
+
+        list.addEventListener("pointerover", (event) => {
+            const li = event.target.closest("li");
+            if (!li || !list.contains(li)) return;
+
+            activeLi = li;
+            visible = true;
+
+            setTargetFromLi(li);
+            blob.classList.add("is-visible");
+
+            start();
+        });
+
+        list.addEventListener("pointerleave", () => {
+            activeLi = null;
+            visible = false;
+            blob.classList.remove("is-visible");
+
+            start();
+        });
+
+        list.addEventListener(
+            "scroll",
+            () => {
+                if (!activeLi) return;
+
+                setTargetFromLi(activeLi);
+                start();
+            },
+            { passive: true }
+        );
+
+        window.addEventListener("resize", () => {
+            if (!activeLi) return;
+
+            setTargetFromLi(activeLi);
+            start();
+        });
+    }
+
+    initProjectCellBlob();
 })
