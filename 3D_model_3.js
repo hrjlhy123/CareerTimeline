@@ -732,9 +732,20 @@ window.addEventListener("DOMContentLoaded", async () => {
         // device.queue.writeBuffer(transformStorageBuffer, 0, new Float32Array(worldMatrix));
 
         window.addEventListener(`wheel`, (event) => {
+            if (event.target.closest('.hotzone-list')) return;
+
             deltaAngle -= event.deltaY * scrollSpeed
             deltaAngle = Math.max(rangeAngle[0], Math.min(rangeAngle[1], deltaAngle))
         })
+
+        const hotzoneList = document.querySelector('.hotzone-list');
+
+        hotzoneList.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            hotzoneList.scrollLeft += event.deltaY;
+        }, { passive: false });
     }
     const wheelResistance = () => {
         if (Math.abs(deltaAngle) < 0.01) {
