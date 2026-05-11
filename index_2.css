@@ -1,7 +1,7 @@
 :root {
   --bubble-fill: rgba(255, 255, 255, 0.08);
   --bubble-glow: rgba(255, 255, 255, 0.08);
-  --bubble-inner-shadow: rgba(0, 0, 0, 0.08);
+  --bubble-inner-shadow: rgba(0, 0, 0, 0.06);
   --bubble-outer-shadow: rgba(0, 0, 0, 0.16);
   --bubble-ink: #0f1114;
 }
@@ -31,10 +31,10 @@ img.conceptDesign {
 div.mainFrame {
   position: absolute;
   inset: 0;
-  width: 99%;
-  height: 98%;
-  margin: 0.5%;
-  padding: 0.5%;
+  width: 99vw;
+  height: 98vh;
+  margin: 1vh;
+  padding: 1vh;
   box-sizing: border-box;
 
   display: grid;
@@ -49,7 +49,6 @@ div.mainFrame {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 
   overflow: hidden;
-  
 }
 
 div.mainFrame > div {
@@ -377,6 +376,87 @@ div.projectShowcase {
 .project-label {
   position: relative;
   z-index: 2;
+  display: inline-block;
+  transform-origin: center;
+
+  font-weight: 400;
+  filter: blur(0);
+
+  transition: font-weight 0s;
+}
+
+.project-label::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  background: linear-gradient(
+    100deg,
+    #ff4d4d 0%,
+    #ffd84d 16.6%,
+    #6dff8a 33.2%,
+    #55dfff 49.8%,
+    #9a7cff 66.4%,
+    #ff7add 83%,
+    #ff4d4d 100%
+  );
+
+  background-size: 200% 100%;
+  background-repeat: repeat;
+  background-position: 200% 50%;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  filter: blur(4px);
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
+}
+
+ol.hotzone-list > li:hover .project-label {
+  font-weight: 900;
+
+  transition: font-weight 0.125s step-end 0.125s;
+
+  animation: liquidBlur 0.25s linear 0.25s forwards;
+}
+
+ol.hotzone-list > li:hover .project-label::before {
+  animation: rainbowShadowShift 0.25s linear 0.25s forwards;
+}
+
+@keyframes liquidBlur {
+  0% {
+    filter: blur(0);
+  }
+
+  50% {
+    filter: blur(0.3px);
+    color: rgba(0, 0, 0, 0.84);
+  }
+
+  100% {
+    filter: blur(0);
+  }
+}
+
+@keyframes rainbowShadowShift {
+  0% {
+    background-position: 200% 50%;
+    opacity: 0;
+  }
+
+  50% {
+    opacity: .5;
+  }
+
+  100% {
+    background-position: 0% 50%;
+    opacity: 0;
+  }
 }
 
 .project-cell-blob {
@@ -390,20 +470,18 @@ div.projectShowcase {
   border-radius: 999px;
 
   background: var(--bubble-fill);
-  /* border: 1px solid var(--bubble-border); */
 
   box-shadow:
-    0 10px 22px rgba(0, 0, 0, 0.18),
     0 0 24px var(--bubble-glow),
-    inset 0 0 18px rgba(255, 255, 255, 0.18),
-    inset 0 0 24px var(--bubble-inner-shadow);
+    inset 0 0 18px var(--bubble-fill),
+    inset 0 0 24px var(--bubble-inner-shadow),
+    5px 5px 12px var(--bubble-outer-shadow);
 
   opacity: 0;
   pointer-events: none;
   z-index: 1;
 
   transform-origin: center center;
-  will-change: transform, width, height, opacity;
   transition: opacity 260ms ease;
 }
 
@@ -425,11 +503,19 @@ div.projectShowcase > div.hotzone {
 
   isolation: isolate;
   /* z-index: 2; */
+
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
 }
 
 div.hotzone > ol.hotzone-list {
   font-size: clamp(12px, 0.85vw, 15px);
-  font-weight: 900;
+  font-weight: 400;
   font-family: monospace;
 
   height: 22%;
@@ -447,8 +533,7 @@ div.hotzone > ol.hotzone-list {
   overflow-x: auto;
   overflow-y: hidden;
 
-  padding-left: 2rem;
-  padding-right: 4rem;
+  padding: 0 0 1vh 0;
 
   counter-reset: project;
   list-style: none;
@@ -555,6 +640,7 @@ div.projectShowcase > div.playzone {
   left: 0;
   width: 100%;
   height: 100%;
+  padding: 1vh;
   --step-left: 2%;
   --left-base: 2%;
   --z-base: 1;
@@ -707,7 +793,7 @@ div.iframe-wrapper > iframe {
   display: none;
   z-index: 0;
   background: #fff;
-  border-radius: 50px;
+  border-radius: 40px;
   transition:
     transform 0.3s ease-out,
     opacity 0.3s ease-out;
@@ -904,7 +990,6 @@ div.projectShowcase.active .iframe-mask {
     opacity 0.28s ease,
     filter 0.18s ease;
 
-  will-change: transform, opacity;
   filter: blur(0px);
 
   --fs: clamp(13px, calc(var(--r) * 0.19), 18px);
