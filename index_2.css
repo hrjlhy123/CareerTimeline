@@ -38,7 +38,7 @@ div.mainFrame {
   box-sizing: border-box;
 
   display: grid;
-  grid-template-columns: 3fr 10fr;
+  grid-template-columns: 2fr 10fr;
   grid-template-rows: 4fr 9fr;
   grid-template-areas:
     "title projectShowcase"
@@ -115,7 +115,7 @@ div.timelineBelt > ul {
 }
 
 div.timelineBelt > ul:has(li:hover) ~ canvas.timelineBelt {
-  filter: blur(2px);
+  filter: blur(1px);
   transition: all 0.5s ease-out;
 }
 
@@ -136,10 +136,10 @@ li[data-date] > span {
   top: 0;
   left: 0;
   font-family: fantasy;
-  font-size: 6rem;
-  width: 203px;
-  height: 107px;
-  border-radius: 40px;
+  font-size: 4rem;
+  width: 154px;
+  height: 84px;
+  border-radius: 28px;
   transform: translate(-50%, -50%);
   color: rgba(255, 255, 255, 0.5);
   text-shadow:
@@ -170,8 +170,8 @@ li[data-date] > span:hover {
   box-shadow:
     inset 2px 2px 4px rgba(0, 0, 0, 0.15),
     /* 内部阴影 */ inset -2px -2px 4px rgba(255, 255, 255, 0.15),
-    /* 内部高光 */ 0 0 80px rgba(255, 255, 255, 0.75);
-  border: 10px solid #fff;
+    /* 内部高光 */ 0 0 10px rgba(255, 255, 255, 0.75);
+  border: 4px solid #fff;
   /* box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.3); */
 }
 li[data-date].checked > span {
@@ -389,10 +389,9 @@ div.projectShowcase {
   content: attr(data-text);
   position: absolute;
   inset: 0;
-  z-index: -1;
 
   background: linear-gradient(
-    100deg,
+    135deg,
     #ff4d4d 0%,
     #ffd84d 16.6%,
     #6dff8a 33.2%,
@@ -402,9 +401,9 @@ div.projectShowcase {
     #ff4d4d 100%
   );
 
-  background-size: 200% 100%;
+  background-size: 240% 240%;
   background-repeat: repeat;
-  background-position: 200% 50%;
+  background-position: var(--rainbow-from, 200% 50%);
 
   -webkit-background-clip: text;
   background-clip: text;
@@ -416,45 +415,41 @@ div.projectShowcase {
   pointer-events: none;
 }
 
+div.projectShowcase > div.hotzone.projectList:has(ol.hotzone-list > li:hover) {
+  z-index: 2;
+}
+
+div.projectShowcase
+  > div.hotzone.projectList:has(ol.hotzone-list > li:hover)
+  > span.project-cell-blob {
+  backdrop-filter: blur(2px);
+}
+
+div.projectShowcase
+  > div.hotzone.projectList:has(ol.hotzone-list > li:hover)
+  > ol.hotzone-list {
+  z-index: 4;
+  transition: z-index 0s step-end 0.25s;
+}
+
 ol.hotzone-list > li:hover .project-label {
   font-weight: 900;
 
   transition: font-weight 0.125s step-end 0.125s;
-
-  animation: liquidBlur 0.25s linear 0.25s forwards;
 }
 
 ol.hotzone-list > li:hover .project-label::before {
-  animation: rainbowShadowShift 0.25s linear 0.25s forwards;
-}
-
-@keyframes liquidBlur {
-  0% {
-    filter: blur(0);
-  }
-
-  50% {
-    filter: blur(0.3px);
-    color: rgba(0, 0, 0, 0.84);
-  }
-
-  100% {
-    filter: blur(0);
-  }
+  animation: rainbowShadowShift 0.5s ease-in 0s forwards;
 }
 
 @keyframes rainbowShadowShift {
   0% {
-    background-position: 200% 50%;
-    opacity: 0;
-  }
-
-  50% {
-    opacity: .5;
+    background-position: var(--rainbow-from, 200% 50%);
+    opacity: 0.5;
   }
 
   100% {
-    background-position: 0% 50%;
+    background-position: var(--rainbow-to, 0% 50%);
     opacity: 0;
   }
 }
@@ -479,10 +474,12 @@ ol.hotzone-list > li:hover .project-label::before {
 
   opacity: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
 
   transform-origin: center center;
   transition: opacity 260ms ease;
+
+  pointer-events: none;
 }
 
 .project-cell-blob.is-visible {
@@ -500,9 +497,37 @@ ol.hotzone-list > li:hover .project-label::before {
 
 div.projectShowcase > div.hotzone {
   position: relative;
+  height: 29vh;
+}
+
+div.hotzone > ol.hotzone-list {
+  font-size: clamp(12px, 0.85vw, 15px);
+  font-weight: 400;
+  font-family: monospace;
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+  grid-auto-columns: minmax(230px, 18vw);
+
+  column-gap: clamp(20px, 2vw, 42px);
+
+  height: 100%;
+  box-sizing: border-box;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  padding: 0 0 4vh 4vh;
+
+  counter-reset: project;
+  list-style: none;
+
+  margin: 0;
+
+  z-index: 0;
 
   isolation: isolate;
-  /* z-index: 2; */
 
   mask-image: linear-gradient(
     to right,
@@ -511,36 +536,6 @@ div.projectShowcase > div.hotzone {
     black 95%,
     transparent 100%
   );
-}
-
-div.hotzone > ol.hotzone-list {
-  font-size: clamp(12px, 0.85vw, 15px);
-  font-weight: 400;
-  font-family: monospace;
-
-  height: 22%;
-
-  display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat(4, auto);
-  grid-auto-columns: minmax(230px, 18vw);
-
-  column-gap: clamp(20px, 2vw, 42px);
-
-  position: relative;
-  left: -2vw;
-
-  overflow-x: auto;
-  overflow-y: hidden;
-
-  padding: 0 0 1vh 0;
-
-  counter-reset: project;
-  list-style: none;
-
-  margin: 0;
-
-  z-index: 2;
 }
 
 div.hotzone > ol.hotzone-list::-webkit-scrollbar {
@@ -655,26 +650,35 @@ div.playzone > div.iframe-wrapper {
   position: absolute;
   top: 2%;
   left: 2%;
-  width: 78%;
-  height: 87%;
+  width: 131.25vh;
+  height: 87.5vh;
   transform-origin: 0 50%;
   border-radius: 40px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-  background: rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.04);
   transition:
     transform 0.3s ease-out,
     filter 0.5s ease-out,
     left 0.2s ease-out;
   pointer-events: auto;
+  z-index: 0;
+}
+
+div.playzone > div.iframe-wrapper.effect-ready {
   backdrop-filter: blur(1px);
 }
 
 div.playzone > div.iframe-wrapper.active {
   position: absolute;
-  backdrop-filter: blur(1px);
+  width: 131.25vh;
+  height: 87.5vh;
   /* i 从 1 开始：1→最右，越大越靠左 */
   left: calc(var(--left-base) + (var(--i) - 1) * var(--step-left));
   z-index: calc(var(--z-base) + (var(--count) - var(--i)));
+}
+
+div.playzone > div.iframe-wrapper.active.effect-ready-2 {
+  backdrop-filter: blur(1px) brightness(0.33);
 }
 
 div.playzone > div.iframe-wrapper.active:hover {
@@ -682,6 +686,11 @@ div.playzone > div.iframe-wrapper.active:hover {
     0 4px 8px rgba(0, 0, 0, 0.5),
     0 0 80px rgba(255, 255, 255, 0.75);
   z-index: 20;
+}
+
+div.playzone:has(> .iframe-wrapper.active:only-child) > .iframe-wrapper.active {
+  width: 155.5vh;
+  height: 87.5vh;
 }
 
 /* Optional hover effect */
@@ -783,11 +792,8 @@ div.playzone
 }
 
 div.iframe-wrapper > iframe {
-  border-radius: 5px;
   width: 100%;
   height: 100%;
-  transform: scale(0.97);
-  border: 2px double #000;
   box-sizing: border-box;
   opacity: 1;
   display: none;
@@ -799,8 +805,13 @@ div.iframe-wrapper > iframe {
     opacity 0.3s ease-out;
 }
 
+div.iframe-wrapper.active > iframe {
+  transform: scale(0.975, 0.96);
+}
+
 div.iframe-wrapper > iframe.mobile {
-  width: calc(100vh / 16 * 9);
+  width: 49.21875vh;
+  height: 87.5vh;
 }
 
 div.iframe-wrapper > div.iframe-mask {
@@ -810,14 +821,14 @@ div.iframe-wrapper > div.iframe-mask {
   height: 100%;
   opacity: 1;
   cursor: pointer;
-  transform: scale(0.95);
+  transform: scale(0.95, 0.925);
   z-index: 1;
   aspect-ratio: 3 / 2;
   transition: opacity 0.5s ease-out;
 }
 
 div.projectShowcase:not(.active) > .playzone > .iframe-wrapper {
-  left: 10%;
+  left: 12.5%;
   top: 30%;
   transform: scale(0.4)
     rotateZ(calc(12deg - var(--rand-global) * 30deg - 45deg));

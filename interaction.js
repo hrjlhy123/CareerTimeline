@@ -89,60 +89,123 @@ window.addEventListener("DOMContentLoaded", async () => {
         })
     });
 
-    const bindIframeEvents = () => {
-        projectShowcase = document.querySelector('div.projectShowcase');
-        iframeWrappers = document.querySelectorAll(`div.iframe-wrapper`);
-        hotzone = document.querySelector(`div.hotzone`);
-        iframeMasks = document.querySelectorAll(`div.iframe-mask`);
+    /* Unsupervised AI content */
 
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    let showcaseEventsBound = false;
+    let animating = false;
+    let iframeShowTimers = [];
+    let openingId = 0;
 
-        hotzone.addEventListener(`mouseover`, () => {
-            iframeWrappers.forEach((item) => {
-                item.querySelector(`iframe`).style.display = '';
-            });
-        });
+    function clearIframeShowTimers() {
+        iframeShowTimers.forEach(clearTimeout);
+        iframeShowTimers = [];
+    }
 
-        hotzone.addEventListener(`click`, () => {
-            projectShowcase.classList.remove('active');
-            hotzone.style.pointerEvents = `none`;
+    function closeProjectShowcase() {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframeWrappers = document.querySelectorAll("div.iframe-wrapper");
+
+        // 关键：取消正在进行的展开流程
+        openingId++;
+        clearIframeShowTimers();
+        animating = false;
+
+        projectShowcase?.classList.remove("active");
+
+        iframeWrappers.forEach((wrapper) => {
+            wrapper.classList.add("effect-ready");
+            wrapper.classList.remove("effect-ready-2");
+            wrapper.classList.remove("active");
+            wrapper.querySelector("iframe")?.classList.remove("show");
+
+            wrapper.style.pointerEvents = "none";
+
             setTimeout(() => {
-                hotzone.style.pointerEvents = `initial`;
-            }, 200);
-
-            iframeWrappers.forEach((wrapper, i) => {
-                iframeWrappers[i].classList.remove(`active`);
-                iframeWrappers[i].querySelector(`iframe`).classList.remove(`show`)
-                iframeWrappers[i].style.pointerEvents = `none`;
-                setTimeout(() => {
-                    iframeWrappers[i].style.pointerEvents = `initial`;
-                }, 500);
-            });
+                wrapper.style.pointerEvents = "initial";
+            }, 500);
         });
+    }
 
-        let animating = false
+    const bindIframeEvents = () => {
+        if (showcaseEventsBound) return;
+        showcaseEventsBound = true;
 
-        iframeMasks.forEach((mask, index) => {
-            mask.addEventListener(`click`, async () => {
-                if (animating) return;        // 防止重复点击
-                animating = true;
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-                projectShowcase.classList.add(`active`);
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const playzone = document.querySelector("div.playzone");
 
-                for (let i = iframeWrappers.length - 1; i >= 0; i--) {
-                    iframeWrappers[i].classList.add(`active`);
-                    await sleep(200);
-                    setTimeout(() => {
-                        iframeWrappers[i].querySelector(`iframe`).classList.add(`show`)
-                    }, 150);
+        if (!projectShowcase || !playzone) return;
+
+        playzone.addEventListener("click", async (event) => {
+            const mask = event.target.closest(".iframe-mask");
+            if (!mask || !playzone.contains(mask)) return;
+
+            event.stopPropagation();
+
+            if (animating) return;
+            animating = true;
+
+            clearIframeShowTimers();
+
+            // 关键：给这一次展开一个唯一 id
+            const currentOpeningId = ++openingId;
+
+            const iframeWrappers = document.querySelectorAll("div.iframe-wrapper");
+
+            projectShowcase.classList.add("active");
+
+            for (let i = iframeWrappers.length - 1; i >= 0; i--) {
+                // 如果中途被关闭/取消，停止展开
+                if (currentOpeningId !== openingId) {
+                    animating = false;
+                    return;
                 }
 
+                const wrapper = iframeWrappers[i];
+
+                wrapper.classList.remove("effect-ready");
+                wrapper.classList.add("active");
+
+                await sleep(200);
+
+                // sleep 之后也必须再检查一次
+                if (currentOpeningId !== openingId) {
+                    animating = false;
+                    return;
+                }
+
+                const timerId = setTimeout(() => {
+                    // timer 执行时也再检查一次
+                    if (currentOpeningId !== openingId) return;
+
+                    wrapper.querySelector("iframe")?.classList.add("show");
+                }, 150);
+
+                iframeShowTimers.push(timerId);
+
+                wrapper.classList.add("effect-ready-2");
+            }
+
+            if (currentOpeningId === openingId) {
                 animating = false;
-            });
+            }
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!projectShowcase.classList.contains("active")) return;
+
+            const clickedActiveWrapper = event.target.closest(".iframe-wrapper.active");
+
+            if (clickedActiveWrapper) return;
+
+            closeProjectShowcase();
         });
     };
 
-    bindIframeEvents()
+    bindIframeEvents();
+
+    /* Unsupervised AI content */
 
     const applyStackVars = (playzone, maxN = 10) => {
         // 只取已激活的
@@ -151,7 +214,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         playzone.style.setProperty('--count', total);
 
         // 根据 maxN 动态计算 step-left
-        const step = 20 / maxN;
+        const step = 10 / maxN;
         playzone.style.setProperty('--step-left', `${step}%`);
 
         // 只让“最后 maxN 个”参与叠放
@@ -167,7 +230,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         items.slice(0, start).forEach(el => el.style.removeProperty('--i'));
     };
 
-    /* Unsupervised AI content */
     // —— 全局轮播管理 —— //
     const _IFRAME_ROTATORS = new Set();
 
@@ -216,11 +278,49 @@ window.addEventListener("DOMContentLoaded", async () => {
         _IFRAME_ROTATORS.add(rot);
     }
 
+    /* Unsupervised AI content */
+
+    function renderSingleProjectInPlayzone(project) {
+        const playzone = document.querySelector(".playzone");
+
+        if (!playzone || !project) return;
+
+        const { name, URLs } = project;
+        const firstURL = URLs?.[0] || "about:blank";
+        const isMobile = name.trim().endsWith("(mobile)");
+        const iframeClass = isMobile ? "projectShowcase mobile" : "projectShowcase";
+
+        _clearAllRotators();
+
+        playzone.innerHTML = "";
+
+        playzone.insertAdjacentHTML(
+            "beforeend",
+            `
+        <div class="iframe-wrapper effect-ready">
+            <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
+            <div class="iframe-mask"></div>
+        </div>
+        `
+        );
+
+        const wrapper = playzone.lastElementChild;
+        const iframeEl = wrapper.querySelector("iframe");
+
+        _attachRotator(iframeEl, URLs, 4000);
+        applyStackVars(playzone, 1);
+    }
+
+    let projectListClickBound = false;
+    let currentProjects = [];
+
     const renderProjects = (year, projects) => {
         const hotzoneList = document.querySelector('.hotzone-list');
         const playzone = document.querySelector('.playzone');
 
-        _clearAllRotators()
+        _clearAllRotators();
+
+        currentProjects = projects;
 
         if (year != `all`) {
             // ✅ 清空
@@ -228,12 +328,17 @@ window.addEventListener("DOMContentLoaded", async () => {
             playzone.innerHTML = '';
 
             playzone.setAttribute("data-date", year);
-            projects.forEach(({ name, URLs }) => {
+            projects.forEach(({ name, URLs }, index) => {
                 const firstURL = URLs?.[0] || 'about:blank';
                 const isMobile = name.trim().endsWith('(mobile)');
                 const iframeClass = isMobile ? 'projectShowcase mobile' : 'projectShowcase';
 
-                hotzoneList.insertAdjacentHTML('beforeend', `<li><span class="project-label"></span></li>`)
+                hotzoneList.insertAdjacentHTML(
+                    'beforeend',
+                    `<li data-project-index="${index}">
+                        <span class="project-label"></span>
+                    </li>`
+                );
                 hotzoneList.lastElementChild.lastElementChild.textContent = name;
                 hotzoneList.lastElementChild.lastElementChild.dataset.text = name;
 
@@ -256,13 +361,35 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         } else {
             hotzoneList.innerHTML = '';
-            projects.forEach(({ name, URLs }) => {
-                hotzoneList.insertAdjacentHTML('beforeend', `<li><span class="project-label"></span></li>`)
-                hotzoneList.lastElementChild.lastElementChild.textContent = name;
-                hotzoneList.lastElementChild.lastElementChild.dataset.text = name;
-            })
+
+            projects.forEach(({ name }, index) => {
+                hotzoneList.insertAdjacentHTML(
+                    'beforeend',
+                    `<li data-project-index="${index}">
+                    <span class="project-label"></span>
+                </li>`
+                );
+
+                const label = hotzoneList.lastElementChild.lastElementChild;
+                label.textContent = name;
+                label.dataset.text = name;
+            });
         }
-        // ✅ 重新绑定事件
+
+        if (!projectListClickBound) {
+            projectListClickBound = true;
+
+            hotzoneList.addEventListener("click", (event) => {
+                event.stopPropagation();
+
+                const li = event.target.closest("li");
+                if (!li || !hotzoneList.contains(li)) return;
+
+                const index = Number(li.dataset.projectIndex);
+                renderSingleProjectInPlayzone(currentProjects[index]);
+            });
+        }
+
         bindIframeEvents();
     };
 
@@ -478,6 +605,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     })();
 
+    /* Unsupervised AI content */
+
     function initProjectCellBlob() {
         const host = document.querySelector(".projectList");
         const list = host?.querySelector(".hotzone-list");
@@ -652,4 +781,71 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     initProjectCellBlob();
+
+    /* Unsupervised AI content */
+
+    // rainbowShadow
+    function initRainbowDirection() {
+        const list = document.querySelector(".hotzone-list");
+        if (!list) return;
+
+        let previousLi = null;
+        let previousCenter = null;
+
+        list.addEventListener("pointerover", (event) => {
+            const li = event.target.closest("li");
+            if (!li || !list.contains(li)) return;
+
+            // 鼠标只是在同一个 li 内部从 span 移动到别的子元素，不重新计算
+            if (event.relatedTarget && li.contains(event.relatedTarget)) return;
+
+            const label = li.querySelector(".project-label");
+            if (!label) return;
+
+            const rect = li.getBoundingClientRect();
+            const currentCenter = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+            };
+
+            // 第一次 hover，没有上一个元素，就给一个默认方向
+            if (!previousCenter || previousLi === li) {
+                label.style.setProperty("--rainbow-from", "200% 50%");
+                label.style.setProperty("--rainbow-to", "0% 50%");
+                previousCenter = currentCenter;
+                previousLi = li;
+                return;
+            }
+
+            const dx = currentCenter.x - previousCenter.x;
+            const dy = currentCenter.y - previousCenter.y;
+
+            const sx = Math.sign(dx);
+            const sy = Math.sign(dy);
+
+            const travel = 80;
+
+            const fromX = 50 - sx * travel;
+            const fromY = 50 - sy * travel;
+            const toX = 50 + sx * travel;
+            const toY = 50 + sy * travel;
+
+            label.style.setProperty("--rainbow-from", `${fromX}% ${fromY}%`);
+            label.style.setProperty("--rainbow-to", `${toX}% ${toY}%`);
+
+            previousCenter = currentCenter;
+            previousLi = li;
+
+            console.log({
+                dx,
+                dy,
+                from: `${fromX}% ${fromY}%`,
+                to: `${toX}% ${toY}%`,
+            });
+        });
+    }
+
+    initRainbowDirection();
+
+
 })
