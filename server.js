@@ -52,7 +52,7 @@ MongoClient.connect(uri)
                     console.log("Using DB:", dbName, "Collection:", collectionName, "Query:", query);
                     const projects = await db.collection(collectionName)
                         .find(query)
-                        .project({ _id: 0, name: 1, URLs: 1 })
+                        .project({ _id: 0, name: 1, URLs: 1, year: 1 })
                         .toArray();
 
                     ws.send(JSON.stringify({

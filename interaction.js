@@ -280,6 +280,355 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     /* Unsupervised AI content */
 
+    function createRippleMapDataURL() {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const width = 512;
+        const height = 512;
+        const outerRadius = 250;
+        const innerRadius = 100;
+        const ringWidth = outerRadius - innerRadius;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const cx = width / 2;
+        const cy = height / 2;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#7f7f7f";
+        ctx.fill();
+
+        const colors = [
+            "rgb(255,0,0)",
+            "rgb(0,255,0)",
+            "rgb(255,0,0)",
+            "rgb(0,255,0)"
+        ];
+
+        const step = Math.PI * 2 / colors.length;
+        let angle = 0;
+
+        for (let i = 0; i < colors.length; i++) {
+            const nextColor = colors[(i + 1) % colors.length];
+
+            const r = innerRadius + ringWidth / 2;
+            const x1 = cx + Math.cos(angle) * r;
+            const y1 = cy + Math.sin(angle) * r;
+            const x2 = cx + Math.cos(angle + step) * r;
+            const y2 = cy + Math.sin(angle + step) * r;
+
+            const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+            gradient.addColorStop(0, colors[i]);
+            gradient.addColorStop(1, nextColor);
+
+            ctx.beginPath();
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = ringWidth;
+            ctx.arc(cx, cy, r, angle, angle + step);
+            ctx.stroke();
+
+            angle += step;
+        }
+
+        const g = ctx.createRadialGradient(cx, cy, innerRadius, cx, cy, outerRadius);
+
+        g.addColorStop(0, "rgba(127,127,127,1)");
+        g.addColorStop(17 / ringWidth, "rgba(115,115,115,.8)");
+        g.addColorStop(25 / ringWidth, "rgba(115,115,115,0.1)");
+        g.addColorStop(28 / ringWidth, "rgba(115,115,115,0.1)");
+        g.addColorStop(37 / ringWidth, "rgba(115,104,104,.8)");
+        g.addColorStop(43 / ringWidth, "rgba(115,104,104,1)");
+        g.addColorStop(44 / ringWidth, "rgba(127,127,127,1)");
+        g.addColorStop(50 / ringWidth, "rgba(127,127,127,.6)");
+        g.addColorStop(54 / ringWidth, "rgba(127,127,127,0)");
+        g.addColorStop(61 / ringWidth, "rgba(0,0,0,0)");
+        g.addColorStop(67 / ringWidth, "rgba(0,0,0,1)");
+        g.addColorStop(78 / ringWidth, "rgba(0,0,0,1)");
+        g.addColorStop(88 / ringWidth, "rgba(0,0,0,0)");
+        g.addColorStop(100 / ringWidth, "rgba(0,0,0,0)");
+        g.addColorStop(108 / ringWidth, "rgba(0,0,0,1)");
+        g.addColorStop(117 / ringWidth, "rgba(0,0,0,1)");
+        g.addColorStop(136 / ringWidth, "rgba(0,0,0,0)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+
+        return canvas.toDataURL();
+    }
+
+    function ensureProjectRippleFilter() {
+        if (document.querySelector("#project-ripple-filter")) return;
+
+        const dataURL = createRippleMapDataURL();
+
+        document.body.insertAdjacentHTML(
+            "afterbegin",
+            `
+        <svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+            <defs>
+                <filter id="project-ripple-filter" x="-100%" y="-200%" width="300%" height="500%">
+                  <feImage
+                    id="project-ripple-image"
+                    href="${dataURL}"
+                    x="0"
+                    y="0"
+                    width="0"
+                    height="0"
+                    result="ripple">
+                  </feImage>
+
+                  <!-- 扭曲后的文字 -->
+                  <feDisplacementMap
+                    id="project-ripple-map"
+                    in="SourceGraphic"
+                    in2="ripple"
+                    scale="0"
+                    xChannelSelector="G"
+                    yChannelSelector="R"
+                    color-interpolation-filters="sRGB"
+                    result="displaced">
+                  </feDisplacementMap>
+
+                  <!-- 只保留 ripple 覆盖区域内的扭曲文字 -->
+                  <feComposite
+                    in="displaced"
+                    in2="ripple"
+                    operator="in"
+                    result="displacedInsideRipple">
+                  </feComposite>
+
+                  <!-- 从原文字里挖掉 ripple 覆盖区域，避免重影 -->
+                  <feComposite
+                    in="SourceGraphic"
+                    in2="ripple"
+                    operator="out"
+                    result="sourceOutsideRipple">
+                  </feComposite>
+
+                  <!-- 原文字非 ripple 区域 + ripple 区域扭曲文字 -->
+                  <feComposite
+                    in="displacedInsideRipple"
+                    in2="sourceOutsideRipple"
+                    operator="over">
+                  </feComposite>
+                </filter>
+            </defs>
+        </svg>
+        `
+        );
+    }
+
+    const PROJECT_RIPPLE_DURATION = 3050;
+    const PROJECT_RIPPLE_SKIP_TIME = 50;
+
+    // 颜色圈比白色涟漪边缘稍微慢一点/小一点
+    const YEAR_COLOR_LAG_PX = 10;
+    function getYearCssVar(year, varName, fallback = "") {
+        const source = document.querySelector(`li[data-date="${year}"]`);
+
+        if (!source) return fallback;
+
+        const value = getComputedStyle(source).getPropertyValue(varName).trim();
+
+        return value || fallback;
+    }
+    let yearColorRippleRaf = 0;
+    let yearColorRippleToken = 0;
+
+    function triggerYearColorRipple(targetYear, event, onDone) {
+        const playzone = document.querySelector(".playzone");
+        if (!playzone || !targetYear) return;
+
+        yearColorRippleToken++;
+        const token = yearColorRippleToken;
+
+        if (yearColorRippleRaf) {
+            cancelAnimationFrame(yearColorRippleRaf);
+            yearColorRippleRaf = 0;
+        }
+
+        const yearRgb = getYearCssVar(targetYear, "--year-rgb", "255 255 255");
+
+        const rect = playzone.getBoundingClientRect();
+
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+
+        const distances = [
+            Math.hypot(clickX, clickY),
+            Math.hypot(rect.width - clickX, clickY),
+            Math.hypot(clickX, rect.height - clickY),
+            Math.hypot(rect.width - clickX, rect.height - clickY),
+        ];
+
+        const maxDistance = Math.max(...distances);
+        const finalRadius = maxDistance * 1.1;
+
+        playzone.classList.add("year-color-rippling");
+        playzone.style.setProperty("--year-ripple-x", `${clickX}px`);
+        playzone.style.setProperty("--year-ripple-y", `${clickY}px`);
+        playzone.style.setProperty("--year-ripple-rgb", yearRgb);
+        playzone.style.setProperty("--year-ripple-alpha", "0.2");
+        playzone.style.setProperty("--year-ripple-radius", "0px");
+
+        const start = performance.now();
+        const duration = PROJECT_RIPPLE_DURATION;
+
+        let dataDateApplied = false;
+        const DATA_DATE_APPLY_TIME = 550;
+
+        function animate(now) {
+            if (token !== yearColorRippleToken) return;
+
+            const t = Math.min(1, Math.max(0, (now - start) / duration));
+            const elapsed = now - start;
+
+            if (!dataDateApplied && elapsed >= DATA_DATE_APPLY_TIME) {
+                playzone.setAttribute("data-date", String(targetYear));
+                dataDateApplied = true;
+            }
+
+            const skipProgress = Math.min(
+                0.35,
+                PROJECT_RIPPLE_SKIP_TIME / duration
+            );
+
+            const visualT = skipProgress + (1 - skipProgress) * t;
+
+            // 跟你的主涟漪保持类似节奏
+            const radius = finalRadius * visualT;
+
+            // 颜色随扩散逐渐透明
+            const startAlpha = 0.2;
+            const alpha = startAlpha * (1 - t);
+
+            playzone.style.setProperty("--year-ripple-radius", `${radius}px`);
+            playzone.style.setProperty("--year-ripple-alpha", alpha.toFixed(3));
+
+            if (t < 1) {
+                yearColorRippleRaf = requestAnimationFrame(animate);
+            } else {
+                if (!dataDateApplied) {
+                    playzone.setAttribute("data-date", String(targetYear));
+                    dataDateApplied = true;
+                }
+
+                playzone.setAttribute("data-date", String(targetYear));
+
+                playzone.classList.remove("year-color-rippling");
+
+                playzone.style.removeProperty("--year-ripple-x");
+                playzone.style.removeProperty("--year-ripple-y");
+                playzone.style.removeProperty("--year-ripple-rgb");
+                playzone.style.removeProperty("--year-ripple-alpha");
+                playzone.style.removeProperty("--year-ripple-radius");
+
+                if (typeof onDone === "function") {
+                    onDone();
+                }
+
+                yearColorRippleRaf = 0;
+            }
+        }
+
+        yearColorRippleRaf = requestAnimationFrame(animate);
+    }
+
+    let projectRippleRaf = 0;
+    let projectRippleToken = 0;
+    let currentRippleTarget = null;
+
+    function triggerProjectListRipple(target, event) {
+        if (!target) return;
+
+        ensureProjectRippleFilter();
+
+        const feImage = document.querySelector("#project-ripple-image");
+        const displacement = document.querySelector("#project-ripple-map");
+
+        if (!feImage || !displacement) return;
+
+        if (currentRippleTarget && currentRippleTarget !== target) {
+            currentRippleTarget.classList.remove("is-rippling");
+        }
+
+        currentRippleTarget = target;
+
+        projectRippleToken++;
+        const token = projectRippleToken;
+
+        if (projectRippleRaf) {
+            cancelAnimationFrame(projectRippleRaf);
+            projectRippleRaf = 0;
+        }
+
+        target.classList.add("is-rippling");
+
+        const rect = target.getBoundingClientRect();
+
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+
+        const distances = [
+            Math.hypot(clickX, clickY),
+            Math.hypot(rect.width - clickX, clickY),
+            Math.hypot(clickX, rect.height - clickY),
+            Math.hypot(rect.width - clickX, rect.height - clickY),
+        ];
+
+        const maxDistance = Math.max(...distances);
+        const finalSize = maxDistance * 2.4;
+
+        const startScale = 2 * finalSize / 512;
+
+        const start = performance.now();
+        const duration = PROJECT_RIPPLE_DURATION;
+
+        function animate(now) {
+            if (token !== projectRippleToken) return;
+
+            const t = Math.min(1, Math.max(0, (now - start) / duration));
+
+            // const size = finalSize * t;
+            const skipTime = PROJECT_RIPPLE_SKIP_TIME;
+            const skipProgress = Math.min(0.35, skipTime / duration);
+
+            const visualT = skipProgress + (1 - skipProgress) * t;
+            const size = finalSize * visualT;
+            const scale = startScale * (1 - t);
+
+            feImage.setAttribute("x", clickX - size / 2);
+            feImage.setAttribute("y", clickY - size / 2);
+            feImage.setAttribute("width", Math.max(1, size));
+            feImage.setAttribute("height", Math.max(1, size));
+
+            displacement.setAttribute("scale", scale.toFixed(2));
+
+            if (t < 1) {
+                projectRippleRaf = requestAnimationFrame(animate);
+            } else {
+                displacement.setAttribute("scale", "0");
+                feImage.setAttribute("width", "0");
+                feImage.setAttribute("height", "0");
+
+                if (currentRippleTarget === target) {
+                    target.classList.remove("is-rippling");
+                    currentRippleTarget = null;
+                }
+
+                projectRippleRaf = 0;
+            }
+        }
+
+        projectRippleRaf = requestAnimationFrame(animate);
+    }
+
     function renderSingleProjectInPlayzone(project) {
         const playzone = document.querySelector(".playzone");
 
@@ -311,6 +660,11 @@ window.addEventListener("DOMContentLoaded", async () => {
         applyStackVars(playzone, 1);
     }
 
+    let currentRenderYear = "all";
+    function getProjectYear(project) {
+        return String(project?.year || currentRenderYear || "all");
+    }
+
     let projectListClickBound = false;
     let currentProjects = [];
 
@@ -321,6 +675,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         _clearAllRotators();
 
         currentProjects = projects;
+        currentRenderYear = year;
+        // console.log(`year:`, year)
 
         if (year != `all`) {
             // ✅ 清空
@@ -328,6 +684,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             playzone.innerHTML = '';
 
             playzone.setAttribute("data-date", year);
+            console.log(`projects:`, projects)
             projects.forEach(({ name, URLs }, index) => {
                 const firstURL = URLs?.[0] || 'about:blank';
                 const isMobile = name.trim().endsWith('(mobile)');
@@ -343,16 +700,16 @@ window.addEventListener("DOMContentLoaded", async () => {
                 hotzoneList.lastElementChild.lastElementChild.dataset.text = name;
 
                 playzone.insertAdjacentHTML('beforeend', `
-            <div class="iframe-wrapper">
-                <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
-                <div class="iframe-mask"></div>
-            </div>
+                    <div class="iframe-wrapper">
+                        <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
+                        <div class="iframe-mask"></div>
+                    </div>
                 `);
 
                 // 给刚插入的 iframe 开启轮播
                 const wrapper = playzone.lastElementChild;
                 const iframeEl = wrapper.querySelector('iframe');
-                _attachRotator(iframeEl, URLs, 4000); // 这里的 5000 就是 5 秒
+                _attachRotator(iframeEl, URLs, 4000); // ms
             });
 
 
@@ -386,7 +743,22 @@ window.addEventListener("DOMContentLoaded", async () => {
                 if (!li || !hotzoneList.contains(li)) return;
 
                 const index = Number(li.dataset.projectIndex);
-                renderSingleProjectInPlayzone(currentProjects[index]);
+                const project = currentProjects[index];
+
+                if (!project) return;
+
+                const targetYear = getProjectYear(project);
+
+                // 先切换 iframe 内容
+                renderSingleProjectInPlayzone(project);
+
+                // 空间涟漪：仍然作用在整个 projectShowcase
+                const showcaseArea = document.querySelector("div.projectShowcase");
+                triggerProjectListRipple(showcaseArea, event);
+
+                // 颜色涟漪：只作用在 playzone > iframe-wrapper
+                // 动画结束后才正式切换 playzone data-date
+                triggerYearColorRipple(targetYear, event);
             });
         }
 
@@ -464,7 +836,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             bubble.style.setProperty('--y', y + 'px');
             bubble.style.setProperty('--r', r + 'px');
 
-            // 一行内容
             let lineHTML = '';
             if (msg.type === 'email') {
                 lineHTML = `<span>Email: </span><a class="btn" href="mailto:${msg.text}">${msg.text}</a>`;
