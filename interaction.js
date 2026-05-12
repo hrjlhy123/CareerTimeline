@@ -10,7 +10,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         coordinates,
         angle
 
-    li = document.querySelectorAll('li[data-date]');
+    li = document.querySelectorAll('ul.timeList > li[data-year]');
     angle = {
         local: { rx: 0, ry: 0, rz: 0 },
         global: { rx: 0, ry: 0, rz: 0 },
@@ -44,18 +44,38 @@ window.addEventListener("DOMContentLoaded", async () => {
                 };
 
                 item.style.transform = `
-                rotateX(${angle.global.rx}deg)
-                rotateY(${angle.global.ry}deg)
-                rotateZ(${angle.global.rz}deg)
-                rotateX(${angle.local.rx}deg)
-                rotateY(${angle.local.ry}deg)
-                rotateZ(${angle.local.rz}deg)
-            `;
+                    translate3d(-50%, -50%, 0)
+                    rotateX(${angle.global.rx}deg)
+                    rotateY(${angle.global.ry}deg)
+                    rotateZ(${angle.global.rz}deg)
+                    rotateX(${angle.local.rx}deg)
+                    rotateY(${angle.local.ry}deg)
+                    rotateZ(${angle.local.rz}deg)
+                `;
 
-                if (data.modelStates[index].center.z + data.modelStates[index].translation.z < data.results.center[2] - 0.5) {
-                    item.style.visibility = `initial`
+                // if (data.modelStates[index].center.z + data.modelStates[index].translation.z < data.results.center[2] - 0.5) {
+                //     item.style.visibility = `initial`
+                // } else {
+                //     item.style.visibility = `hidden`
+                // }
+                const zFront =
+                    data.modelStates[index].center.z + data.modelStates[index].translation.z <
+                    data.results.center[2] - 0.5;
+
+                const localRx =
+                    data.modelStates[index].angle.rx -
+                    data.modelStates[index].deltaAngle.rx;
+
+                // 1 = 正面，0 = 侧面，-1 = 背面
+                const facing = Math.cos(localRx);
+
+                // 这个值越大，隐藏越早
+                const isFrontFacing = facing > 0.18;
+
+                if (zFront && isFrontFacing) {
+                    item.style.visibility = "initial";
                 } else {
-                    item.style.visibility = `hidden`
+                    item.style.visibility = "hidden";
                 }
 
             })
@@ -64,6 +84,19 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
     frame()
 
+    /* Unsupervised AI content */
+    function syncTimelinePerspective() {
+        const belt = document.querySelector("div.timelineBelt");
+        if (!belt) return;
+
+        const fov = 30 * Math.PI / 180;
+        const perspective = belt.clientHeight / (2 * Math.tan(fov / 2));
+
+        belt.style.setProperty("--timeline-perspective", `${perspective}px`);
+    }
+
+    syncTimelinePerspective();
+    window.addEventListener("resize", syncTimelinePerspective);
 
     let projectShowcase = document.querySelector('div.projectShowcase')
     let hotzone = document.querySelector(`div.hotzone`)
@@ -76,7 +109,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         item.addEventListener(`click`, async (event) => {
             item.parentNode.querySelectorAll('.checked').forEach(el => el.classList.remove('checked'));
             item.classList.add('checked');
-            year = item.getAttribute('data-date');
+            year = item.getAttribute('data-year');
             projectShowcase.classList.remove('active');
             await getProjects(year)
             // random num
@@ -93,28 +126,19 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     let showcaseEventsBound = false;
     let animating = false;
-    let iframeShowTimers = [];
     let openingId = 0;
-
-    function clearIframeShowTimers() {
-        iframeShowTimers.forEach(clearTimeout);
-        iframeShowTimers = [];
-    }
 
     function closeProjectShowcase() {
         const projectShowcase = document.querySelector("div.projectShowcase");
         const iframeWrappers = document.querySelectorAll("div.iframe-wrapper");
 
-        // 关键：取消正在进行的展开流程
         openingId++;
-        clearIframeShowTimers();
         animating = false;
 
         projectShowcase?.classList.remove("active");
 
         iframeWrappers.forEach((wrapper) => {
-            wrapper.classList.add("effect-ready");
-            wrapper.classList.remove("effect-ready-2");
+            wrapper.classList.remove("effect-ready");
             wrapper.classList.remove("active");
             wrapper.querySelector("iframe")?.classList.remove("show");
 
@@ -122,7 +146,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             setTimeout(() => {
                 wrapper.style.pointerEvents = "initial";
-            }, 500);
+            }, 300);
         });
     }
 
@@ -146,45 +170,40 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (animating) return;
             animating = true;
 
-            clearIframeShowTimers();
-
-            // 关键：给这一次展开一个唯一 id
             const currentOpeningId = ++openingId;
-
-            const iframeWrappers = document.querySelectorAll("div.iframe-wrapper");
+            const iframeWrappers = Array.from(document.querySelectorAll("div.iframe-wrapper"));
 
             projectShowcase.classList.add("active");
 
             for (let i = iframeWrappers.length - 1; i >= 0; i--) {
-                // 如果中途被关闭/取消，停止展开
+                if (currentOpeningId !== openingId) {
+                    animating = false;
+                    return;
+                }
+
+                iframeWrappers[i].classList.add("active");
+
+                await sleep(50);
+            }
+
+            await sleep(50);
+
+            for (let i = 0; i < iframeWrappers.length; i++) {
+                if (currentOpeningId !== openingId) {
+                    animating = false;
+                    return;
+                }
+
+                await sleep(200);
+
                 if (currentOpeningId !== openingId) {
                     animating = false;
                     return;
                 }
 
                 const wrapper = iframeWrappers[i];
-
-                wrapper.classList.remove("effect-ready");
-                wrapper.classList.add("active");
-
-                await sleep(200);
-
-                // sleep 之后也必须再检查一次
-                if (currentOpeningId !== openingId) {
-                    animating = false;
-                    return;
-                }
-
-                const timerId = setTimeout(() => {
-                    // timer 执行时也再检查一次
-                    if (currentOpeningId !== openingId) return;
-
-                    wrapper.querySelector("iframe")?.classList.add("show");
-                }, 150);
-
-                iframeShowTimers.push(timerId);
-
-                wrapper.classList.add("effect-ready-2");
+                wrapper.querySelector("iframe")?.classList.add("show");
+                wrapper.classList.add("effect-ready");
             }
 
             if (currentOpeningId === openingId) {
@@ -196,7 +215,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (!projectShowcase.classList.contains("active")) return;
 
             const clickedActiveWrapper = event.target.closest(".iframe-wrapper.active");
-
             if (clickedActiveWrapper) return;
 
             closeProjectShowcase();
@@ -214,7 +232,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         playzone.style.setProperty('--count', total);
 
         // 根据 maxN 动态计算 step-left
-        const step = 10 / maxN;
+        const step = 20 / maxN;
         playzone.style.setProperty('--step-left', `${step}%`);
 
         // 只让“最后 maxN 个”参与叠放
@@ -430,7 +448,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     // 颜色圈比白色涟漪边缘稍微慢一点/小一点
     const YEAR_COLOR_LAG_PX = 10;
     function getYearCssVar(year, varName, fallback = "") {
-        const source = document.querySelector(`li[data-date="${year}"]`);
+        const source = document.querySelector(`ul.timeList > li[data-year="${year}"]`);
 
         if (!source) return fallback;
 
@@ -481,7 +499,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         const duration = PROJECT_RIPPLE_DURATION;
 
         let dataDateApplied = false;
-        const DATA_DATE_APPLY_TIME = 550;
+        const DATA_DATE_APPLY_TIME = 1550;
 
         function animate(now) {
             if (token !== yearColorRippleToken) return;
@@ -490,7 +508,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const elapsed = now - start;
 
             if (!dataDateApplied && elapsed >= DATA_DATE_APPLY_TIME) {
-                playzone.setAttribute("data-date", String(targetYear));
+                playzone.setAttribute("data-year", String(targetYear));
                 dataDateApplied = true;
             }
 
@@ -505,7 +523,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const radius = finalRadius * visualT;
 
             // 颜色随扩散逐渐透明
-            const startAlpha = 0.2;
+            const startAlpha = 0.1;
             const alpha = startAlpha * (1 - t);
 
             playzone.style.setProperty("--year-ripple-radius", `${radius}px`);
@@ -515,11 +533,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 yearColorRippleRaf = requestAnimationFrame(animate);
             } else {
                 if (!dataDateApplied) {
-                    playzone.setAttribute("data-date", String(targetYear));
+                    playzone.setAttribute("data-year", String(targetYear));
                     dataDateApplied = true;
                 }
 
-                playzone.setAttribute("data-date", String(targetYear));
+                playzone.setAttribute("data-year", String(targetYear));
 
                 playzone.classList.remove("year-color-rippling");
 
@@ -646,7 +664,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         playzone.insertAdjacentHTML(
             "beforeend",
             `
-        <div class="iframe-wrapper effect-ready">
+        <div class="iframe-wrapper">
             <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
             <div class="iframe-mask"></div>
         </div>
@@ -665,7 +683,106 @@ window.addEventListener("DOMContentLoaded", async () => {
         return String(project?.year || currentRenderYear || "all");
     }
 
+    function setCheckedTimelineYear(year) {
+        document
+            .querySelectorAll('ul.timeList > li[data-year].checked')
+            .forEach((el) => el.classList.remove("checked"));
+
+        document
+            .querySelector(`ul.timeList > li[data-year="${year}"]`)
+            ?.classList.add("checked");
+    }
+
+    let timelineCenterRaf = 0;
+    let timelineCenterTargetYear = null;
+
+    // 你说 2024 居中时 top 大约是 231.775，所以先取 232
+    const TIMELINE_TARGET_TOP = 232;
+    const TIMELINE_CENTER_TOLERANCE = 2;
+
+    // 如果方向反了，把这个改成 -1
+    const TIMELINE_WHEEL_DIRECTION = -1;
+
+    function isTimelineYearFront(year) {
+        const item = document.querySelector(`ul.timeList > li[data-year="${year}"]`);
+        if (!item) return false;
+
+        // 你的 frame loop 里，背面年份会被设为 hidden，正面会是 initial
+        return getComputedStyle(item).visibility !== "hidden";
+    }
+
+    function requestCenterTimelineYear(year) {
+        if (!year || year === "all") return;
+
+        const yearStr = String(year);
+
+        // 如果这个年份已经在正面，就不滚动
+        if (isTimelineYearFront(yearStr)) {
+            stopCenterTimelineYear();
+            return;
+        }
+
+        timelineCenterTargetYear = yearStr;
+
+        if (!timelineCenterRaf) {
+            timelineCenterRaf = requestAnimationFrame(centerTimelineYearStep);
+        }
+    }
+
+    function stopCenterTimelineYear() {
+        timelineCenterTargetYear = null;
+
+        if (timelineCenterRaf) {
+            cancelAnimationFrame(timelineCenterRaf);
+            timelineCenterRaf = 0;
+        }
+    }
+
+    function centerTimelineYearStep() {
+        timelineCenterRaf = 0;
+
+        const year = timelineCenterTargetYear;
+        if (!year) return;
+
+        const item = document.querySelector(`ul.timeList > li[data-year="${year}"]`);
+        const canvas = document.querySelector("canvas.timelineBelt");
+
+        if (!item || !canvas) return;
+
+        // 注意：你的 li top 是每帧由 3D 坐标计算出来的，所以直接读 style.top 最稳定
+        const currentTop = parseFloat(item.style.top);
+
+        if (!Number.isFinite(currentTop)) {
+            timelineCenterRaf = requestAnimationFrame(centerTimelineYearStep);
+            return;
+        }
+
+        const diff = currentTop - TIMELINE_TARGET_TOP;
+
+        if (Math.abs(diff) <= TIMELINE_CENTER_TOLERANCE) {
+            return;
+        }
+
+        // 模拟滚轮，复用 3D_model_3.js 里已有的 wheel → deltaAngle 逻辑
+        const deltaY = TIMELINE_WHEEL_DIRECTION * Math.max(
+            -80,
+            Math.min(80, diff * 0.45)
+        );
+
+        canvas.dispatchEvent(
+            new WheelEvent("wheel", {
+                deltaY,
+                bubbles: true,
+                cancelable: true,
+            })
+        );
+
+        timelineCenterRaf = requestAnimationFrame(centerTimelineYearStep);
+    }
+
     let projectListClickBound = false;
+    let projectListHoverBound = false;
+    let lastHoverTimelineYear = null;
     let currentProjects = [];
 
     const renderProjects = (year, projects) => {
@@ -683,21 +800,23 @@ window.addEventListener("DOMContentLoaded", async () => {
             hotzoneList.innerHTML = '';
             playzone.innerHTML = '';
 
-            playzone.setAttribute("data-date", year);
-            console.log(`projects:`, projects)
             projects.forEach(({ name, URLs }, index) => {
                 const firstURL = URLs?.[0] || 'about:blank';
                 const isMobile = name.trim().endsWith('(mobile)');
                 const iframeClass = isMobile ? 'projectShowcase mobile' : 'projectShowcase';
 
+                playzone.setAttribute("data-year", year);
+
                 hotzoneList.insertAdjacentHTML(
                     'beforeend',
-                    `<li data-project-index="${index}">
+                    `<li data-project-index="${index}" data-year="${year}">
                         <span class="project-label"></span>
                     </li>`
                 );
-                hotzoneList.lastElementChild.lastElementChild.textContent = name;
-                hotzoneList.lastElementChild.lastElementChild.dataset.text = name;
+
+                const label = hotzoneList.lastElementChild.lastElementChild;
+                label.textContent = name;
+                label.dataset.text = name;
 
                 playzone.insertAdjacentHTML('beforeend', `
                     <div class="iframe-wrapper">
@@ -719,12 +838,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         } else {
             hotzoneList.innerHTML = '';
 
-            projects.forEach(({ name }, index) => {
+            projects.forEach(({ name, year }, index) => {
                 hotzoneList.insertAdjacentHTML(
                     'beforeend',
-                    `<li data-project-index="${index}">
-                    <span class="project-label"></span>
-                </li>`
+                    `<li data-project-index="${index}" data-year="${year}">
+                        <span class="project-label"></span>
+                    </li>`
                 );
 
                 const label = hotzoneList.lastElementChild.lastElementChild;
@@ -752,13 +871,39 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // 先切换 iframe 内容
                 renderSingleProjectInPlayzone(project);
 
+                setCheckedTimelineYear(targetYear);
+
                 // 空间涟漪：仍然作用在整个 projectShowcase
                 const showcaseArea = document.querySelector("div.projectShowcase");
                 triggerProjectListRipple(showcaseArea, event);
 
                 // 颜色涟漪：只作用在 playzone > iframe-wrapper
-                // 动画结束后才正式切换 playzone data-date
+                // 动画结束后才正式切换 playzone data-year
                 triggerYearColorRipple(targetYear, event);
+            });
+        }
+
+        if (!projectListHoverBound) {
+            projectListHoverBound = true;
+
+            hotzoneList.addEventListener("pointerover", (event) => {
+                const projectLi = event.target.closest("li[data-year]");
+                if (!projectLi || !hotzoneList.contains(projectLi)) return;
+
+                // 同一个 li 内部移动，不重复触发
+                if (event.relatedTarget && projectLi.contains(event.relatedTarget)) return;
+
+                const year = projectLi.dataset.year;
+
+                if (year === lastHoverTimelineYear) return;
+                lastHoverTimelineYear = year;
+
+                requestCenterTimelineYear(year);
+            });
+
+            hotzoneList.addEventListener("pointerleave", () => {
+                lastHoverTimelineYear = null;
+                stopCenterTimelineYear();
             });
         }
 
@@ -1218,5 +1363,190 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     initRainbowDirection();
 
+    // test
+    function animateCaterpillarPath(path, svg, duration = 1250) {
+        const len = path.getTotalLength();
+        const start = performance.now();
 
+        path.style.strokeDasharray = `0 ${len}`;
+        path.style.strokeDashoffset = "0";
+        path.style.opacity = "0";
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function easeInQuad(t) {
+            return t * t;
+        }
+
+        function frame(now) {
+            const t = Math.min(1, (now - start) / duration);
+
+            let head;
+            let tail;
+
+            // 前端：一开始快，后面慢慢变慢
+            head = len * easeOutCubic(t);
+
+            // 后端：一开始几乎不动，后面慢慢加速
+            tail = len * easeInQuad(t);
+
+            // 防止 tail 超过 head
+            tail = Math.min(tail, head);
+
+            const visible = Math.max(0, head - tail);
+
+            path.style.opacity = t < 0.04 ? String(t / 0.04) : "1";
+            path.style.strokeDasharray = `${visible} ${len}`;
+            path.style.strokeDashoffset = `${-tail}`;
+
+            if (t < 1) {
+                requestAnimationFrame(frame);
+            } else {
+                svg.remove();
+            }
+        }
+
+        requestAnimationFrame(frame);
+    }
+
+    function triggerTitleRainbowFirework(event) {
+        let layer = document.querySelector(".rainbow-firework-layer");
+
+        if (!layer) {
+            layer = document.createElement("div");
+            layer.className = "rainbow-firework-layer";
+            document.body.appendChild(layer);
+        }
+
+        const title = event.currentTarget;
+        const rect = title.getBoundingClientRect();
+
+        const originX = rect.left + rect.width / 2;
+        const originY = rect.top + rect.height * 0.45;
+
+        const colors = [
+            "#ff2d2d",
+            "#ff7a00",
+            "#ffd400",
+            "#39ff14",
+            "#00d9ff",
+            "#245bff",
+            "#8b35ff",
+            "#ff3bd5"
+        ];
+
+        function hexToRgba(hex, alpha) {
+            const value = hex.replace("#", "");
+
+            const r = parseInt(value.slice(0, 2), 16);
+            const g = parseInt(value.slice(2, 4), 16);
+            const b = parseInt(value.slice(4, 6), 16);
+
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function randomColorWithAlpha(colors) {
+            const hex = colors[Math.floor(Math.random() * colors.length)];
+            const alpha = 0.5 + Math.random() * 0.5; // 0.5 ~ 1
+
+            return hexToRgba(hex, alpha.toFixed(2));
+        }
+
+        // 彩虹曲线喷射
+        const curveCount = 1 + Math.floor(Math.random() * 2.15);
+        const curveEnds = [];
+
+        for (let i = 0; i < curveCount; i++) {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+            svg.classList.add("rainbow-curve");
+            svg.setAttribute("viewBox", "0 0 240 180");
+
+            // 起点在 SVG 底部中间
+            const startX = 120;
+            const startY = 165;
+
+            // 每条线随机一个发射方向
+            // -150 到 -30 度：向左上到右上
+            const angle = -130 + Math.random() * 80;
+            const rad = angle * Math.PI / 180;
+
+            // 每条线随机长度
+            const length = 105 + Math.random() * 85;
+
+            // 终点
+            const endX = startX + Math.cos(rad) * length;
+            const endY = startY + Math.sin(rad) * length;
+
+            // 控制点：沿发射方向走一段，再加横向偏移制造曲线
+            const curveBend = (Math.random() - 0.5) * 90;
+
+            const c1X = startX + Math.cos(rad) * length * 0.28 + curveBend * 0.25;
+            const c1Y = startY + Math.sin(rad) * length * 0.28;
+
+            const c2X = startX + Math.cos(rad) * length * 0.72 + curveBend;
+            const c2Y = startY + Math.sin(rad) * length * 0.72 + (Math.random() - 0.5) * 30;
+
+            path.setAttribute(
+                "d",
+                `M ${startX} ${startY} C ${c1X} ${c1Y}, ${c2X} ${c2Y}, ${endX} ${endY}`
+            );
+
+            const color = randomColorWithAlpha(colors);
+
+            path.style.setProperty("--c", color);
+
+            svg.style.setProperty("--x", `${originX - 120}px`);
+            svg.style.setProperty("--y", `${originY - 160}px`);
+
+            svg.appendChild(path);
+            layer.appendChild(svg);
+
+            curveEnds.push({
+                x: originX - 120 + endX,
+                y: originY - 160 + endY
+            });
+
+            // 每条线略微不同速度，更自然
+            animateCaterpillarPath(
+                path,
+                svg,
+                1100 + Math.random() * 350
+            );
+        }
+
+        // 小彩点烟花：等曲线快到顶端时再出现
+        setTimeout(() => {
+            const dotCount = 3 + Math.floor(Math.random() * 4.5);
+
+            for (let i = 0; i < dotCount; i++) {
+                const dot = document.createElement("span");
+                dot.className = "rainbow-dot";
+
+                const color = colors[Math.floor(Math.random() * colors.length)];
+
+                const end = curveEnds[Math.floor(Math.random() * curveEnds.length)];
+
+                dot.style.setProperty("--x", `${end.x + (Math.random() - 0.5) * 50}px`);
+                dot.style.setProperty("--y", `${end.y + (Math.random() - 0.5) * 50}px`);
+                dot.style.setProperty("--s", `${1}px`);
+                dot.style.setProperty("--c", color);
+
+                // 每个星星闪烁节奏不同
+                dot.style.setProperty("--duration", `${1300 + Math.random() * 1400}ms`);
+                dot.style.setProperty("--delay", `${Math.random() * 260}ms`);
+                dot.style.setProperty("--start-scale", `${0.25 + Math.random() * 0.5}`);
+
+                layer.appendChild(dot);
+
+                dot.addEventListener("animationend", () => dot.remove(), { once: true });
+            }
+        }, 520);
+    }
+    document
+        .querySelector("span.title")
+        ?.addEventListener("click", triggerTitleRainbowFirework);
 })

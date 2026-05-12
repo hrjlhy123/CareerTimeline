@@ -55,6 +55,7 @@ div.mainFrame > div {
   z-index: 2;
   min-width: 0;
   min-height: 0;
+  border-radius: 10px;
 }
 
 div.title {
@@ -62,15 +63,17 @@ div.title {
   display: flex;
   justify-content: center;
   align-items: center;
+  user-select: none;
 }
 
 span.title {
-  padding: 5px;
+  padding: 20px;
   font-size: xx-large;
   display: inline-block;
   text-align: center;
   font-family: monospace;
-  border-radius: 5px;
+  border-radius: 40px;
+  cursor: pointer;
 }
 
 div.mailboxSlot {
@@ -93,6 +96,8 @@ div.mailboxSlot > canvas {
 div.timelineBelt {
   grid-area: timelineBelt;
   position: relative;
+  perspective: var(--timeline-perspective, 1200px);
+  perspective-origin: 50% 50%;
 }
 
 div.timelineBelt > canvas {
@@ -102,7 +107,7 @@ div.timelineBelt > canvas {
   z-index: -1;
 }
 
-div.timelineBelt > ul {
+div.timelineBelt > ul.timeList {
   position: absolute;
   padding: 0;
   margin: 0;
@@ -112,6 +117,7 @@ div.timelineBelt > ul {
   height: 100%;
   pointer-events: none;
   z-index: 1;
+  transform-style: preserve-3d;
 }
 
 div.timelineBelt > ul:has(li:hover) ~ canvas.timelineBelt {
@@ -119,8 +125,8 @@ div.timelineBelt > ul:has(li:hover) ~ canvas.timelineBelt {
   transition: all 0.5s ease-out;
 }
 
-ul > li[data-date] {
-  position: absolute;
+ul.timeList > li[data-year] {
+  /* position: absolute;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -128,36 +134,158 @@ ul > li[data-date] {
   height: 5px;
   cursor: pointer;
   pointer-events: all;
-  z-index: 1;
-}
-
-li[data-date] > span {
+  z-index: 1; */
   position: absolute;
-  top: 0;
-  left: 0;
-  font-family: fantasy;
-  font-size: 4rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
   width: 154px;
   height: 84px;
+
+  cursor: pointer;
+  pointer-events: all;
+  z-index: 1;
+
+  transform-origin: center center;
+  transform-style: preserve-3d;
+}
+
+ul.timeList > li[data-year="2017"],
+div.playzone[data-year="2017"] {
+  --year-rgb: 255 0 0;
+  --year-accent-rgb: 255 153 153;
+  --year-card-filter: hue-rotate(-200deg);
+}
+
+ul.timeList > li[data-year="2018"],
+div.playzone[data-year="2018"] {
+  --year-rgb: 255 127 0;
+  --year-accent-rgb: 255 204 153;
+  --year-card-filter: hue-rotate(-160deg);
+}
+
+ul.timeList > li[data-year="2019"],
+div.playzone[data-year="2019"] {
+  --year-rgb: 255 255 0;
+  --year-accent-rgb: 255 255 153;
+  --year-card-filter: hue-rotate(-120deg);
+}
+
+ul.timeList > li[data-year="2020"],
+div.playzone[data-year="2020"] {
+  --year-rgb: 0 255 0;
+  --year-accent-rgb: 153 255 153;
+  --year-card-filter: hue-rotate(-80deg);
+}
+
+ul.timeList > li[data-year="2021"],
+div.playzone[data-year="2021"] {
+  --year-rgb: 0 255 255;
+  --year-accent-rgb: 153 255 255;
+  --year-card-filter: hue-rotate(-40deg);
+}
+
+ul.timeList > li[data-year="2022"],
+div.playzone[data-year="2022"] {
+  --year-rgb: 0 127 255;
+  --year-accent-rgb: 153 204 255;
+  --year-card-filter: hue-rotate(0deg);
+}
+
+ul.timeList > li[data-year="2023"],
+div.playzone[data-year="2023"] {
+  --year-rgb: 139 0 255;
+  --year-accent-rgb: 203 153 255;
+  --year-card-filter: hue-rotate(40deg);
+}
+
+ul.timeList > li[data-year="2024"],
+div.playzone[data-year="2024"] {
+  --year-rgb: 255 0 255;
+  --year-accent-rgb: 255 153 255;
+  --year-card-filter: hue-rotate(80deg);
+}
+
+ul.timeList > li[data-year="2025"],
+div.playzone[data-year="2025"] {
+  --year-rgb: 255 20 147;
+  --year-accent-rgb: 255 161 221;
+  --year-card-filter: hue-rotate(120deg);
+}
+
+ul.timeList > li[data-year] > span {
+  position: absolute;
+  inset: 0;
+
+  font-family: fantasy;
+  font-size: 4rem;
+
+  width: 100%;
+  height: 100%;
+
   border-radius: 28px;
-  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+
+  transform: none;
+  transform-origin: center center;
+  backface-visibility: visible;
+
   color: rgba(255, 255, 255, 0.5);
+
   text-shadow:
     1px 1px 0.5px rgba(0, 0, 0, 0.1),
     2px 2px 0.5px rgba(0, 0, 0, 0.08),
     3px 3px 0.5px rgba(0, 0, 0, 0.06),
     4px 4px 0.5px rgba(0, 0, 0, 0.04),
     5px 5px 0.5px rgba(0, 0, 0, 0.02);
+
+  background-color: rgb(var(--year-rgb) / 0.05);
   backdrop-filter: blur(2px);
   transition: all 0.25s ease;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  user-select: none;
 }
 
-li[data-date] > span:hover {
-  /* color: rgba(255, 255, 255, 0.6); */
+ul.timeList > li[data-year] > span:hover,
+div.mainFrame:has(.hotzone-list > li[data-year="2017"]:hover)
+  .timelineBelt
+  li[data-year="2017"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2018"]:hover)
+  .timelineBelt
+  li[data-year="2018"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2019"]:hover)
+  .timelineBelt
+  li[data-year="2019"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2020"]:hover)
+  .timelineBelt
+  li[data-year="2020"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2021"]:hover)
+  .timelineBelt
+  li[data-year="2021"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2022"]:hover)
+  .timelineBelt
+  li[data-year="2022"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2023"]:hover)
+  .timelineBelt
+  li[data-year="2023"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2024"]:hover)
+  .timelineBelt
+  li[data-year="2024"]
+  > span,
+div.mainFrame:has(.hotzone-list > li[data-year="2025"]:hover)
+  .timelineBelt
+  li[data-year="2025"]
+  > span {
   text-shadow:
     1px 1px 0px rgba(0, 0, 0, 0.1),
     2px 2px 0px rgba(0, 0, 0, 0.08),
@@ -165,115 +293,31 @@ li[data-date] > span:hover {
     4px 4px 0px rgba(0, 0, 0, 0.04),
     5px 5px 0px rgba(0, 0, 0, 0.02);
   backdrop-filter: blur(0px);
-  /* background-color: rgba(255, 255, 255, 0.75); */
-  /* border: 4px double rgba(0, 0, 0, 0.2); */
   box-shadow:
     inset 2px 2px 4px rgba(0, 0, 0, 0.15),
     /* 内部阴影 */ inset -2px -2px 4px rgba(255, 255, 255, 0.15),
     /* 内部高光 */ 0 0 10px rgba(255, 255, 255, 0.75);
   border: 4px solid #fff;
-  /* box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.3); */
-}
-li[data-date].checked > span {
-  background-color: unset;
-  backdrop-filter: blur(5px);
-}
-
-li[data-date="2017"],
-div.playzone[data-date="2017"] {
-  --year-rgb: 255 0 0;
-  --year-accent-rgb: 255 153 153;
-  --year-card-active-alpha: 0.07;
-  --year-card-filter: hue-rotate(-200deg);
-}
-
-li[data-date="2018"],
-div.playzone[data-date="2018"] {
-  --year-rgb: 255 127 0;
-  --year-accent-rgb: 255 204 153;
-  --year-card-active-alpha: 0.15;
-  --year-card-filter: hue-rotate(-160deg);
-}
-
-li[data-date="2019"],
-div.playzone[data-date="2019"] {
-  --year-rgb: 255 255 0;
-  --year-accent-rgb: 255 255 153;
-  --year-card-active-alpha: 0.1;
-  --year-card-filter: hue-rotate(-120deg);
-}
-
-li[data-date="2020"],
-div.playzone[data-date="2020"] {
-  --year-rgb: 0 255 0;
-  --year-accent-rgb: 153 255 153;
-  --year-card-active-alpha: 0.05;
-  --year-card-filter: hue-rotate(-80deg);
-}
-
-li[data-date="2021"],
-div.playzone[data-date="2021"] {
-  --year-rgb: 0 255 255;
-  --year-accent-rgb: 153 255 255;
-  --year-card-active-alpha: 0.07;
-  --year-card-filter: hue-rotate(-40deg);
-}
-
-li[data-date="2022"],
-div.playzone[data-date="2022"] {
-  --year-rgb: 0 127 255;
-  --year-accent-rgb: 153 204 255;
-  --year-card-active-alpha: 0.2;
-  --year-card-filter: hue-rotate(0deg);
-}
-
-li[data-date="2023"],
-div.playzone[data-date="2023"] {
-  --year-rgb: 139 0 255;
-  --year-accent-rgb: 203 153 255;
-  --year-card-active-alpha: 0.2;
-  --year-card-filter: hue-rotate(40deg);
-}
-
-li[data-date="2024"],
-div.playzone[data-date="2024"] {
-  --year-rgb: 255 0 255;
-  --year-accent-rgb: 255 153 255;
-  --year-card-active-alpha: 0.2;
-  --year-card-filter: hue-rotate(80deg);
-}
-
-li[data-date="2025"],
-div.playzone[data-date="2025"] {
-  --year-rgb: 255 20 147;
-  --year-accent-rgb: 255 161 221;
-  --year-card-active-alpha: 0.2;
-  --year-card-filter: hue-rotate(120deg);
-}
-
-li[data-date] > span {
-  background-color: rgb(var(--year-rgb) / 0.05);
-}
-
-li[data-date] > span:hover {
   color: rgb(var(--year-accent-rgb) / 0.75);
   background-color: rgb(var(--year-rgb) / 0.2);
   border-color: rgb(var(--year-accent-rgb) / 0.65);
 }
 
-li[data-date].checked > span {
+ul.timeList > li[data-year].checked > span {
+  background-color: unset;
+  backdrop-filter: blur(5px);
   color: rgb(var(--year-accent-rgb) / 0.75);
 }
 
-div.playzone[data-date] > div.iframe-wrapper {
+div.playzone[data-year] > div.iframe-wrapper {
   background-color: rgb(var(--year-rgb) / 0.03);
 }
 
-div.playzone[data-date] > div.iframe-wrapper.active {
-  background-color: rgb(var(--year-rgb) / var(--year-card-active-alpha, 0.1));
+div.playzone[data-year] > div.iframe-wrapper.active {
+  background-color: rgb(var(--year-rgb) / 0.1);
 }
 
-div.playzone[data-date] > .iframe-wrapper > .iframe-mask {
+div.playzone[data-year] > .iframe-wrapper > .iframe-mask {
   filter: var(--year-card-filter, none);
 }
 
@@ -551,11 +595,31 @@ div.playzone > div.iframe-wrapper {
   background: rgba(0, 0, 0, 0.04);
   transition:
     transform 0.3s ease-out,
-    filter 2.5s ease-out,
+    filter 1.5s ease-out,
     left 0.2s ease-out,
     background-color 0.5s ease-out;
   pointer-events: auto;
   z-index: 0;
+}
+
+div.playzone > div.iframe-wrapper.active {
+  position: absolute;
+  width: 120vh;
+  height: 67.5vh;
+  /* i 从 1 开始：1→最右，越大越靠左 */
+  left: calc(var(--left-base) + (var(--i) - 1) * var(--step-left));
+  z-index: calc(var(--z-base) + (var(--count) - var(--i)));
+}
+
+div.playzone > div.iframe-wrapper.active.effect-ready {
+  backdrop-filter: blur(1px) brightness(0.98) saturate(0);
+}
+
+div.playzone > div.iframe-wrapper.active:hover {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    0 0 80px rgba(255, 255, 255, 0.75);
+  z-index: 20;
 }
 
 div.playzone.year-color-rippling::after {
@@ -583,33 +647,18 @@ div.playzone.year-color-rippling::after {
   opacity: 1;
 }
 
-div.playzone > div.iframe-wrapper.effect-ready {
-  backdrop-filter: blur(1px);
-}
-
-div.playzone > div.iframe-wrapper.active {
-  position: absolute;
-  width: 131.25vh;
-  height: 87.5vh;
-  /* i 从 1 开始：1→最右，越大越靠左 */
-  left: calc(var(--left-base) + (var(--i) - 1) * var(--step-left));
-  z-index: calc(var(--z-base) + (var(--count) - var(--i)));
-}
-
-div.playzone > div.iframe-wrapper.active.effect-ready-2 {
-  backdrop-filter: blur(1px) brightness(0.33);
-}
-
-div.playzone > div.iframe-wrapper.active:hover {
-  box-shadow:
-    0 4px 8px rgba(0, 0, 0, 0.5),
-    0 0 80px rgba(255, 255, 255, 0.75);
-  z-index: 20;
-}
-
 div.playzone:has(> .iframe-wrapper.active:only-child) > .iframe-wrapper.active {
   width: 155.5vh;
   height: 87.5vh;
+}
+
+div.playzone:has(> .iframe-wrapper.active:only-child)
+  > .iframe-wrapper.active
+  > iframe {
+  width: 117.65%;
+  height: 117.65%;
+  transform: scale(0.85);
+  border-radius: 40px;
 }
 
 /* Optional hover effect */
@@ -711,26 +760,29 @@ div.playzone
 }
 
 div.iframe-wrapper > iframe {
-  width: 100%;
-  height: 100%;
+  flex: 0 0 auto;
+  max-width: none;
+  max-height: none;
+  width: 196%;
+  height: 196%;
+  margin: 2%;
+  transform: scale(0.5);
+  transform-origin: center;
   box-sizing: border-box;
-  opacity: 1;
+  opacity: 0;
   display: none;
   z-index: 0;
   background: #fff;
-  border-radius: 40px;
+  border-radius: 80px;
   transition:
     transform 0.3s ease-out,
     opacity 0.3s ease-out;
 }
 
-div.iframe-wrapper.active > iframe {
-  transform: scale(0.975, 0.96);
-}
-
 div.iframe-wrapper > iframe.mobile {
-  width: 49.21875vh;
-  height: 87.5vh;
+  width: 75.9375vh;
+  height: 135vh;
+  border-radius: 0;
 }
 
 div.iframe-wrapper > div.iframe-mask {
@@ -745,7 +797,7 @@ div.iframe-wrapper > div.iframe-mask {
   aspect-ratio: 3 / 2;
   transition:
     opacity 0.5s ease-out,
-    filter 2.5s ease-out;
+    filter 1.5s ease-out;
 }
 
 div.projectShowcase:not(.active) > .playzone > .iframe-wrapper {
@@ -859,16 +911,39 @@ div.projectShowcase:not(.active)
     rotateZ(calc(-15deg - var(--rand-global) * 30deg - 45deg));
 }
 
+div.projectShowcase:not(.active)
+  > .playzone:has(> .iframe-wrapper:only-child)
+  > .iframe-wrapper {
+  transform: none;
+}
+
 .iframe-wrapper.active > iframe {
   z-index: 1;
 }
 
 .iframe-wrapper.active > iframe.show {
   display: initial;
+  animation: iframeFadeIn 1s ease-out forwards;
+}
+
+@keyframes iframeFadeIn {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 .iframe-wrapper.active > .iframe-mask {
   z-index: 0;
+}
+
+div.projectShowcase.active {
+  mask-image: none;
 }
 
 div.projectShowcase.active .iframe-mask {
@@ -892,6 +967,33 @@ div.projectShowcase.active .iframe-mask {
     background: url("./resources/playingcards.svg") center center / contain
       no-repeat;
   }
+}
+
+div.mainFrame > div.summary {
+  position: absolute;
+  bottom: 0;
+  left: calc(17vw + 3vh);
+  height: 22vh;
+  width: calc(66vw - 6vh);
+  margin: 0 0 2vh;
+  padding: 14px 22px;
+  box-sizing: border-box;
+  border-radius: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+  box-shadow:
+    inset 0 0 18px rgba(255, 255, 255, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.18);
+
+  font-size: clamp(12px, 0.8vw, 15px);
+  line-height: 1.45;
+
+  z-index: 3;
+  display: none;
+}
+
+div.mainFrame:has(div.playzone > .iframe-wrapper.active) > div.summary {
+  display: initial;
 }
 
 /* Unsupervised AI content */
@@ -1003,4 +1105,110 @@ div.projectShowcase.active .iframe-mask {
 .bubble .btn:active {
   transform: translateY(0);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
+/* test */
+.rainbow-firework-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.rainbow-curve {
+  position: absolute;
+  left: 0;
+  top: 75px;
+  width: 240px;
+  height: 180px;
+  overflow: visible;
+  pointer-events: none;
+
+  transform: translate(var(--x), var(--y));
+}
+
+.rainbow-curve path {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  filter: drop-shadow(0 0 3px var(--c));
+
+  opacity: 1;
+}
+
+.rainbow-dot {
+  position: absolute;
+  left: var(--x);
+  top: calc(var(--y) + 75px);
+
+  width: var(--s, 4px);
+  height: var(--s, 4px);
+  border-radius: 50%;
+
+  background: var(--c);
+  box-shadow:
+    0 0 5px var(--c),
+    0 0 12px var(--c),
+    0 0 22px var(--c);
+
+  opacity: 0;
+  transform: scale(var(--start-scale, 0.5));
+
+  animation: rainbowStarTwinkle var(--duration, 1800ms) ease-in-out
+    var(--delay, 0ms) forwards;
+}
+
+@keyframes rainbowStarTwinkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.25);
+    filter: blur(1px);
+  }
+
+  12% {
+    opacity: 0.9;
+    transform: scale(1.15);
+    filter: blur(0);
+  }
+
+  24% {
+    opacity: 0.25;
+    transform: scale(0.65);
+  }
+
+  39% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+
+  52% {
+    opacity: 0.15;
+    transform: scale(0.55);
+  }
+
+  68% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+
+  82% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+
+  94% {
+    opacity: 0.75;
+    transform: scale(0.8);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.05);
+    filter: blur(0);
+  }
 }
