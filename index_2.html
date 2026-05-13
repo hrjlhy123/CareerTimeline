@@ -77,22 +77,39 @@
                                 <lineargradient id="projectBackIconGradient"
                                     x1="0%" y1="0%" x2="100%" y2="100%">
                                     <stop offset="0%" class="back-stop-1" />
-                                    <stop offset="22%" class="back-stop-2" />
-                                    <stop offset="34%" class="back-stop-3" />
-                                    <stop offset="58%" class="back-stop-4" />
-                                    <stop offset="74%" class="back-stop-5" />
-                                    <stop offset="100%" class="back-stop-6" />
+                                    <stop offset="34%" class="back-stop-2" />
+                                    <stop offset="68%" class="back-stop-3" />
+                                    <stop offset="100%" class="back-stop-4" />
                                 </lineargradient>
+
+                                <radialgradient id="projectBackLightGradient"
+                                    cx="50%" cy="44%" r="42%">
+                                    <stop offset="0%"
+                                        class="back-light-stop-1" />
+                                    <stop offset="38%"
+                                        class="back-light-stop-2" />
+                                    <stop offset="100%"
+                                        class="back-light-stop-3" />
+                                </radialgradient>
                             </defs>
 
-                            <path
+                            <path class="project-back-base"
                                 d="M46 18
-                                   L14 44
-                                   L46 70
-                                   L46 55
-                                   C66 55 78 64 84 82
-                                   C84 52 68 35 46 35
-                                   Z" />
+                                    L14 44
+                                    L46 70
+                                    L46 55
+                                    C66 55 78 64 84 82
+                                    C84 52 68 35 46 35
+                                    Z" />
+
+                            <path class="project-back-light"
+                                d="M46 18
+                                    L14 44
+                                    L46 70
+                                    L46 55
+                                    C66 55 78 64 84 82
+                                    C84 52 68 35 46 35
+                                    Z" />
                         </svg>
                     </button>
                     <ol class="hotzone-list"></ol>
@@ -109,10 +126,35 @@
                 </div>
             </div>
             <div class="summary">
-                <p>2019 · Insurance & Marketing Web Projects
-                    Built multiple campaign, portal, and mobile insurance
-                    pages, focusing on responsive UI, interactive forms, and
+                <p>2019 · Insurance & Marketing Web Projects</p>
+                <p>Built multiple campaign, portal, and mobile insurance pages,
+                    focusing on responsive UI, interactive forms, and
                     client-facing promotional workflows.</p>
+            </div>
+            <div class="project-metrics">
+                <div class="metric metric-complexity" style="--value: 58%;">
+                    <div class="metric-value">58%</div>
+                    <div class="metric-slot">
+                        <div class="metric-fill"></div>
+                    </div>
+                    <div class="metric-label">Complexity</div>
+                </div>
+
+                <div class="metric metric-ownership" style="--value: 72%;">
+                    <div class="metric-value">72%</div>
+                    <div class="metric-slot">
+                        <div class="metric-fill"></div>
+                    </div>
+                    <div class="metric-label">Ownership</div>
+                </div>
+
+                <div class="metric metric-impact" style="--value: 65%;">
+                    <div class="metric-value">65%</div>
+                    <div class="metric-slot">
+                        <div class="metric-fill"></div>
+                    </div>
+                    <div class="metric-label">Impact</div>
+                </div>
             </div>
         </div>
 

@@ -16,6 +16,227 @@ window.addEventListener("DOMContentLoaded", async () => {
         global: { rx: 0, ry: 0, rz: 0 },
     }
 
+    // Global Illumination
+
+    // const lightDebugDot = document.createElement("div");
+    // lightDebugDot.style.cssText = `
+    //     position: fixed;
+    //     width: 10px;
+    //     height: 10px;
+    //     border-radius: 999px;
+    //     background: red;
+    //     z-index: 99999;
+    //     pointer-events: none;
+    //     transform: translate(-50%, -50%);
+    // `;
+    // document.body.appendChild(lightDebugDot);
+
+    const pointerLight = {
+        x: window.innerWidth * 0.32,
+        y: window.innerHeight * 0.12,
+        hasPointer: false,
+    };
+
+    const clamp = (value, min, max) => {
+        return Math.min(Math.max(value, min), max);
+    };
+
+    function getGlobalLightForElement(el, options = {}) {
+        if (!el) return null;
+
+        const rect = el.getBoundingClientRect();
+
+        if (rect.width === 0 || rect.height === 0) return null;
+
+        const {
+            defaultLightX = rect.left + rect.width * 0.32,
+            defaultLightY = rect.top + rect.height * 0.12,
+            range = 420,
+            minInfluence = 0.18,
+            xStrength = 30,
+            yStrength = 22,
+            yBias = -6,
+            alphaBase = 0.42,
+            alphaInfluence = 0.24,
+            alphaExtra = 0,
+        } = options;
+
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const lightSourceX = pointerLight.hasPointer
+            ? pointerLight.x
+            : defaultLightX;
+
+        const lightSourceY = pointerLight.hasPointer
+            ? pointerLight.y
+            : defaultLightY;
+
+        const dx = lightSourceX - centerX;
+        const dy = lightSourceY - centerY;
+
+        const distance = Math.hypot(dx, dy) || 1;
+
+        const nx = dx / distance;
+        const ny = dy / distance;
+
+        const influence = clamp(
+            1 - distance / range,
+            minInfluence,
+            1
+        );
+
+        const lightX = clamp(
+            50 + nx * xStrength * influence,
+            18,
+            82
+        );
+
+        const lightY = clamp(
+            50 + yBias + ny * yStrength * influence,
+            14,
+            76
+        );
+
+        const lightAlpha = clamp(
+            alphaBase + influence * alphaInfluence + alphaExtra,
+            0.42,
+            0.86
+        );
+
+        return {
+            dx,
+            dy,
+            distance,
+            nx,
+            ny,
+            influence,
+            lightX,
+            lightY,
+            lightAlpha,
+        };
+    }
+
+    function updateBackButtonGlobalIllumination() {
+        const button = document.querySelector(".project-back-button");
+        const icon = document.querySelector(".project-back-icon");
+        const lightGradient = document.querySelector("#projectBackLightGradient");
+
+        if (!button || !icon || !lightGradient) return;
+
+        const light = getGlobalLightForElement(button, {
+            range: 360,
+            minInfluence: 0.18,
+            xStrength: 34,
+            yStrength: 30,
+            yBias: -6,
+            alphaBase: 0.42,
+            alphaInfluence: 0.32,
+        });
+
+        if (!light) return;
+
+        // 像年份牌一样：高光点移动，而不是旋转底色
+        lightGradient.setAttribute("cx", `${light.lightX.toFixed(1)}%`);
+        lightGradient.setAttribute("cy", `${light.lightY.toFixed(1)}%`);
+        lightGradient.setAttribute("r", `${(32 + light.influence * 48).toFixed(1)}%`);
+
+        icon.style.setProperty("--back-light-alpha", light.lightAlpha.toFixed(2));
+
+        icon.style.setProperty(
+            "--back-light-opacity",
+            clamp(0.28 + light.influence * 0.56, 0.28, 0.84).toFixed(2)
+        );
+
+        icon.style.setProperty(
+            "--back-shadow-alpha",
+            clamp(0.10 + light.influence * 0.16, 0.10, 0.26).toFixed(2)
+        );
+
+        icon.style.setProperty(
+            "--back-accent-alpha",
+            clamp(0.58 + light.influence * 0.26, 0.58, 0.84).toFixed(2)
+        );
+    }
+
+    function updateMetricGlobalIllumination() {
+        const fills = document.querySelectorAll(".metric-fill");
+
+        fills.forEach((fill) => {
+            const light = getGlobalLightForElement(fill, {
+                range: 360,
+                minInfluence: 0.12,
+                xStrength: 28,
+                yStrength: 26,
+                yBias: -8,
+                alphaBase: 0.24,
+                alphaInfluence: 0.34,
+            });
+
+            if (!light) return;
+
+            const rect = fill.getBoundingClientRect();
+
+            const lightSourceY = pointerLight.hasPointer
+                ? pointerLight.y
+                : rect.top + rect.height * 0.18;
+
+            // 用“真实光源高度”决定光斑纵向位置，而不是用 light.lightY
+            const localY = clamp(
+                (lightSourceY - rect.top) / rect.height,
+                -0.25,
+                1.25
+            );
+
+            const mappedY = clamp(
+                localY * 100,
+                8,
+                92
+            );
+
+            // 0 = 顶部/底部，1 = 中部
+            const centerFactor = 1 - Math.abs(clamp(localY, 0, 1) - 0.5) * 2;
+
+            const farFactor = 1 - light.influence;
+
+            const lightRx = clamp(
+                48 + farFactor * 44 + (1 - centerFactor) * 8,
+                42,
+                98
+            );
+
+            const lightRy = clamp(
+                30 + centerFactor * light.influence * 52 + farFactor * 16,
+                28,
+                86
+            );
+
+            const lightAlpha = clamp(
+                0.20 + light.influence * 0.36,
+                0.20,
+                0.62
+            );
+
+            fill.style.setProperty("--metric-light-x", `${light.lightX.toFixed(1)}%`);
+            fill.style.setProperty("--metric-light-y", `${mappedY.toFixed(1)}%`);
+            fill.style.setProperty("--metric-light-rx", `${lightRx.toFixed(1)}%`);
+            fill.style.setProperty("--metric-light-ry", `${lightRy.toFixed(1)}%`);
+            fill.style.setProperty("--metric-light-alpha", lightAlpha.toFixed(2));
+        });
+    }
+
+    document.addEventListener("pointermove", (event) => {
+        pointerLight.x = event.clientX;
+        pointerLight.y = event.clientY;
+        pointerLight.hasPointer = true;
+        // lightDebugDot.style.left = `${event.clientX}px`;
+        // lightDebugDot.style.top = `${event.clientY}px`;
+    });
+
+    document.addEventListener("pointerleave", () => {
+        pointerLight.hasPointer = false;
+    });
+
     frame = async () => {
         data = await getData()
         if (data.results && data.modelStates && data.matrix_view && data.matrix_projection && data.matrix_transform && data.matrix_world && data.canvas) {
@@ -29,6 +250,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 coordinates = await getCoordinates([x, y, z], data.matrix_view, data.matrix_projection, data.matrix_world, data.canvas)
                 x = coordinates.x
                 y = coordinates.y
+                // console.log(`x:`, x, `, y:`, y)
 
                 Object.assign(item.style, {
                     left: x + 'px',
@@ -68,34 +290,28 @@ window.addEventListener("DOMContentLoaded", async () => {
                     return Math.min(Math.max(value, min), max);
                 };
 
-                const canvasWidth = data.canvas.clientWidth || data.canvas.width;
-                const canvasHeight = data.canvas.clientHeight || data.canvas.height;
+                const beltRect = data.canvas.getBoundingClientRect();
 
-                // 全局光源位置：偏左上，但不要太极端
-                const lightSourceX = canvasWidth * 0.32;
-                const lightSourceY = canvasHeight * 0.12;
-
-                const yearCardWidth = 154;
-                const yearCardHeight = 84;
-
-                // 光斑只小范围移动，避免每个字材质跑太散
-                const localLightX = clamp(
-                    38 + ((lightSourceX - x) / yearCardWidth) * 16,
-                    22,
-                    68
-                );
-
-                const localLightY = clamp(
-                    20 + ((lightSourceY - y) / yearCardHeight) * 10,
-                    10,
-                    38
-                );
-
-                // facing 已经是 Math.cos(localRx)
                 const frontLight = clamp(facing, 0.25, 1);
 
-                // 高光强度轻微变化即可
-                const lightAlpha = clamp(0.54 + frontLight * 0.18, 0.52, 0.74);
+                const yearLight = getGlobalLightForElement(item, {
+                    defaultLightX: beltRect.left + beltRect.width * 0.32,
+                    defaultLightY: beltRect.top + beltRect.height * 0.12,
+                    range: 420,
+                    minInfluence: 0.18,
+                    xStrength: 30,
+                    yStrength: 22,
+                    yBias: -6,
+                    alphaBase: 0.42,
+                    alphaInfluence: 0.24,
+                    alphaExtra: frontLight * 0.12,
+                });
+
+                if (!yearLight) return;
+
+                const localLightX = yearLight.lightX;
+                const localLightY = yearLight.lightY;
+                const lightAlpha = yearLight.lightAlpha;
 
                 item.style.setProperty("--year-light-x", `${localLightX.toFixed(1)}%`);
                 item.style.setProperty("--year-light-y", `${localLightY.toFixed(1)}%`);
@@ -112,6 +328,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             })
         }
+
+        updateBackButtonGlobalIllumination()
+        updateMetricGlobalIllumination()
         requestAnimationFrame(frame)
     }
     frame()
@@ -866,8 +1085,26 @@ window.addEventListener("DOMContentLoaded", async () => {
             .forEach((el) => el.classList.remove("is-iframe-hover"));
     }
 
+    function shouldHoverAllProjectListItems() {
+        const playzone = document.querySelector(".playzone");
+        if (!playzone) return false;
+
+        const wrappers = playzone.querySelectorAll(".iframe-wrapper[data-project-index]");
+        const activeWrapper = playzone.querySelector(".iframe-wrapper.active");
+
+        return wrappers.length > 1 && !activeWrapper;
+    }
+
     function setIframeHoverProjectList(index) {
         clearIframeHoverProjectList();
+
+        if (shouldHoverAllProjectListItems()) {
+            document
+                .querySelectorAll(".hotzone-list > li[data-project-index]")
+                .forEach((el) => el.classList.add("is-iframe-hover"));
+
+            return;
+        }
 
         if (index === undefined || index === null || index === "") return;
 
@@ -980,10 +1217,15 @@ window.addEventListener("DOMContentLoaded", async () => {
             projectListClickBound = true;
 
             hotzoneList.addEventListener("click", (event) => {
-                event.stopPropagation();
-
                 const li = event.target.closest("li");
+
+                // 点到 hotzone-list 空白区域：不要阻止冒泡
+                // 让 document click 逻辑继续执行，从而可以关闭 active iframe-wrapper
                 if (!li || !hotzoneList.contains(li)) return;
+
+                // 只有真的点到 li，才阻止冒泡
+                // 这样点击项目不会触发关闭
+                event.stopPropagation();
 
                 const index = Number(li.dataset.projectIndex);
                 const project = currentProjects[index];
@@ -998,17 +1240,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 li.classList.add("checked");
 
-                // 先切换 iframe 内容
                 renderSingleProjectInPlayzone(project, index);
 
                 setCheckedTimelineYear(targetYear);
 
-                // 空间涟漪：仍然作用在整个 projectShowcase
                 const showcaseArea = document.querySelector("div.projectShowcase");
                 triggerProjectListRipple(showcaseArea, event);
 
-                // 颜色涟漪：只作用在 playzone > iframe-wrapper
-                // 动画结束后才正式切换 playzone data-year
                 triggerYearColorRipple(targetYear, event);
             });
         }
@@ -1933,6 +2171,21 @@ window.addEventListener("DOMContentLoaded", async () => {
             requestAnimationFrame(draw);
         }
 
+        function stopReveal() {
+            state.inside = false;
+            state.started = false;
+            state.targetRadius = 0;
+            state.revealStartTime = null;
+        }
+
+        function isOverRevealBlockedArea(event) {
+            const el = document.elementFromPoint(event.clientX, event.clientY);
+
+            return !!el?.closest?.(
+                ".iframe-wrapper, ul.timeList > li[data-year]"
+            );
+        }
+
         document.addEventListener("mousemove", (event) => {
             const rect = mainFrame.getBoundingClientRect();
 
@@ -1942,10 +2195,8 @@ window.addEventListener("DOMContentLoaded", async () => {
                 event.clientY >= rect.top &&
                 event.clientY <= rect.bottom;
 
-            if (!inside) {
-                state.inside = false;
-                state.started = false;
-                state.targetRadius = 0;
+            if (!inside || isOverRevealBlockedArea(event)) {
+                stopReveal();
                 return;
             }
 
@@ -1969,10 +2220,12 @@ window.addEventListener("DOMContentLoaded", async () => {
             state.lastY = y;
         });
 
-        document.addEventListener("mouseleave", () => {
-            state.inside = false;
-            state.started = false;
-            state.targetRadius = 0;
+        document.addEventListener("mouseleave", stopReveal);
+
+        document.addEventListener("mouseover", (event) => {
+            if (event.target.closest?.(".iframe-wrapper, ul.timeList > li[data-year]")) {
+                stopReveal();
+            }
         });
 
         resizeCanvas();
