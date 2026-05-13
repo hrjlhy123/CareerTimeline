@@ -63,7 +63,6 @@ div.title {
   display: flex;
   justify-content: center;
   align-items: center;
-  user-select: none;
 }
 
 span.title {
@@ -126,15 +125,6 @@ div.timelineBelt > ul:has(li:hover) ~ canvas.timelineBelt {
 }
 
 ul.timeList > li[data-year] {
-  /* position: absolute;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  width: 5px;
-  height: 5px;
-  cursor: pointer;
-  pointer-events: all;
-  z-index: 1; */
   position: absolute;
   padding: 0;
   margin: 0;
@@ -231,17 +221,10 @@ ul.timeList > li[data-year] > span {
   transform-origin: center center;
   backface-visibility: visible;
 
-  color: rgba(255, 255, 255, 0.5);
-
-  text-shadow:
-    1px 1px 0.5px rgba(0, 0, 0, 0.1),
-    2px 2px 0.5px rgba(0, 0, 0, 0.08),
-    3px 3px 0.5px rgba(0, 0, 0, 0.06),
-    4px 4px 0.5px rgba(0, 0, 0, 0.04),
-    5px 5px 0.5px rgba(0, 0, 0, 0.02);
+  color: transparent;
 
   background-color: rgb(var(--year-rgb) / 0.05);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(1px);
   transition: all 0.25s ease;
 
   display: flex;
@@ -249,7 +232,140 @@ ul.timeList > li[data-year] > span {
   justify-content: center;
 }
 
-ul.timeList > li[data-year] > span:hover,
+ul.timeList > li[data-year] {
+  --year-text-rgb: 226 232 229;
+  --year-text-shadow-rgb: 72 78 76;
+
+  --year-light-x: 36%;
+  --year-light-y: 18%;
+  --year-light-alpha: 0.62;
+}
+
+ul.timeList > li[data-year].checked {
+  --year-text-rgb: var(--year-accent-rgb);
+  --year-text-shadow-rgb: 70 76 74;
+  --year-light-alpha: 0.72;
+}
+ul.timeList > li[data-year]::after {
+  content: attr(data-year);
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: fantasy;
+  font-size: 4rem;
+  font-weight: 400;
+
+  color: transparent;
+
+  -webkit-text-stroke: 2px rgb(255 255 255 / 0.75);
+
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.13));
+}
+
+ul.timeList > li[data-year]:hover::after,
+ul.timeList > li[data-year].checked::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2017"]:hover)
+  .timelineBelt
+  li[data-year="2017"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2018"]:hover)
+  .timelineBelt
+  li[data-year="2018"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2019"]:hover)
+  .timelineBelt
+  li[data-year="2019"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2020"]:hover)
+  .timelineBelt
+  li[data-year="2020"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2021"]:hover)
+  .timelineBelt
+  li[data-year="2021"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2022"]:hover)
+  .timelineBelt
+  li[data-year="2022"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2023"]:hover)
+  .timelineBelt
+  li[data-year="2023"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2024"]:hover)
+  .timelineBelt
+  li[data-year="2024"]::after,
+div.mainFrame:has(.hotzone-list > li[data-year="2025"]:hover)
+  .timelineBelt
+  li[data-year="2025"]::after {
+  -webkit-text-stroke: 0px rgb(255 255 255 / 0.75);
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 38%,
+      rgb(255 255 255 / 0.55) 47%,
+      transparent 58%,
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse at var(--year-light-x, 36%) var(--year-light-y, 18%),
+      rgb(255 255 255 / var(--year-light-alpha, 0.62)) 0%,
+      rgb(255 255 255 / 0.36) 18%,
+      rgb(255 255 255 / 0) 42%
+    ),
+    linear-gradient(
+      145deg,
+      rgb(255 255 255) 0%,
+      rgb(236 241 239) 22%,
+      rgb(var(--year-text-rgb) / 0.55) 34%,
+      rgb(142 152 149) 58%,
+      rgb(255 255 255) 74%,
+      rgb(205 215 211) 100%
+    );
+
+  background-size:
+    220% 100%,
+    100% 100%,
+    100% 100%;
+
+  background-position:
+    160% 0,
+    0 0,
+    0 0;
+
+  background-repeat: no-repeat;
+
+  background-blend-mode: screen, screen, normal;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  filter: drop-shadow(0 2px 1px rgb(var(--year-text-shadow-rgb) / 1))
+    drop-shadow(0 6px 2px rgb(0 0 0 / 0.13))
+    drop-shadow(0 -1px 1px rgb(255 255 255 / 1));
+}
+
+ul.timeList > li[data-year]:hover::after,
+ul.timeList > li[data-year].checked::after {
+  animation: yearTextSheen 2s ease-out both;
+}
+
+@keyframes yearTextSheen {
+  from {
+    background-position:
+      160% 0,
+      0 0,
+      0 0;
+  }
+
+  to {
+    background-position:
+      -120% 0,
+      0 0,
+      0 0;
+  }
+}
+
+/* ul.timeList > li[data-year]:hover > span,
 div.mainFrame:has(.hotzone-list > li[data-year="2017"]:hover)
   .timelineBelt
   li[data-year="2017"]
@@ -295,18 +411,17 @@ div.mainFrame:has(.hotzone-list > li[data-year="2025"]:hover)
   backdrop-filter: blur(0px);
   box-shadow:
     inset 2px 2px 4px rgba(0, 0, 0, 0.15),
-    /* 内部阴影 */ inset -2px -2px 4px rgba(255, 255, 255, 0.15),
-    /* 内部高光 */ 0 0 10px rgba(255, 255, 255, 0.75);
-  border: 4px solid #fff;
+    inset -2px -2px 4px rgba(255, 255, 255, 0.15),
+    0 0 10px rgba(255, 255, 255, 0.75);
+  border: 4px solid #ddd;
   color: rgb(var(--year-accent-rgb) / 0.75);
   background-color: rgb(var(--year-rgb) / 0.2);
   border-color: rgb(var(--year-accent-rgb) / 0.65);
-}
+} */
 
 ul.timeList > li[data-year].checked > span {
   background-color: unset;
-  backdrop-filter: blur(5px);
-  color: rgb(var(--year-accent-rgb) / 0.75);
+  backdrop-filter: blur(4px);
 }
 
 div.playzone[data-year] > div.iframe-wrapper {
@@ -579,6 +694,11 @@ div.projectShowcase > div.playzone {
   pointer-events: none;
 }
 
+div.playzone:has(> .iframe-wrapper.active) {
+  pointer-events: initial;
+  z-index: 1;
+}
+
 div.playzone > div.iframe-wrapper {
   display: flex;
   flex-grow: 1;
@@ -606,6 +726,8 @@ div.playzone > div.iframe-wrapper.active {
   position: absolute;
   width: 120vh;
   height: 67.5vh;
+  box-sizing: border-box;
+  padding: 2%;
   /* i 从 1 开始：1→最右，越大越靠左 */
   left: calc(var(--left-base) + (var(--i) - 1) * var(--step-left));
   z-index: calc(var(--z-base) + (var(--count) - var(--i)));
@@ -650,6 +772,9 @@ div.playzone.year-color-rippling::after {
 div.playzone:has(> .iframe-wrapper.active:only-child) > .iframe-wrapper.active {
   width: 155.5vh;
   height: 87.5vh;
+  left: calc((100% - 155.5vh) / 2);
+  z-index: 4;
+  padding: 0;
 }
 
 div.playzone:has(> .iframe-wrapper.active:only-child)
@@ -658,7 +783,6 @@ div.playzone:has(> .iframe-wrapper.active:only-child)
   width: 117.65%;
   height: 117.65%;
   transform: scale(0.85);
-  border-radius: 40px;
 }
 
 /* Optional hover effect */
@@ -763,17 +887,16 @@ div.iframe-wrapper > iframe {
   flex: 0 0 auto;
   max-width: none;
   max-height: none;
-  width: 196%;
-  height: 196%;
-  margin: 2%;
+  width: 200%;
+  height: 200%;
   transform: scale(0.5);
   transform-origin: center;
   box-sizing: border-box;
   opacity: 0;
   display: none;
   z-index: 0;
-  background: #fff;
-  border-radius: 80px;
+  background: #ddd;
+  border-radius: 40px;
   transition:
     transform 0.3s ease-out,
     opacity 0.3s ease-out;

@@ -53,11 +53,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                     rotateZ(${angle.local.rz}deg)
                 `;
 
-                // if (data.modelStates[index].center.z + data.modelStates[index].translation.z < data.results.center[2] - 0.5) {
-                //     item.style.visibility = `initial`
-                // } else {
-                //     item.style.visibility = `hidden`
-                // }
                 const zFront =
                     data.modelStates[index].center.z + data.modelStates[index].translation.z <
                     data.results.center[2] - 0.5;
@@ -68,6 +63,43 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 // 1 = 正面，0 = 侧面，-1 = 背面
                 const facing = Math.cos(localRx);
+
+                const clamp = (value, min, max) => {
+                    return Math.min(Math.max(value, min), max);
+                };
+
+                const canvasWidth = data.canvas.clientWidth || data.canvas.width;
+                const canvasHeight = data.canvas.clientHeight || data.canvas.height;
+
+                // 全局光源位置：偏左上，但不要太极端
+                const lightSourceX = canvasWidth * 0.32;
+                const lightSourceY = canvasHeight * 0.12;
+
+                const yearCardWidth = 154;
+                const yearCardHeight = 84;
+
+                // 光斑只小范围移动，避免每个字材质跑太散
+                const localLightX = clamp(
+                    38 + ((lightSourceX - x) / yearCardWidth) * 16,
+                    22,
+                    68
+                );
+
+                const localLightY = clamp(
+                    20 + ((lightSourceY - y) / yearCardHeight) * 10,
+                    10,
+                    38
+                );
+
+                // facing 已经是 Math.cos(localRx)
+                const frontLight = clamp(facing, 0.25, 1);
+
+                // 高光强度轻微变化即可
+                const lightAlpha = clamp(0.54 + frontLight * 0.18, 0.52, 0.74);
+
+                item.style.setProperty("--year-light-x", `${localLightX.toFixed(1)}%`);
+                item.style.setProperty("--year-light-y", `${localLightY.toFixed(1)}%`);
+                item.style.setProperty("--year-light-alpha", lightAlpha.toFixed(2));
 
                 // 这个值越大，隐藏越早
                 const isFrontFacing = facing > 0.18;
@@ -123,99 +155,133 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     /* Unsupervised AI content */
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     let showcaseEventsBound = false;
     let animating = false;
     let openingId = 0;
 
-    function closeProjectShowcase() {
-        const projectShowcase = document.querySelector("div.projectShowcase");
-        const iframeWrappers = document.querySelectorAll("div.iframe-wrapper");
+    const setWrappersPointerEvents = (wrappers, value) => {
+        wrappers.forEach((wrapper) => {
+            wrapper.style.pointerEvents = value;
+        });
+    };
 
+
+    const closeProjectShowcase = async () => {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframeWrappers = Array.from(document.querySelectorAll("div.iframe-wrapper"));
+
+        if (!projectShowcase || !iframeWrappers.length) return;
+        if (animating) return;
+
+        animating = true;
         openingId++;
-        animating = false;
+
+        setWrappersPointerEvents(iframeWrappers, "none");
+
+        for (let i = iframeWrappers.length - 1; i >= 0; i--) {
+            const wrapper = iframeWrappers[i];
+            wrapper.classList.remove("effect-ready");
+            wrapper.querySelector("iframe")?.classList.remove("show");
+            await sleep(50);
+        }
+
+        await sleep(150);
+
+        for (let i = iframeWrappers.length - 1; i >= 0; i--) {
+            const wrapper = iframeWrappers[i];
+            wrapper.classList.remove("active");
+        }
 
         projectShowcase?.classList.remove("active");
 
-        iframeWrappers.forEach((wrapper) => {
-            wrapper.classList.remove("effect-ready");
-            wrapper.classList.remove("active");
-            wrapper.querySelector("iframe")?.classList.remove("show");
+        await sleep(300);
 
-            wrapper.style.pointerEvents = "none";
+        setWrappersPointerEvents(iframeWrappers, "initial");
+        animating = false;
+    }
 
-            setTimeout(() => {
-                wrapper.style.pointerEvents = "initial";
-            }, 300);
-        });
+    const openProjectShowcase = async () => {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframeWrappers = Array.from(document.querySelectorAll("div.iframe-wrapper"));
+
+        if (!projectShowcase || !iframeWrappers.length) return;
+        if (animating) return;
+
+        animating = true;
+
+        const currentOpeningId = ++openingId;
+
+        setWrappersPointerEvents(iframeWrappers, "none");
+
+        projectShowcase.classList.add("active");
+
+        for (let i = iframeWrappers.length - 1; i >= 0; i--) {
+            if (currentOpeningId !== openingId) {
+                animating = false;
+                return;
+            }
+
+            const wrapper = iframeWrappers[i];
+
+            wrapper.classList.add("active");
+            await sleep(50);
+        }
+
+        await sleep(450);
+
+        for (let i = iframeWrappers.length - 1; i >= 0; i--) {
+            if (currentOpeningId !== openingId) {
+                animating = false;
+                return;
+            }
+
+            const wrapper = iframeWrappers[i];
+
+            wrapper.querySelector("iframe")?.classList.add("show");
+            wrapper.classList.add("effect-ready");
+
+            await sleep(50);
+        }
+
+        if (currentOpeningId === openingId) {
+            setWrappersPointerEvents(iframeWrappers, "initial");
+            animating = false;
+        }
     }
 
     const bindIframeEvents = () => {
         if (showcaseEventsBound) return;
         showcaseEventsBound = true;
 
-        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        document.addEventListener("click", async (event) => {
+            const projectShowcase = document.querySelector("div.projectShowcase");
+            const playzone = document.querySelector("div.playzone");
+            const title = document.querySelector("div.title");
+            const summary = document.querySelector("div.summary");
 
-        const projectShowcase = document.querySelector("div.projectShowcase");
-        const playzone = document.querySelector("div.playzone");
+            if (!projectShowcase || !playzone) return;
 
-        if (!projectShowcase || !playzone) return;
+            const isOpen = projectShowcase.classList.contains("active");
 
-        playzone.addEventListener("click", async (event) => {
-            const mask = event.target.closest(".iframe-mask");
-            if (!mask || !playzone.contains(mask)) return;
+            // 打开：只允许点击 iframe-mask 打开
+            if (!isOpen) {
+                const mask = event.target.closest(".iframe-mask");
 
-            event.stopPropagation();
+                if (!mask || !playzone.contains(mask)) return;
 
-            if (animating) return;
-            animating = true;
-
-            const currentOpeningId = ++openingId;
-            const iframeWrappers = Array.from(document.querySelectorAll("div.iframe-wrapper"));
-
-            projectShowcase.classList.add("active");
-
-            for (let i = iframeWrappers.length - 1; i >= 0; i--) {
-                if (currentOpeningId !== openingId) {
-                    animating = false;
-                    return;
-                }
-
-                iframeWrappers[i].classList.add("active");
-
-                await sleep(50);
+                event.stopPropagation();
+                await openProjectShowcase();
+                return;
             }
 
-            await sleep(50);
-
-            for (let i = 0; i < iframeWrappers.length; i++) {
-                if (currentOpeningId !== openingId) {
-                    animating = false;
-                    return;
-                }
-
-                await sleep(200);
-
-                if (currentOpeningId !== openingId) {
-                    animating = false;
-                    return;
-                }
-
-                const wrapper = iframeWrappers[i];
-                wrapper.querySelector("iframe")?.classList.add("show");
-                wrapper.classList.add("effect-ready");
-            }
-
-            if (currentOpeningId === openingId) {
-                animating = false;
-            }
-        });
-
-        document.addEventListener("click", (event) => {
-            if (!projectShowcase.classList.contains("active")) return;
-
+            // 关闭：点击 active wrapper / title / summary 内部都不关闭
             const clickedActiveWrapper = event.target.closest(".iframe-wrapper.active");
-            if (clickedActiveWrapper) return;
+            const clickedTitle = title?.contains(event.target);
+            const clickedSummary = summary?.contains(event.target);
+
+            if (clickedActiveWrapper || clickedTitle || clickedSummary) return;
 
             closeProjectShowcase();
         });
@@ -226,26 +292,37 @@ window.addEventListener("DOMContentLoaded", async () => {
     /* Unsupervised AI content */
 
     const applyStackVars = (playzone, maxN = 10) => {
-        // 只取已激活的
-        const items = Array.from(playzone.querySelectorAll('.iframe-wrapper'));
+        const items = Array.from(playzone.querySelectorAll(".iframe-wrapper"));
         const total = items.length;
-        playzone.style.setProperty('--count', total);
 
-        // 根据 maxN 动态计算 step-left
-        const step = 20 / maxN;
-        playzone.style.setProperty('--step-left', `${step}%`);
+        playzone.style.setProperty("--count", total);
 
-        // 只让“最后 maxN 个”参与叠放
         const start = Math.max(0, total - maxN);
         const visible = items.slice(start);
+        const visibleCount = visible.length;
 
-        // 右→左编号：最右 i=1
+        const vh = window.innerHeight / 100;
+        const vw = window.innerWidth / 100;
+
+        const targetTotalWidth = 66 * vw - 6 * vh;
+        const cardWidth = 120 * vh;
+
+        let stepPx = 0;
+
+        if (visibleCount > 1) {
+            stepPx = (targetTotalWidth - cardWidth) / (visibleCount - 1);
+            stepPx = Math.max(0, stepPx);
+        }
+
+        playzone.style.setProperty("--step-left", `${stepPx}px`);
+
         visible.reverse().forEach((el, i) => {
-            el.style.setProperty('--i', i + 1);
+            el.style.setProperty("--i", i + 1);
         });
 
-        // 清掉前面被“忽略”的
-        items.slice(0, start).forEach(el => el.style.removeProperty('--i'));
+        items.slice(0, start).forEach((el) => {
+            el.style.removeProperty("--i");
+        });
     };
 
     // —— 全局轮播管理 —— //
@@ -696,18 +773,15 @@ window.addEventListener("DOMContentLoaded", async () => {
     let timelineCenterRaf = 0;
     let timelineCenterTargetYear = null;
 
-    // 你说 2024 居中时 top 大约是 231.775，所以先取 232
     const TIMELINE_TARGET_TOP = 232;
     const TIMELINE_CENTER_TOLERANCE = 2;
 
-    // 如果方向反了，把这个改成 -1
     const TIMELINE_WHEEL_DIRECTION = -1;
 
     function isTimelineYearFront(year) {
         const item = document.querySelector(`ul.timeList > li[data-year="${year}"]`);
         if (!item) return false;
 
-        // 你的 frame loop 里，背面年份会被设为 hidden，正面会是 initial
         return getComputedStyle(item).visibility !== "hidden";
     }
 
@@ -749,7 +823,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!item || !canvas) return;
 
-        // 注意：你的 li top 是每帧由 3D 坐标计算出来的，所以直接读 style.top 最稳定
         const currentTop = parseFloat(item.style.top);
 
         if (!Number.isFinite(currentTop)) {
@@ -1228,9 +1301,9 @@ window.addEventListener("DOMContentLoaded", async () => {
             blob.style.height = `${state.h}px`;
 
             blob.style.transform = `
-    translate3d(${state.x}px, ${state.y}px, 0)
-    scale(${stretchX}, ${squashY})
-  `;
+                translate3d(${state.x}px, ${state.y}px, 0)
+                scale(${stretchX}, ${squashY})
+            `;
 
             const distance =
                 Math.abs(target.x - state.x) +
