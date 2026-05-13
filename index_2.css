@@ -171,63 +171,72 @@ ul.timeList > li[data-year] {
 }
 
 ul.timeList > li[data-year="2017"],
-div.playzone[data-year="2017"] {
+div.playzone[data-year="2017"],
+div.projectShowcase:has(.playzone[data-year="2017"]) {
   --year-rgb: 255 0 0;
   --year-accent-rgb: 255 153 153;
   --year-card-filter: hue-rotate(-200deg);
 }
 
 ul.timeList > li[data-year="2018"],
-div.playzone[data-year="2018"] {
+div.playzone[data-year="2018"],
+div.projectShowcase:has(.playzone[data-year="2018"]) {
   --year-rgb: 255 127 0;
   --year-accent-rgb: 255 204 153;
   --year-card-filter: hue-rotate(-160deg);
 }
 
 ul.timeList > li[data-year="2019"],
-div.playzone[data-year="2019"] {
+div.playzone[data-year="2019"],
+div.projectShowcase:has(.playzone[data-year="2019"]) {
   --year-rgb: 255 255 0;
   --year-accent-rgb: 255 255 153;
   --year-card-filter: hue-rotate(-120deg);
 }
 
 ul.timeList > li[data-year="2020"],
-div.playzone[data-year="2020"] {
+div.playzone[data-year="2020"],
+div.projectShowcase:has(.playzone[data-year="2020"]) {
   --year-rgb: 0 255 0;
   --year-accent-rgb: 153 255 153;
   --year-card-filter: hue-rotate(-80deg);
 }
 
 ul.timeList > li[data-year="2021"],
-div.playzone[data-year="2021"] {
+div.playzone[data-year="2021"],
+div.projectShowcase:has(.playzone[data-year="2021"]) {
   --year-rgb: 0 255 255;
   --year-accent-rgb: 153 255 255;
   --year-card-filter: hue-rotate(-40deg);
 }
 
 ul.timeList > li[data-year="2022"],
-div.playzone[data-year="2022"] {
+div.playzone[data-year="2022"],
+div.projectShowcase:has(.playzone[data-year="2022"]) {
   --year-rgb: 0 127 255;
   --year-accent-rgb: 153 204 255;
   --year-card-filter: hue-rotate(0deg);
 }
 
 ul.timeList > li[data-year="2023"],
-div.playzone[data-year="2023"] {
+div.playzone[data-year="2023"],
+div.projectShowcase:has(.playzone[data-year="2023"]) {
   --year-rgb: 139 0 255;
   --year-accent-rgb: 203 153 255;
   --year-card-filter: hue-rotate(40deg);
 }
 
 ul.timeList > li[data-year="2024"],
-div.playzone[data-year="2024"] {
+div.playzone[data-year="2024"],
+div.projectShowcase:has(.playzone[data-year="2024"]) {
   --year-rgb: 255 0 255;
   --year-accent-rgb: 255 153 255;
   --year-card-filter: hue-rotate(80deg);
 }
 
 ul.timeList > li[data-year="2025"],
-div.playzone[data-year="2025"] {
+div.playzone[data-year="2025"],
+div.projectShowcase:has(.playzone[data-year="2025"]) {
   --year-rgb: 255 20 147;
   --year-accent-rgb: 255 161 221;
   --year-card-filter: hue-rotate(120deg);
@@ -263,7 +272,6 @@ ul.timeList > li[data-year] > span {
 
 ul.timeList > li[data-year] {
   --year-text-rgb: 226 232 229;
-  --year-text-shadow-rgb: 72 78 76;
 
   --year-light-x: 36%;
   --year-light-y: 18%;
@@ -272,7 +280,6 @@ ul.timeList > li[data-year] {
 
 ul.timeList > li[data-year].checked {
   --year-text-rgb: var(--year-accent-rgb);
-  --year-text-shadow-rgb: 70 76 74;
   --year-light-alpha: 0.72;
 }
 ul.timeList > li[data-year]::after {
@@ -291,9 +298,9 @@ ul.timeList > li[data-year]::after {
 
   color: transparent;
 
-  -webkit-text-stroke: 2px rgb(255 255 255 / 0.75);
+  -webkit-text-stroke: 2px #002244;
 
-  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.13));
+  filter: var(--year-card-filter, none) drop-shadow(0 6px 2px rgb(0 0 0 / 0.13));
 }
 
 ul.timeList > li[data-year]:hover::after,
@@ -368,7 +375,7 @@ div.mainFrame:has(.hotzone-list > li[data-year="2025"]:hover)
   -webkit-background-clip: text;
   background-clip: text;
 
-  filter: drop-shadow(0 2px 1px rgb(var(--year-text-shadow-rgb) / 1))
+  filter: drop-shadow(0 2px 1px rgb(70 76 74 / 1))
     drop-shadow(0 6px 2px rgb(0 0 0 / 0.13))
     drop-shadow(0 -1px 1px rgb(255 255 255 / 1));
 }
@@ -486,13 +493,17 @@ div.projectShowcase
   transition: z-index 0s step-end 0.25s;
 }
 
-ol.hotzone-list > li:hover .project-label {
+ol.hotzone-list > li:hover .project-label,
+ol.hotzone-list > li.checked .project-label,
+ol.hotzone-list > li.is-iframe-hover .project-label {
   font-weight: 900;
 
   transition: font-weight 0.125s step-end 0.125s;
 }
 
-ol.hotzone-list > li:hover .project-label::before {
+ol.hotzone-list > li:hover .project-label::before,
+ol.hotzone-list > li.checked .project-label::before,
+ol.hotzone-list > li.is-iframe-hover .project-label::before {
   animation: rainbowShadowShift 0.5s ease-in 0s forwards;
 }
 
@@ -600,14 +611,14 @@ ol.hotzone-list > li {
   justify-content: flex-start;
   position: relative;
   z-index: 2;
-  margin: 2px 0;
+  margin: 0 0 2px;
   cursor: pointer;
 }
 
 div.hotzone > .project-back-button {
   position: absolute;
   top: 2vh;
-  right: 4vh;
+  right: 2vh;
 
   width: 44px;
   height: 44px;
@@ -630,19 +641,49 @@ div.hotzone > .project-back-button.is-visible {
   display: flex;
 }
 
-div.hotzone > .project-back-button > .project-back-icon {
-  width: 34px;
-  height: 34px;
+.project-back-button > svg.project-back-icon {
+  width: 40px;
+  height: 40px;
   display: block;
   overflow: visible;
 
-  /* fill: white; */
-
-  filter:
-    drop-shadow(0 2px 2px rgb(0 0 0 / 0.22))
-    drop-shadow(0 0 8px rgb(255 255 255 / 0.5));
+  filter: drop-shadow(0 1px 0.5px rgb(70 76 74 / 1))
+    drop-shadow(0 3px 1px rgb(0 0 0 / 0.13))
+    drop-shadow(0 -0.5px 0.5px rgb(255 255 255 / 1));
 
   transition: transform 0.18s ease-out;
+}
+
+div.hotzone > .project-back-button > .project-back-icon > path {
+  fill: url("#projectBackIconGradient");
+
+  paint-order: stroke fill;
+  vector-effect: non-scaling-stroke;
+}
+
+.project-back-icon .back-stop-1 {
+  stop-color: rgb(255 255 255);
+}
+
+.project-back-icon .back-stop-2 {
+  stop-color: rgb(236 241 239);
+}
+
+.project-back-icon .back-stop-3 {
+  stop-color: rgb(var(--year-accent-rgb, 255 255 255));
+  transition: stop-color 0.3s linear;
+}
+
+.project-back-icon .back-stop-4 {
+  stop-color: rgb(142 152 149);
+}
+
+.project-back-icon .back-stop-5 {
+  stop-color: rgb(255 255 255);
+}
+
+.project-back-icon .back-stop-6 {
+  stop-color: rgb(205 215 211);
 }
 
 .project-droplet {
@@ -704,6 +745,7 @@ div.projectShowcase > div.playzone {
   width: 100%;
   height: 100%;
   padding: 1vh;
+  box-sizing: border-box;
   --step-left: 2%;
   --left-base: 2%;
   --z-base: 1;
@@ -721,15 +763,16 @@ div.playzone > div.iframe-wrapper {
   justify-content: center;
   align-items: center;
   position: absolute;
-  top: 2%;
   left: 2%;
-  width: 131.25vh;
-  height: 87.5vh;
+  bottom: 1vh;
+  width: 101.25vh;
+  height: 67.5vh;
   transform-origin: 0 50%;
   border-radius: 40px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   background: rgba(0, 0, 0, 0.04);
   transition:
+    /* all 33.3s ease-out, */
     transform 0.3s ease-out,
     filter 1.5s ease-out,
     left 0.2s ease-out,
@@ -745,18 +788,18 @@ div.playzone > div.iframe-wrapper.active {
   box-sizing: border-box;
   padding: 2%;
   /* i 从 1 开始：1→最右，越大越靠左 */
-  left: calc(var(--left-base) + (var(--i) - 1) * var(--step-left));
-  z-index: calc(var(--z-base) + (var(--count) - var(--i)));
+  left: calc(var(--left-base) + var(--i) * var(--step-left));
+  z-index: calc(var(--z-base) + (var(--count) - (var(--i) + 1)));
 }
 
 div.playzone > div.iframe-wrapper.active.effect-ready {
-  backdrop-filter: blur(1px) brightness(0.98) saturate(0);
+  backdrop-filter: blur(1px) brightness(0.98) saturate(0.5);
 }
 
 div.playzone > div.iframe-wrapper.active:hover {
   box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.5),
-    0 0 80px rgba(255, 255, 255, 0.75);
+    0 0 10px rgba(255, 255, 255, 0.75);
   z-index: 20;
 }
 
@@ -788,9 +831,10 @@ div.playzone.year-color-rippling::after {
 div.playzone:has(> .iframe-wrapper.active:only-child) > .iframe-wrapper.active {
   width: 155.5vh;
   height: 87.5vh;
-  left: calc((100% - 155.5vh) / 2);
+  left: calc((100% - 155.5vh) / 2 - 3vh);
   z-index: 4;
   padding: 0;
+  bottom: 4.25vh;
 }
 
 div.playzone:has(> .iframe-wrapper.active:only-child)
@@ -801,100 +845,109 @@ div.playzone:has(> .iframe-wrapper.active:only-child)
   transform: scale(0.85);
 }
 
+div.playzone:has(> .iframe-wrapper.active:only-child)
+  > .iframe-wrapper.active
+  > iframe.mobile {
+  /* width: 75.9375vh;
+  height: 135vh; */
+  width: calc(49.21875vh / 0.85);
+  height: calc(87.5vh / 0.85);
+  border-radius: 0;
+}
+
 /* Optional hover effect */
-div.playzone > div.iframe-wrapper.active:hover ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(+ div.iframe-wrapper.active:hover) {
   z-index: 19;
   transform: scale(1) rotateZ(-3deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active + div.iframe-wrapper.active:hover
+  ) {
   z-index: 18;
   transform: scale(1) rotateZ(-6deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active:hover
+  ) {
   z-index: 17;
   transform: scale(1) rotateZ(-9deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active:hover
+  ) {
   z-index: 16;
   transform: scale(1) rotateZ(-12deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active:hover
+  ) {
   z-index: 15;
   transform: scale(1) rotateZ(-15deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active:hover
+  ) {
   z-index: 14;
   transform: scale(1) rotateZ(-18deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active:hover
+  ) {
   z-index: 13;
   transform: scale(1) rotateZ(-21deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active:hover
+  ) {
   z-index: 12;
   transform: scale(1) rotateZ(-24deg) !important;
 }
 
-div.playzone
-  > .iframe-wrapper.active:hover
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active
-  ~ .iframe-wrapper.active {
+div.iframe-wrapper.active:has(
+    + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active
+      + div.iframe-wrapper.active:hover
+  ) {
   z-index: 11;
   transform: scale(1) rotateZ(-27deg) !important;
 }
@@ -941,119 +994,130 @@ div.iframe-wrapper > div.iframe-mask {
 
 div.projectShowcase:not(.active) > .playzone > .iframe-wrapper {
   left: 12.5%;
-  top: 30%;
-  transform: scale(0.4)
+  bottom: -10%;
+  transform: scale(0.5)
     rotateZ(calc(12deg - var(--rand-global) * 30deg - 45deg));
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(calc(9deg - var(--rand-global) * 30deg - 45deg));
+  > div.iframe-wrapper:has(+ div.iframe-wrapper) {
+  transform: scale(0.5) rotateZ(calc(9deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 11;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(calc(6deg - var(--rand-global) * 30deg - 45deg));
+  > div.iframe-wrapper:has(+ div.iframe-wrapper + div.iframe-wrapper) {
+  transform: scale(0.5) rotateZ(calc(6deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 12;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(calc(3deg - var(--rand-global) * 30deg - 45deg));
+  > div.iframe-wrapper:has(
+    + div.iframe-wrapper + div.iframe-wrapper + div.iframe-wrapper
+  ) {
+  transform: scale(0.5) rotateZ(calc(3deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 13;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4) rotateZ(calc(0deg - var(--rand-global) * 30deg - 45deg));
+  > div.iframe-wrapper:has(
+    + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+  ) {
+  transform: scale(0.5) rotateZ(calc(0deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 14;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4)
+  > div.iframe-wrapper:has(
+    + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+  ) {
+  transform: scale(0.5)
     rotateZ(calc(-3deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 15;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4)
+  > div.iframe-wrapper:has(
+    + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+  ) {
+  transform: scale(0.5)
     rotateZ(calc(-6deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 16;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4)
+  > div.iframe-wrapper:has(
+    + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+  ) {
+  transform: scale(0.5)
     rotateZ(calc(-9deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 17;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4)
+  > div.iframe-wrapper:has(
+    + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+  ) {
+  transform: scale(0.5)
     rotateZ(calc(-12deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 18;
 }
 
 div.projectShowcase:not(.active)
   > .playzone
-  > .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper
-  ~ .iframe-wrapper {
-  transform: scale(0.4)
+  > div.iframe-wrapper:has(
+    + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+      + div.iframe-wrapper
+  ) {
+  transform: scale(0.5)
     rotateZ(calc(-15deg - var(--rand-global) * 30deg - 45deg));
+  z-index: 19;
 }
 
 div.projectShowcase:not(.active)
   > .playzone:has(> .iframe-wrapper:only-child)
   > .iframe-wrapper {
-  transform: none;
+  transform: scale(1.3);
 }
 
 .iframe-wrapper.active > iframe {
@@ -1086,7 +1150,6 @@ div.projectShowcase.active {
 }
 
 div.projectShowcase.active .iframe-mask {
-  /* transform: scale(0.9); */
   display: none;
 }
 
@@ -1111,9 +1174,9 @@ div.projectShowcase.active .iframe-mask {
 div.mainFrame > div.summary {
   position: absolute;
   bottom: 0;
-  left: calc(17vw + 3vh);
-  height: 22vh;
-  width: calc(66vw - 6vh);
+  right: 3vh;
+  height: 67.5vh;
+  width: calc(17vw - 6vh);
   margin: 0 0 2vh;
   padding: 14px 22px;
   box-sizing: border-box;

@@ -73,13 +73,26 @@
                         title="Back to all projects">
                         <svg class="project-back-icon" viewBox="0 0 100 100"
                             aria-hidden="true">
-                            <path d="M46 18
-                                     L14 44
-                                     L46 70
-                                     L46 55
-                                     C66 55 78 64 84 82
-                                     C84 52 68 35 46 35
-                                     Z" />
+                            <defs>
+                                <lineargradient id="projectBackIconGradient"
+                                    x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" class="back-stop-1" />
+                                    <stop offset="22%" class="back-stop-2" />
+                                    <stop offset="34%" class="back-stop-3" />
+                                    <stop offset="58%" class="back-stop-4" />
+                                    <stop offset="74%" class="back-stop-5" />
+                                    <stop offset="100%" class="back-stop-6" />
+                                </lineargradient>
+                            </defs>
+
+                            <path
+                                d="M46 18
+                                   L14 44
+                                   L46 70
+                                   L46 55
+                                   C66 55 78 64 84 82
+                                   C84 52 68 35 46 35
+                                   Z" />
                         </svg>
                     </button>
                     <ol class="hotzone-list"></ol>

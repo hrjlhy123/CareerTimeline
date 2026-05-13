@@ -316,8 +316,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         playzone.style.setProperty("--step-left", `${stepPx}px`);
 
-        visible.reverse().forEach((el, i) => {
-            el.style.setProperty("--i", i + 1);
+        visible.forEach((el, i) => {
+            el.style.setProperty("--i", i);
         });
 
         items.slice(0, start).forEach((el) => {
@@ -724,7 +724,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         projectRippleRaf = requestAnimationFrame(animate);
     }
 
-    function renderSingleProjectInPlayzone(project) {
+    function renderSingleProjectInPlayzone(project, projectIndex = null) {
         const playzone = document.querySelector(".playzone");
 
         if (!playzone || !project) return;
@@ -741,7 +741,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         playzone.insertAdjacentHTML(
             "beforeend",
             `
-        <div class="iframe-wrapper">
+        <div class="iframe-wrapper" ${projectIndex !== null ? `data-project-index="${projectIndex}"` : ""}>
             <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
             <div class="iframe-mask"></div>
         </div>
@@ -858,6 +858,52 @@ window.addEventListener("DOMContentLoaded", async () => {
     let lastHoverTimelineYear = null;
     let currentProjects = [];
 
+    let iframeWrapperHoverBound = false;
+
+    function clearIframeHoverProjectList() {
+        document
+            .querySelectorAll(".hotzone-list > li.is-iframe-hover")
+            .forEach((el) => el.classList.remove("is-iframe-hover"));
+    }
+
+    function setIframeHoverProjectList(index) {
+        clearIframeHoverProjectList();
+
+        if (index === undefined || index === null || index === "") return;
+
+        document
+            .querySelector(`.hotzone-list > li[data-project-index="${index}"]`)
+            ?.classList.add("is-iframe-hover");
+    }
+
+    function bindIframeWrapperHoverToProjectList() {
+        if (iframeWrapperHoverBound) return;
+        iframeWrapperHoverBound = true;
+
+        const playzone = document.querySelector(".playzone");
+        if (!playzone) return;
+
+        playzone.addEventListener("pointerover", (event) => {
+            const wrapper = event.target.closest(".iframe-wrapper[data-project-index]");
+            if (!wrapper || !playzone.contains(wrapper)) return;
+
+            if (event.relatedTarget && wrapper.contains(event.relatedTarget)) return;
+
+            setIframeHoverProjectList(wrapper.dataset.projectIndex);
+        });
+
+        playzone.addEventListener("pointerout", (event) => {
+            const wrapper = event.target.closest(".iframe-wrapper[data-project-index]");
+            if (!wrapper || !playzone.contains(wrapper)) return;
+
+            if (event.relatedTarget && wrapper.contains(event.relatedTarget)) return;
+
+            clearIframeHoverProjectList();
+        });
+
+        playzone.addEventListener("pointerleave", clearIframeHoverProjectList);
+    }
+
     const renderProjects = (year, projects) => {
         const hotzoneList = document.querySelector('.hotzone-list');
         const playzone = document.querySelector('.playzone');
@@ -895,7 +941,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 label.dataset.text = name;
 
                 playzone.insertAdjacentHTML('beforeend', `
-                    <div class="iframe-wrapper">
+                    <div class="iframe-wrapper" data-project-index="${index}">
                         <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
                         <div class="iframe-mask"></div>
                     </div>
@@ -946,8 +992,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 const targetYear = getProjectYear(project);
 
+                hotzoneList
+                    .querySelectorAll("li.checked")
+                    .forEach((el) => el.classList.remove("checked"));
+
+                li.classList.add("checked");
+
                 // 先切换 iframe 内容
-                renderSingleProjectInPlayzone(project);
+                renderSingleProjectInPlayzone(project, index);
 
                 setCheckedTimelineYear(targetYear);
 
@@ -986,6 +1038,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
 
         bindIframeEvents();
+        bindIframeWrapperHoverToProjectList();
     };
 
     const ws = new WebSocket(`wss://localhost:443`)
@@ -1212,7 +1265,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         playzone.style.removeProperty("--step-left");
 
         playzone.innerHTML = `
-        <div class="iframe-wrapper">
+        <div class="iframe-wrapper" data-project-index="35">
             <iframe class="projectShowcase"
                 src="https://www.hrjlhy.com/index_old_2025-08-09.html"
                 frameborder="0"
@@ -1728,7 +1781,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         };
 
         const config = {
-            idleDelay: 22000,
+            idleDelay: 60000,
             moveThreshold: 10,
             growSpeed: 0.03,     // 蔓延速度
             revealDuration: 18000,
