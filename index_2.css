@@ -44,11 +44,40 @@ div.mainFrame {
     "title projectShowcase"
     "timelineBelt projectShowcase";
 
-  background-color: #ddd;
+  background: transparent;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 
   overflow: hidden;
+}
+
+div.mainFrame {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.mainFrame-reveal-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  background-color: #ddd;
+}
+
+.mainFrame-reveal-canvas.is-ready {
+  background: transparent;
+}
+
+div.mainFrame > div.title,
+div.mainFrame > div.mailboxSlot,
+div.mainFrame > div.timelineBelt,
+div.mainFrame > div.projectShowcase,
+div.mainFrame > div.summary {
+  position: relative;
+  z-index: 2;
 }
 
 div.mainFrame > div {
@@ -365,60 +394,6 @@ ul.timeList > li[data-year].checked::after {
   }
 }
 
-/* ul.timeList > li[data-year]:hover > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2017"]:hover)
-  .timelineBelt
-  li[data-year="2017"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2018"]:hover)
-  .timelineBelt
-  li[data-year="2018"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2019"]:hover)
-  .timelineBelt
-  li[data-year="2019"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2020"]:hover)
-  .timelineBelt
-  li[data-year="2020"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2021"]:hover)
-  .timelineBelt
-  li[data-year="2021"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2022"]:hover)
-  .timelineBelt
-  li[data-year="2022"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2023"]:hover)
-  .timelineBelt
-  li[data-year="2023"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2024"]:hover)
-  .timelineBelt
-  li[data-year="2024"]
-  > span,
-div.mainFrame:has(.hotzone-list > li[data-year="2025"]:hover)
-  .timelineBelt
-  li[data-year="2025"]
-  > span {
-  text-shadow:
-    1px 1px 0px rgba(0, 0, 0, 0.1),
-    2px 2px 0px rgba(0, 0, 0, 0.08),
-    3px 3px 0px rgba(0, 0, 0, 0.06),
-    4px 4px 0px rgba(0, 0, 0, 0.04),
-    5px 5px 0px rgba(0, 0, 0, 0.02);
-  backdrop-filter: blur(0px);
-  box-shadow:
-    inset 2px 2px 4px rgba(0, 0, 0, 0.15),
-    inset -2px -2px 4px rgba(255, 255, 255, 0.15),
-    0 0 10px rgba(255, 255, 255, 0.75);
-  border: 4px solid #ddd;
-  color: rgb(var(--year-accent-rgb) / 0.75);
-  background-color: rgb(var(--year-rgb) / 0.2);
-  border-color: rgb(var(--year-accent-rgb) / 0.65);
-} */
-
 ul.timeList > li[data-year].checked > span {
   background-color: unset;
   backdrop-filter: blur(4px);
@@ -627,6 +602,47 @@ ol.hotzone-list > li {
   z-index: 2;
   margin: 2px 0;
   cursor: pointer;
+}
+
+div.hotzone > .project-back-button {
+  position: absolute;
+  top: 2vh;
+  right: 4vh;
+
+  width: 44px;
+  height: 44px;
+
+  border: none;
+  padding: 0;
+  border-radius: 999px;
+
+  background: transparent;
+  cursor: pointer;
+
+  z-index: 5;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+div.hotzone > .project-back-button.is-visible {
+  display: flex;
+}
+
+div.hotzone > .project-back-button > .project-back-icon {
+  width: 34px;
+  height: 34px;
+  display: block;
+  overflow: visible;
+
+  /* fill: white; */
+
+  filter:
+    drop-shadow(0 2px 2px rgb(0 0 0 / 0.22))
+    drop-shadow(0 0 8px rgb(255 255 255 / 0.5));
+
+  transition: transform 0.18s ease-out;
 }
 
 .project-droplet {
@@ -1115,7 +1131,8 @@ div.mainFrame > div.summary {
   display: none;
 }
 
-div.mainFrame:has(div.playzone > .iframe-wrapper.active) > div.summary {
+div.mainFrame:has(div.playzone > .iframe-wrapper.active:not(:only-child))
+  > div.summary {
   display: initial;
 }
 
@@ -1230,7 +1247,7 @@ div.mainFrame:has(div.playzone > .iframe-wrapper.active) > div.summary {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28);
 }
 
-/* test */
+/* firework */
 .rainbow-firework-layer {
   position: fixed;
   inset: 0;

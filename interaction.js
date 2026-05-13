@@ -861,6 +861,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     const renderProjects = (year, projects) => {
         const hotzoneList = document.querySelector('.hotzone-list');
         const playzone = document.querySelector('.playzone');
+        const backButton = document.querySelector(".project-back-button");
+
+        backButton?.classList.toggle("is-visible", year !== "all");
 
         _clearAllRotators();
 
@@ -910,6 +913,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         } else {
             hotzoneList.innerHTML = '';
+
+            resetPlayzoneToDefault();
 
             projects.forEach(({ name, year }, index) => {
                 hotzoneList.insertAdjacentHTML(
@@ -1194,11 +1199,56 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     })();
 
+    // return button
+
+    function resetPlayzoneToDefault() {
+        const playzone = document.querySelector(".playzone");
+        if (!playzone) return;
+
+        _clearAllRotators();
+
+        playzone.removeAttribute("data-year");
+        playzone.style.removeProperty("--count");
+        playzone.style.removeProperty("--step-left");
+
+        playzone.innerHTML = `
+        <div class="iframe-wrapper">
+            <iframe class="projectShowcase"
+                src="https://www.hrjlhy.com/index_old_2025-08-09.html"
+                frameborder="0"
+                tabindex="0">
+            </iframe>
+            <div class="iframe-mask"></div>
+        </div>
+    `;
+
+        applyStackVars(playzone, 1);
+    }
+
+    document.querySelector(".project-back-button")?.addEventListener("click", async (event) => {
+        event.stopPropagation();
+
+        const showcaseArea = document.querySelector("div.projectShowcase");
+
+        triggerProjectListRipple(showcaseArea, event);
+
+        document
+            .querySelectorAll("ul.timeList > li[data-year].checked")
+            .forEach((el) => el.classList.remove("checked"));
+
+        document.querySelector("div.projectShowcase")?.classList.remove("active");
+
+        resetPlayzoneToDefault();
+
+        await getProjects();
+    });
+
     /* Unsupervised AI content */
 
     function initProjectCellBlob() {
         const host = document.querySelector(".projectList");
         const list = host?.querySelector(".hotzone-list");
+        const backButton = host.querySelector(".project-back-button");
 
         if (!host || !list) return;
         if (host.querySelector(".project-cell-blob")) return;
@@ -1262,18 +1312,31 @@ window.addEventListener("DOMContentLoaded", async () => {
             return [current, velocity];
         }
 
-        function setTargetFromLi(li) {
-            const targetElement = li.querySelector(".project-label") || li;
-            const liRect = targetElement.getBoundingClientRect();
+        function setTargetFromElement(el, shape = "pill") {
+            const targetElement =
+                el.querySelector(".project-label") ||
+                el.querySelector(".project-back-icon") ||
+                el;
+
+            const rect = targetElement.getBoundingClientRect();
             const hostRect = host.getBoundingClientRect();
 
-            const paddingX = 8;
-            const paddingY = 8;
+            if (shape === "circle") {
+                const size = Math.max(rect.width, rect.height) + 22;
 
-            target.x = liRect.left - hostRect.left - paddingX / 2 - 38;
-            target.y = liRect.top - hostRect.top - paddingY;
-            target.w = liRect.width - paddingX * 2 + 38 * 2;
-            target.h = liRect.height + paddingY * 2;
+                target.x = rect.left - hostRect.left + rect.width / 2 - size / 2;
+                target.y = rect.top - hostRect.top + rect.height / 2 - size / 2;
+                target.w = size;
+                target.h = size;
+            } else {
+                const paddingX = 8;
+                const paddingY = 8;
+
+                target.x = rect.left - hostRect.left - paddingX / 2 - 38;
+                target.y = rect.top - hostRect.top - paddingY;
+                target.w = rect.width - paddingX * 2 + 38 * 2;
+                target.h = rect.height + paddingY * 2;
+            }
 
             if (!initialized) {
                 state.x = target.x;
@@ -1336,7 +1399,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             activeLi = li;
             visible = true;
 
-            setTargetFromLi(li);
+            setTargetFromElement(li, "pill");
             blob.classList.add("is-visible");
 
             start();
@@ -1365,6 +1428,23 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (!activeLi) return;
 
             setTargetFromLi(activeLi);
+            start();
+        });
+
+        backButton?.addEventListener("pointerover", () => {
+            activeLi = null;
+            visible = true;
+
+            setTargetFromElement(backButton, "circle");
+            blob.classList.add("is-visible");
+
+            start();
+        });
+
+        backButton?.addEventListener("pointerleave", () => {
+            visible = false;
+            blob.classList.remove("is-visible");
+
             start();
         });
     }
@@ -1436,7 +1516,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     initRainbowDirection();
 
-    // test
+    // firework
     function animateCaterpillarPath(path, svg, duration = 1250) {
         const len = path.getTotalLength();
         const start = performance.now();
@@ -1622,4 +1702,236 @@ window.addEventListener("DOMContentLoaded", async () => {
     document
         .querySelector("span.title")
         ?.addEventListener("click", triggerTitleRainbowFirework);
+
+    // Background Reveal
+
+    function initMainFrameVideoReveal() {
+        const mainFrame = document.querySelector("div.mainFrame");
+        const canvas = document.querySelector(".mainFrame-reveal-canvas");
+
+        if (!mainFrame || !canvas) return;
+
+        const ctx = canvas.getContext("2d");
+
+        const state = {
+            x: 0,
+            y: 0,
+            lastX: 0,
+            lastY: 0,
+            lastMoveTime: performance.now(),
+            revealStartTime: null,
+            inside: false,
+            radius: 0,
+            targetRadius: 0,
+            started: false,
+            time: 0,
+        };
+
+        const config = {
+            idleDelay: 22000,
+            moveThreshold: 10,
+            growSpeed: 0.03,     // 蔓延速度
+            revealDuration: 18000,
+            shrinkSpeed: 0.03,    // 鼠标离开后的收回速度
+            edgeSoftness: 0,     // 边缘柔和程度
+            fillColor: "#ddd",
+        };
+
+        function paintInitialMask() {
+            const rect = mainFrame.getBoundingClientRect();
+
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            ctx.globalCompositeOperation = "source-over";
+            ctx.fillStyle = config.fillColor;
+            ctx.fillRect(0, 0, rect.width, rect.height);
+
+            canvas.classList.add("is-ready");
+        }
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = mainFrame.getBoundingClientRect();
+
+            canvas.width = Math.round(rect.width * dpr);
+            canvas.height = Math.round(rect.height * dpr);
+
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        function getMaxRadius() {
+            const rect = mainFrame.getBoundingClientRect();
+
+            const distances = [
+                Math.hypot(state.x, state.y),
+                Math.hypot(rect.width - state.x, state.y),
+                Math.hypot(state.x, rect.height - state.y),
+                Math.hypot(rect.width - state.x, rect.height - state.y),
+            ];
+
+            return Math.max(...distances) * 1.15;
+        }
+
+        function drawIrregularBlob(x, y, radius, time) {
+            if (radius <= 0.5) return;
+
+            const points = 96;
+            const wobbleA = 0.13;
+            const wobbleB = 0.075;
+            const wobbleC = 0.045;
+
+            ctx.save();
+            ctx.globalCompositeOperation = "destination-out";
+
+            // 让边缘柔和
+            ctx.shadowBlur = config.edgeSoftness;
+            ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+            ctx.fillStyle = "rgba(0, 0, 0, 1)";
+
+            ctx.beginPath();
+
+            const coords = [];
+
+            for (let i = 0; i < points; i++) {
+                const a = (Math.PI * 2 * i) / points;
+
+                const n1 = Math.sin(a * 3.0 + time * 0.0018);
+                const n2 = Math.sin(a * 5.0 - time * 0.0012 + 1.7);
+                const n3 = Math.sin(a * 9.0 + time * 0.0025 + 0.4);
+
+                const r =
+                    radius *
+                    (1 +
+                        n1 * wobbleA +
+                        n2 * wobbleB +
+                        n3 * wobbleC);
+
+                coords.push({
+                    x: x + Math.cos(a) * r,
+                    y: y + Math.sin(a) * r,
+                });
+            }
+
+            // 用 quadraticCurveTo 让边界变成平滑曲面
+            for (let i = 0; i < coords.length; i++) {
+                const current = coords[i];
+                const next = coords[(i + 1) % coords.length];
+
+                const midX = (current.x + next.x) / 2;
+                const midY = (current.y + next.y) / 2;
+
+                if (i === 0) {
+                    ctx.moveTo(midX, midY);
+                } else {
+                    ctx.quadraticCurveTo(current.x, current.y, midX, midY);
+                }
+            }
+
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function draw(now) {
+            state.time = now;
+
+            const rect = mainFrame.getBoundingClientRect();
+
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            // 先画完整 #ddd 遮罩
+            ctx.globalCompositeOperation = "source-over";
+            ctx.fillStyle = config.fillColor;
+            ctx.fillRect(0, 0, rect.width, rect.height);
+
+            const idleTime = now - state.lastMoveTime;
+
+            if (state.inside && idleTime >= config.idleDelay) {
+                state.started = true;
+                state.targetRadius = getMaxRadius();
+            } else if (!state.inside) {
+                state.started = false;
+                state.targetRadius = 0;
+            }
+
+            if (state.started) {
+                if (state.revealStartTime === null) {
+                    state.revealStartTime = now;
+                }
+
+                const progress = Math.min(
+                    1,
+                    (now - state.revealStartTime) / config.revealDuration
+                );
+
+                // ease-in
+                const eased = Math.pow(progress, 3);
+
+                state.radius = state.targetRadius * eased;
+            } else {
+                state.revealStartTime = null;
+                state.radius += (0 - state.radius) * config.shrinkSpeed;
+            }
+
+            drawIrregularBlob(state.x, state.y, state.radius, now);
+
+            requestAnimationFrame(draw);
+        }
+
+        document.addEventListener("mousemove", (event) => {
+            const rect = mainFrame.getBoundingClientRect();
+
+            const inside =
+                event.clientX >= rect.left &&
+                event.clientX <= rect.right &&
+                event.clientY >= rect.top &&
+                event.clientY <= rect.bottom;
+
+            if (!inside) {
+                state.inside = false;
+                state.started = false;
+                state.targetRadius = 0;
+                return;
+            }
+
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const moved = Math.hypot(x - state.lastX, y - state.lastY);
+
+            state.inside = true;
+            state.x = x;
+            state.y = y;
+
+            if (moved > config.moveThreshold) {
+                state.lastMoveTime = performance.now();
+                state.started = false;
+                state.targetRadius = 0;
+                state.revealStartTime = null;
+            }
+
+            state.lastX = x;
+            state.lastY = y;
+        });
+
+        document.addEventListener("mouseleave", () => {
+            state.inside = false;
+            state.started = false;
+            state.targetRadius = 0;
+        });
+
+        resizeCanvas();
+        paintInitialMask();
+
+        window.addEventListener("resize", () => {
+            resizeCanvas();
+            paintInitialMask();
+        });
+
+        requestAnimationFrame(draw);
+    }
+
+    initMainFrameVideoReveal();
 })

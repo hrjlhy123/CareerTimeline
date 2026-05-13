@@ -17,7 +17,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         navigator.gpu
             ?? (() => { throw new Error(`WebGPU not supported`) })()
 
-        canvas = document.querySelector("canvas")
+        canvas = document.querySelector("canvas.timelineBelt")
             ?? (() => { throw new Error(`Could not access canvas in page`) })()
 
         context = canvas.getContext(`webgpu`)

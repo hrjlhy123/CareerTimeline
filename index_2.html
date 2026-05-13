@@ -26,6 +26,7 @@
         <img src="./resources/bg_2.png" alt
             class="conceptDesign">
         <div class="mainFrame">
+            <canvas class="mainFrame-reveal-canvas"></canvas>
             <div class="title">
                 <span class="title">Project Gallery</span>
             </div>
@@ -67,6 +68,20 @@
             </div>
             <div class="projectShowcase">
                 <div class="hotzone projectList">
+                    <button class="project-back-button" type="button"
+                        aria-label="Back to all projects"
+                        title="Back to all projects">
+                        <svg class="project-back-icon" viewBox="0 0 100 100"
+                            aria-hidden="true">
+                            <path d="M46 18
+                                     L14 44
+                                     L46 70
+                                     L46 55
+                                     C66 55 78 64 84 82
+                                     C84 52 68 35 46 35
+                                     Z" />
+                        </svg>
+                    </button>
                     <ol class="hotzone-list"></ol>
                 </div>
                 <div class="playzone">
