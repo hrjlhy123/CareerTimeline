@@ -1178,7 +1178,163 @@ window.addEventListener("DOMContentLoaded", async () => {
     let lastHoverTimelineYear = null;
     let currentProjects = [];
 
+    const DEFAULT_DASHBOARD_META = Object.freeze({
+        description: "",
+        complexity: 0,
+        ownership: 0,
+        impact: 0,
+    });
+
+    // 未来可以把这个对象换成一个 JSON 文档或数据库接口。
+    // 推荐 key 格式：project.id 优先；没有 id 时用 year::name。
+    const PROJECT_DASHBOARD_DETAILS = Object.freeze({
+        // 示例：
+        // "2019::Health Food Story Page": {
+        //     description: "A responsive story page for a health food campaign.",
+        //     complexity: 58,
+        //     ownership: 72,
+        //     impact: 65,
+        // },
+    });
+
+    let dashboardUpdateToken = 0;
+
+    function getProjectDashboardKey(project, index) {
+        if (!project) return "";
+
+        if (project.id) {
+            return String(project.id);
+        }
+
+        const year = String(project.year || currentRenderYear || "all");
+        const name = String(project.name || `project-${index}`);
+
+        return `${year}::${name}`;
+    }
+
+    function normalizeDashboardMeta(meta = {}) {
+        return {
+            description: String(meta.description || ""),
+            complexity: clamp(Number(meta.complexity) || 0, 0, 100),
+            ownership: clamp(Number(meta.ownership) || 0, 0, 100),
+            impact: clamp(Number(meta.impact) || 0, 0, 100),
+        };
+    }
+
+    async function getProjectDashboardMeta(project, index) {
+        const key = getProjectDashboardKey(project, index);
+
+        // 未来后端可以替换成：
+        // const response = await fetch(`/api/project-dashboard/${encodeURIComponent(key)}`);
+        // return normalizeDashboardMeta(await response.json());
+
+        return normalizeDashboardMeta(
+            PROJECT_DASHBOARD_DETAILS[key] || DEFAULT_DASHBOARD_META
+        );
+    }
+
+    function getProjectPrimaryURL(project, wrapper = null) {
+        const currentIframeSrc = wrapper
+            ?.querySelector("iframe")
+            ?.getAttribute("src");
+
+        if (currentIframeSrc && currentIframeSrc !== "about:blank") {
+            return currentIframeSrc;
+        }
+
+        return project?.URLs?.[0] || "";
+    }
+
+    function setMetricValue(metricName, value) {
+        const metric = document.querySelector(`.metric-${metricName}`);
+        if (!metric) return;
+
+        const percent = clamp(Number(value) || 0, 0, 100);
+
+        metric.style.setProperty("--value", `${percent}%`);
+
+        const valueEl = metric.querySelector(".metric-value");
+
+        if (valueEl) {
+            valueEl.textContent = `${Math.round(percent)}%`;
+        }
+    }
+
+    function renderDashboardProject(project, index, meta, wrapper = null) {
+        const summary = document.querySelector(".dashboards > .summary");
+        if (!summary) return;
+
+        const titleLink = summary.querySelector(".summary-title-link");
+        const descriptionEl = summary.querySelector(".summary-description");
+
+        const year = project ? getProjectYear(project) : "";
+        const name = project?.name || "";
+        const href = getProjectPrimaryURL(project, wrapper);
+
+        if (titleLink) {
+            titleLink.textContent = name ? `${year} · ${name}` : "";
+
+            if (href) {
+                titleLink.href = href;
+                titleLink.removeAttribute("aria-disabled");
+                titleLink.tabIndex = 0;
+            } else {
+                titleLink.href = "#";
+                titleLink.setAttribute("aria-disabled", "true");
+                titleLink.tabIndex = -1;
+            }
+        }
+
+        if (descriptionEl) {
+            descriptionEl.textContent = meta.description || "";
+        }
+
+        setMetricValue("complexity", meta.complexity);
+        setMetricValue("ownership", meta.ownership);
+        setMetricValue("impact", meta.impact);
+    }
+
+    async function updateDashboardByIndex(index, wrapper = null) {
+        const projectIndex = Number(index);
+
+        if (!Number.isInteger(projectIndex)) return;
+
+        const project = currentProjects[projectIndex];
+
+        if (!project) {
+            renderDashboardProject(null, -1, DEFAULT_DASHBOARD_META);
+            return;
+        }
+
+        const token = ++dashboardUpdateToken;
+        const meta = await getProjectDashboardMeta(project, projectIndex);
+
+        if (token !== dashboardUpdateToken) return;
+
+        renderDashboardProject(project, projectIndex, meta, wrapper);
+    }
+
+    function updateDashboardFromWrapper(wrapper) {
+        if (!wrapper) return;
+
+        updateDashboardByIndex(wrapper.dataset.index, wrapper);
+    }
+
+    function updateDashboardFromFirstWrapper() {
+        const wrapper = document.querySelector(
+            ".iframes > .iframe-wrapper[data-index]"
+        );
+
+        if (!wrapper) {
+            renderDashboardProject(null, -1, DEFAULT_DASHBOARD_META);
+            return;
+        }
+
+        updateDashboardFromWrapper(wrapper);
+    }
+
     let iframeWrapperHoverBound = false;
+    let pinnedDashboardWrapper = null;
 
     function clearIframeHoverProjectList() {
         document
@@ -1332,11 +1488,15 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     function renderProjectListItems(projects, year) {
         return projects
-            .map(({ name }, index) => {
-                const safeName = escapeAttr(name);
+            .map((project, index) => {
+                const safeName = escapeAttr(project.name);
+                const safeKey = escapeAttr(getProjectDashboardKey(project, index));
 
                 return `
-                <li data-index="${index}" data-year="${year}">
+                <li
+                    data-index="${index}"
+                    data-year="${year}"
+                    data-dashboard-key="${safeKey}">
                     <span class="project-label" data-text="${safeName}">${safeName}</span>
                 </li>
             `;
@@ -1346,14 +1506,20 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     function renderIframeCards(projects) {
         return projects
-            .map(({ name, URLs }, index) => {
+            .map((project, index) => {
+                const { name, URLs } = project;
+
                 const firstURL = URLs?.[0] || "about:blank";
                 const isMobile = name.trim().endsWith("(mobile)");
                 const iframeClass = isMobile ? "projectShowcase mobile" : "projectShowcase";
                 const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
+                const safeKey = escapeAttr(getProjectDashboardKey(project, index));
 
                 return `
-                <div class="iframe-wrapper" data-index="${index}">
+                <div
+                    class="iframe-wrapper"
+                    data-index="${index}"
+                    data-dashboard-key="${safeKey}">
                     <iframe
                         class="${iframeClass}"
                         data-src="${firstURL}"
@@ -1369,32 +1535,116 @@ window.addEventListener("DOMContentLoaded", async () => {
             .join("");
     }
 
+    function clearIframeWrapperHoverState() {
+        document
+            .querySelectorAll(".iframes > .iframe-wrapper.is-dashboard-hover")
+            .forEach((wrapper) => {
+                wrapper.classList.remove("is-dashboard-hover");
+            });
+    }
+
+    function setDashboardHoverWrapper(wrapper) {
+        if (!wrapper) return;
+
+        // 固定后，普通鼠标 hover 不允许切换当前 dashboard wrapper
+        if (pinnedDashboardWrapper && pinnedDashboardWrapper !== wrapper) return;
+
+        clearIframeWrapperHoverState();
+
+        wrapper.classList.add("is-dashboard-hover");
+
+        setIframeHoverProjectList(wrapper.dataset.index);
+        updateDashboardFromWrapper(wrapper);
+    }
+
+    function resetDashboardHoverState() {
+        if (pinnedDashboardWrapper) return;
+
+        clearIframeWrapperHoverState();
+        clearIframeHoverProjectList();
+        updateDashboardFromFirstWrapper();
+    }
+
+    function setTapePinned(isPinned) {
+        const tape = document.querySelector(".tape");
+        const showcase = document.querySelector("div.projectShowcase");
+
+        if (!tape) return;
+
+        tape.src = isPinned ? "/resources/tape_2.png" : "/resources/tape.png";
+        tape.classList.toggle("is-pinned", isPinned);
+        showcase?.classList.toggle("is-dashboard-pinned", isPinned);
+    }
+
+    function clearPinnedDashboardWrapper() {
+        pinnedDashboardWrapper?.classList.remove("is-dashboard-pinned");
+        pinnedDashboardWrapper = null;
+        setTapePinned(false);
+    }
+
     function bindIframeWrapperHoverToProjectList() {
         if (iframeWrapperHoverBound) return;
         iframeWrapperHoverBound = true;
 
+        const showcase = document.querySelector("div.projectShowcase");
         const iframes = document.querySelector(".iframes");
-        if (!iframes) return;
+        const tape = document.querySelector(".tape");
 
-        iframes.addEventListener("pointerover", (event) => {
+        if (!showcase || !iframes) return;
+
+        showcase.addEventListener("pointerover", (event) => {
+            if (pinnedDashboardWrapper) return;
+
             const wrapper = event.target.closest(".iframe-wrapper[data-index]");
-            if (!wrapper || !iframes.contains(wrapper)) return;
 
+            if (!wrapper || !iframes.contains(wrapper)) return;
             if (event.relatedTarget && wrapper.contains(event.relatedTarget)) return;
 
-            setIframeHoverProjectList(wrapper.dataset.index);
+            setDashboardHoverWrapper(wrapper);
         });
 
-        iframes.addEventListener("pointerout", (event) => {
-            const wrapper = event.target.closest(".iframe-wrapper[data-index]");
-            if (!wrapper || !iframes.contains(wrapper)) return;
-
-            if (event.relatedTarget && wrapper.contains(event.relatedTarget)) return;
-
-            clearIframeHoverProjectList();
+        tape?.addEventListener("pointerdown", (event) => {
+            event.stopPropagation();
         });
 
-        iframes.addEventListener("pointerleave", clearIframeHoverProjectList);
+        tape?.addEventListener("click", (event) => {
+            event.stopPropagation();
+
+            const currentWrapper =
+                pinnedDashboardWrapper ||
+                document.querySelector(".iframes > .iframe-wrapper.is-dashboard-hover");
+
+            if (!currentWrapper) return;
+
+            if (pinnedDashboardWrapper === currentWrapper) {
+                currentWrapper.classList.remove("is-dashboard-pinned");
+                pinnedDashboardWrapper = null;
+                setTapePinned(false);
+                return;
+            }
+
+            clearPinnedDashboardWrapper();
+
+            pinnedDashboardWrapper = currentWrapper;
+            pinnedDashboardWrapper.classList.add("is-dashboard-pinned");
+
+            setDashboardHoverWrapper(pinnedDashboardWrapper);
+            setTapePinned(true);
+        });
+
+        iframes.addEventListener("pointerleave", (event) => {
+            if (pinnedDashboardWrapper) return;
+
+            const next = event.relatedTarget;
+
+            // 鼠标移到 tape 上，不取消当前 iframe-wrapper hover
+            if (next?.closest?.(".tape")) return;
+
+            // 鼠标移到 dashboard 上，也可以不取消，方便点 summary title
+            if (next?.closest?.(".dashboards")) return;
+
+            resetDashboardHoverState();
+        });
     }
 
     function loadIframe(wrapper) {
@@ -1463,13 +1713,13 @@ window.addEventListener("DOMContentLoaded", async () => {
         backButton?.classList.toggle("is-visible", year !== `all`);
 
         _clearAllRotators();
+        clearPinnedDashboardWrapper();
 
         currentProjects = projects;
         currentRenderYear = year;
         // console.log(`year:`, year)
 
         if (year != `all`) {
-
             hotzoneList.innerHTML = renderProjectListItems(projects, year);
             iframes.innerHTML = renderIframeCards(projects);
 
@@ -1477,6 +1727,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             applyStackVars(iframes, projects.length);
 
             triggerDealInAnimation(iframes);
+            updateDashboardFromFirstWrapper();
         } else {
             hotzoneList.innerHTML = projects
                 .map(({ name, year }, index) => {
@@ -1491,6 +1742,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 .join("");
 
             resetIframesToDefault();
+            updateDashboardFromFirstWrapper();
         }
 
         if (!projectListClickBound) {
@@ -1551,13 +1803,16 @@ window.addEventListener("DOMContentLoaded", async () => {
             projectListHoverBound = true;
 
             hotzoneList.addEventListener("pointerover", (event) => {
+                if (pinnedDashboardWrapper) return;
+
                 const projectLi = event.target.closest("li[data-year]");
                 if (!projectLi || !hotzoneList.contains(projectLi)) return;
 
-                // 同一个 li 内部移动，不重复触发
                 if (event.relatedTarget && projectLi.contains(event.relatedTarget)) return;
 
                 const year = projectLi.dataset.year;
+
+                updateDashboardByIndex(Number(projectLi.dataset.index));
 
                 if (year === lastHoverTimelineYear) return;
                 lastHoverTimelineYear = year;
@@ -1832,6 +2087,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     `;
 
         applyStackVars(iframes, 1);
+        clearPinnedDashboardWrapper();
     }
 
     document.querySelector(".project-back-button")?.addEventListener("click", async (event) => {
