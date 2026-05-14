@@ -31,9 +31,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         summary: document.querySelector(".playzone .summary"),
     };
 
-    const getIframeWrappers = () =>
-        Array.from(dom.iframes.querySelectorAll(".iframe-wrapper"));
-
     // Global Illumination
 
     // const lightDebugDot = document.createElement("div");
@@ -437,6 +434,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         const iframeWrappers = Array.from(
             document.querySelectorAll(".iframes > .iframe-wrapper")
         );
+        const dashboards = document.querySelector(".playzone > .dashboards");
 
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
@@ -445,6 +443,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         openingId++;
 
         setWrappersPointerEvents(iframeWrappers, "none");
+
+        dashboards?.classList.add("is-closing");
+        // await sleep(300);
 
         for (let i = iframeWrappers.length - 1; i >= 0; i--) {
             const wrapper = iframeWrappers[i];
@@ -461,16 +462,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
 
         projectShowcase?.classList.remove("active");
-        clearFocusedIframeWrapper();
+        dashboards?.classList.remove("is-closing");
+
+        clearPickedIframeWrapper({ deactivate: false, clearChecked: false });
 
         await sleep(300);
 
         setWrappersPointerEvents(iframeWrappers, "initial");
         animating = false;
-
-        // document.querySelectorAll(".iframes iframe").forEach((iframe) => {
-        //     iframe.src = "about:blank";
-        // });
     }
 
     const openProjectShowcase = async () => {
@@ -539,18 +538,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const isOpen = projectShowcase.classList.contains("active");
 
-            // 打开：只允许点击 iframe-mask 打开
-            if (!isOpen) {
-                const mask = event.target.closest(".iframe-mask");
-
-                if (!mask || !iframes.contains(mask)) return;
-
-                event.stopPropagation();
-                await openProjectShowcase();
-                return;
-            }
-
-            // 关闭：点击 active wrapper / title / summary 内部都不关闭
             const clickedActiveWrapper = event.target.closest(".iframe-wrapper.active");
             const clickedTitle = title?.contains(event.target);
             const clickedSummary = summary?.contains(event.target);
@@ -565,8 +552,49 @@ window.addEventListener("DOMContentLoaded", async () => {
                 clickedDashboardControl
             ) return;
 
-            if (iframes.classList.contains("has-focused-wrapper")) {
-                clearFocusedIframeWrapper();
+            // 打开：只允许点击 iframe-mask 打开
+            if (!isOpen) {
+                const pickedWrapper = event.target.closest(".iframe-wrapper.is-picked-wrapper");
+
+                // 1. 如果点击的是已经抽出的 picked wrapper，就打开它
+                if (pickedWrapper && iframes.contains(pickedWrapper)) {
+                    event.stopPropagation();
+                    openPickedIframeWrapper(pickedWrapper);
+                    return;
+                }
+
+                // 2. 如果当前已经有 picked wrapper，但点击的是外部，
+                //    就退回普通牌堆状态
+                if (iframes.classList.contains("has-picked-wrapper")) {
+                    clearPickedIframeWrapper({
+                        deactivate: true,
+                        clearChecked: true
+                    });
+                    return;
+                }
+
+                // 3. 没有 picked wrapper 时，保持原来的点击牌堆打开全部逻辑
+                const mask = event.target.closest(".iframe-mask");
+
+                if (!mask || !iframes.contains(mask)) return;
+
+                event.stopPropagation();
+                await openProjectShowcase();
+                return;
+            }
+
+            // 关闭：active 状态下，如果只是处于 picked 模式，点击外部只退出 picked，
+            // 不关闭整个 projectShowcase
+            if (iframes.classList.contains("has-picked-wrapper")) {
+                clearPickedIframeWrapper({
+                    deactivate: false,
+                    clearChecked: true
+                });
+
+                clearIframeHoverProjectList();
+
+                await openProjectShowcase();
+
                 return;
             }
 
@@ -810,7 +838,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     const PROJECT_RIPPLE_SKIP_TIME = 50;
 
     // 颜色圈比白色涟漪边缘稍微慢一点/小一点
-    const YEAR_COLOR_LAG_PX = 10;
     function getYearCssVar(year, varName, fallback = "") {
         const source = document.querySelector(`ul.timeList > li[data-year="${year}"]`);
 
@@ -1187,7 +1214,38 @@ window.addEventListener("DOMContentLoaded", async () => {
             ?.classList.add("is-iframe-hover");
     }
 
-    function isIframesMultiActive() {
+    function clearProjectListChecked() {
+        document
+            .querySelectorAll(".hotzone-list > li.checked")
+            .forEach((el) => el.classList.remove("checked"));
+    }
+
+    function clearPickedIframeWrapper(options = {}) {
+        const { deactivate = false, clearChecked = true } = options;
+
+        const iframes = document.querySelector(".iframes");
+        if (!iframes) return;
+
+        iframes.classList.remove("has-picked-wrapper");
+
+        iframes
+            .querySelectorAll(".iframe-wrapper.is-picked-wrapper")
+            .forEach((wrapper) => {
+                wrapper.classList.remove("is-picked-wrapper");
+
+                if (deactivate) {
+                    wrapper.classList.remove("active");
+                    wrapper.classList.remove("effect-ready");
+                    wrapper.querySelector("iframe")?.classList.remove("show");
+                }
+            });
+
+        if (clearChecked) {
+            clearProjectListChecked();
+        }
+    }
+
+    function pickExistingIframeWrapper(index) {
         const projectShowcase = document.querySelector("div.projectShowcase");
         const iframes = document.querySelector(".iframes");
 
@@ -1195,36 +1253,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const wrappers = iframes.querySelectorAll(".iframe-wrapper[data-index]");
 
-        return projectShowcase.classList.contains("active") && wrappers.length > 1;
-    }
-
-    function clearFocusedIframeWrapper(options = {}) {
-        const { clearChecked = true } = options;
-
-        const iframes = document.querySelector(".iframes");
-
-        iframes?.classList.remove("has-focused-wrapper");
-
-        document
-            .querySelectorAll(".iframes > .iframe-wrapper.is-single-focus")
-            .forEach((el) => el.classList.remove("is-single-focus"));
-
-        if (clearChecked) {
-            clearProjectListChecked();
-        }
-    }
-
-    function clearProjectListChecked() {
-        document
-            .querySelectorAll(".hotzone-list > li.checked")
-            .forEach((el) => el.classList.remove("checked"));
-    }
-
-    function focusExistingIframeWrapper(index) {
-        const iframes = document.querySelector(".iframes");
-
-        if (!iframes) return false;
-        if (!isIframesMultiActive()) return false;
+        // 只有多张牌时才走 pick 逻辑
+        if (wrappers.length <= 1) return false;
 
         const wrapper = iframes.querySelector(
             `.iframe-wrapper[data-index="${index}"]`
@@ -1232,14 +1262,61 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!wrapper) return false;
 
-        clearFocusedIframeWrapper({ clearChecked: false });
+        const wasOpen = projectShowcase.classList.contains("active");
 
-        iframes.classList.add("has-focused-wrapper");
+        // 如果本来是 active 展开状态，不要 deactivate 旧 wrapper
+        // 如果本来不是 active，只是在牌堆状态，则清掉旧 picked 的 active/show
+        clearPickedIframeWrapper({
+            deactivate: !wasOpen,
+            clearChecked: false
+        });
+
+        iframes.classList.add("has-picked-wrapper");
+        wrapper.classList.add("is-picked-wrapper");
+
+        if (wasOpen) {
+            projectShowcase.classList.add("active");
+
+            loadIframe(wrapper);
+
+            // 关键：放大/移动前先关掉 blur，避免 backdrop-filter 参与动画
+            wrapper.classList.remove("effect-ready");
+
+            wrapper.classList.add("active");
+            wrapper.classList.add("is-picked-wrapper");
+            wrapper.querySelector("iframe")?.classList.add("show");
+
+            window.setTimeout(() => {
+                if (wrapper.classList.contains("is-picked-wrapper")) {
+                    wrapper.classList.add("effect-ready");
+                }
+            }, 300);
+        } else {
+            // 当前不是打开状态：只 pick，不 active
+            projectShowcase.classList.remove("active");
+
+            wrapper.classList.remove("active");
+            wrapper.classList.remove("effect-ready");
+            wrapper.querySelector("iframe")?.classList.remove("show");
+        }
+
+        return true;
+    }
+
+    function openPickedIframeWrapper(wrapper) {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframes = document.querySelector(".iframes");
+
+        if (!projectShowcase || !iframes || !wrapper) return false;
+        if (!wrapper.classList.contains("is-picked-wrapper")) return false;
+
+        projectShowcase.classList.add("active");
+        iframes.classList.add("has-picked-wrapper");
 
         loadIframe(wrapper);
+
         wrapper.classList.add("active");
         wrapper.classList.add("effect-ready");
-        wrapper.classList.add("is-single-focus");
         wrapper.querySelector("iframe")?.classList.add("show");
 
         return true;
@@ -1349,14 +1426,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         wrappers.forEach((wrapper, index) => {
             const randomX = (Math.random() - 0.5) * 260;
             const startRot = -45 + Math.random() * 90;
-            const approachRot = 2 + Math.random() * 4;
-            const settleRot = 0.4 + Math.random() * 1.2;
             const delay = index * 38 + Math.random() * 45;
 
             wrapper.style.setProperty("--deal-x", `${randomX.toFixed(1)}px`);
             wrapper.style.setProperty("--deal-start-rot", `${startRot.toFixed(1)}deg`);
-            wrapper.style.setProperty("--deal-approach-rot", `${approachRot.toFixed(1)}deg`);
-            wrapper.style.setProperty("--deal-settle-rot", `${settleRot.toFixed(1)}deg`);
             wrapper.style.setProperty("--deal-delay", `${delay.toFixed(0)}ms`);
         });
 
@@ -1396,7 +1469,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         // console.log(`year:`, year)
 
         if (year != `all`) {
-            clearFocusedIframeWrapper();
 
             hotzoneList.innerHTML = renderProjectListItems(projects, year);
             iframes.innerHTML = renderIframeCards(projects);
@@ -1448,18 +1520,30 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 li.classList.add("checked");
 
-                const focusedExistingWrapper = focusExistingIframeWrapper(index);
+                const pickedExistingWrapper = pickExistingIframeWrapper(index);
 
-                if (!focusedExistingWrapper) {
+                if (!pickedExistingWrapper) {
                     renderSingleProjectInIframes(project, index);
                 }
 
                 setCheckedTimelineYear(targetYear);
 
-                const showcaseArea = document.querySelector("div.projectShowcase");
-                triggerProjectListRipple(showcaseArea, event);
+                // const showcaseArea = document.querySelector("div.projectShowcase");
+                // triggerProjectListRipple(showcaseArea, event);
 
-                triggerYearColorRipple(targetYear, event);
+                // triggerYearColorRipple(targetYear, event);
+                const iframeCount = document.querySelectorAll(
+                    ".iframes > .iframe-wrapper"
+                ).length;
+
+                const shouldPlayRipple = iframeCount <= 1;
+
+                if (shouldPlayRipple) {
+                    const showcaseArea = document.querySelector("div.projectShowcase");
+                    triggerProjectListRipple(showcaseArea, event);
+
+                    triggerYearColorRipple(targetYear, event);
+                }
             });
         }
 
@@ -1518,7 +1602,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Bubble
     (() => {
-        const RIGHT_ZONE = 0.5;          // 右侧触发阈值
         const TTL_BASE = 4200;         // 基础 TTL
         const TTL_JITTER = 2000;         // 0~2000ms 随机
         const MAX = 7;            // 同屏最多
@@ -1735,7 +1818,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         iframes.removeAttribute("data-year");
         iframes.style.removeProperty("--count");
         iframes.style.removeProperty("--step-left");
-        iframes.classList.remove("has-focused-wrapper");
+        iframes.classList.remove("has-picked-wrapper");
 
         iframes.innerHTML = `
         <div class="iframe-wrapper" data-index="35">
@@ -2031,12 +2114,12 @@ window.addEventListener("DOMContentLoaded", async () => {
             previousCenter = currentCenter;
             previousLi = li;
 
-            console.log({
-                dx,
-                dy,
-                from: `${fromX}% ${fromY}%`,
-                to: `${toX}% ${toY}%`,
-            });
+            // console.log({
+            //     dx,
+            //     dy,
+            //     from: `${fromX}% ${fromY}%`,
+            //     to: `${toX}% ${toY}%`,
+            // });
         });
     }
 
