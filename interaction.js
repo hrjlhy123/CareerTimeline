@@ -1,4 +1,4 @@
-import { getData } from "./3D_model_3.js";
+import { getData } from "./3D_model.js";
 import { getCoordinates, getRotations } from "./tools/calculate.js"
 
 "use strict";
@@ -10,11 +10,29 @@ window.addEventListener("DOMContentLoaded", async () => {
         coordinates,
         angle
 
+    let timelineListReady = false;
+
     li = document.querySelectorAll('ul.timeList > li[data-year]');
     angle = {
         local: { rx: 0, ry: 0, rz: 0 },
         global: { rx: 0, ry: 0, rz: 0 },
     }
+
+    const dom = {
+        projectShowcase: document.querySelector("div.projectShowcase"),
+        projectList: document.querySelector("div.projectList"),
+        iframes: document.querySelector("div.iframes"),
+        hotzoneList: document.querySelector(".hotzone-list"),
+        backButton: document.querySelector(".project-back-button"),
+        backIcon: document.querySelector(".project-back-icon"),
+        backLightGradient: document.querySelector("#projectBackLightGradient"),
+        metricFills: Array.from(document.querySelectorAll(".metric-fill")),
+        title: document.querySelector("div.title > p.title"),
+        summary: document.querySelector(".playzone .summary"),
+    };
+
+    const getIframeWrappers = () =>
+        Array.from(dom.iframes.querySelectorAll(".iframe-wrapper"));
 
     // Global Illumination
 
@@ -35,6 +53,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         x: window.innerWidth * 0.32,
         y: window.innerHeight * 0.12,
         hasPointer: false,
+        dirty: true,
     };
 
     const clamp = (value, min, max) => {
@@ -118,9 +137,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateBackButtonGlobalIllumination() {
-        const button = document.querySelector(".project-back-button");
-        const icon = document.querySelector(".project-back-icon");
-        const lightGradient = document.querySelector("#projectBackLightGradient");
+        const button = dom.backButton;
+        const icon = dom.backIcon;
+        const lightGradient = dom.backLightGradient;
 
         if (!button || !icon || !lightGradient) return;
 
@@ -160,9 +179,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateMetricGlobalIllumination() {
-        const fills = document.querySelectorAll(".metric-fill");
-
-        fills.forEach((fill) => {
+        dom.metricFills.forEach((fill) => {
             const light = getGlobalLightForElement(fill, {
                 range: 360,
                 minInfluence: 0.12,
@@ -229,69 +246,98 @@ window.addEventListener("DOMContentLoaded", async () => {
         pointerLight.x = event.clientX;
         pointerLight.y = event.clientY;
         pointerLight.hasPointer = true;
+        pointerLight.dirty = true;
         // lightDebugDot.style.left = `${event.clientX}px`;
         // lightDebugDot.style.top = `${event.clientY}px`;
     });
 
     document.addEventListener("pointerleave", () => {
         pointerLight.hasPointer = false;
+        pointerLight.dirty = true;
     });
 
     frame = async () => {
-        data = await getData()
-        if (data.results && data.modelStates && data.matrix_view && data.matrix_projection && data.matrix_transform && data.matrix_world && data.canvas) {
-            // console.log(`data:`, data)
-            li.forEach(async (item, index) => {
-                // if (index == 0) {
-                x = data.modelStates[index].center.x + data.modelStates[index].translation.x
-                y = data.modelStates[index].center.y + data.modelStates[index].translation.y
-                z = data.modelStates[index].center.z + data.modelStates[index].translation.z
+        data = await getData();
 
-                coordinates = await getCoordinates([x, y, z], data.matrix_view, data.matrix_projection, data.matrix_world, data.canvas)
-                x = coordinates.x
-                y = coordinates.y
-                // console.log(`x:`, x, `, y:`, y)
+        if (
+            data.results &&
+            data.modelStates &&
+            data.matrix_view &&
+            data.matrix_projection &&
+            data.matrix_transform &&
+            data.matrix_world &&
+            data.canvas
+        ) {
+            const angleGlobal = await getRotations(data.matrix_world);
+            const beltRect = data.canvas.getBoundingClientRect();
 
-                Object.assign(item.style, {
-                    left: x + 'px',
-                    top: y + 'px',
-                })
+            for (let index = 0; index < li.length; index++) {
+                const item = li[index];
 
-                // 角度单位：度
-                angle.global = await getRotations(data.matrix_world);
-                angle.local = {
-                    rx: (data.modelStates[index].angle.rx - data.modelStates[index].deltaAngle.rx) * 180 / Math.PI,
-                    ry: (data.modelStates[index].angle.ry - data.modelStates[index].deltaAngle.ry) * 180 / Math.PI,
-                    rz: (data.modelStates[index].angle.rz - data.modelStates[index].deltaAngle.rz) * 180 / Math.PI,
+                let x =
+                    data.modelStates[index].center.x +
+                    data.modelStates[index].translation.x;
+
+                let y =
+                    data.modelStates[index].center.y +
+                    data.modelStates[index].translation.y;
+
+                let z =
+                    data.modelStates[index].center.z +
+                    data.modelStates[index].translation.z;
+
+                const coordinates = await getCoordinates(
+                    [x, y, z],
+                    data.matrix_view,
+                    data.matrix_projection,
+                    data.matrix_world,
+                    data.canvas
+                );
+
+                x = coordinates.x;
+                y = coordinates.y;
+
+                item.style.left = `${x}px`;
+                item.style.top = `${y}px`;
+
+                const angleLocal = {
+                    rx:
+                        (data.modelStates[index].angle.rx -
+                            data.modelStates[index].deltaAngle.rx) *
+                        180 /
+                        Math.PI,
+                    ry:
+                        (data.modelStates[index].angle.ry -
+                            data.modelStates[index].deltaAngle.ry) *
+                        180 /
+                        Math.PI,
+                    rz:
+                        (data.modelStates[index].angle.rz -
+                            data.modelStates[index].deltaAngle.rz) *
+                        180 /
+                        Math.PI,
                 };
 
                 item.style.transform = `
-                    translate3d(-50%, -50%, 0)
-                    rotateX(${angle.global.rx}deg)
-                    rotateY(${angle.global.ry}deg)
-                    rotateZ(${angle.global.rz}deg)
-                    rotateX(${angle.local.rx}deg)
-                    rotateY(${angle.local.ry}deg)
-                    rotateZ(${angle.local.rz}deg)
-                `;
+                translate3d(-50%, -50%, 0)
+                rotateX(${angleGlobal.rx}deg)
+                rotateY(${angleGlobal.ry}deg)
+                rotateZ(${angleGlobal.rz}deg)
+                rotateX(${angleLocal.rx}deg)
+                rotateY(${angleLocal.ry}deg)
+                rotateZ(${angleLocal.rz}deg)
+            `;
 
                 const zFront =
-                    data.modelStates[index].center.z + data.modelStates[index].translation.z <
+                    data.modelStates[index].center.z +
+                    data.modelStates[index].translation.z <
                     data.results.center[2] - 0.5;
 
                 const localRx =
                     data.modelStates[index].angle.rx -
                     data.modelStates[index].deltaAngle.rx;
 
-                // 1 = 正面，0 = 侧面，-1 = 背面
                 const facing = Math.cos(localRx);
-
-                const clamp = (value, min, max) => {
-                    return Math.min(Math.max(value, min), max);
-                };
-
-                const beltRect = data.canvas.getBoundingClientRect();
-
                 const frontLight = clamp(facing, 0.25, 1);
 
                 const yearLight = getGlobalLightForElement(item, {
@@ -307,32 +353,33 @@ window.addEventListener("DOMContentLoaded", async () => {
                     alphaExtra: frontLight * 0.12,
                 });
 
-                if (!yearLight) return;
-
-                const localLightX = yearLight.lightX;
-                const localLightY = yearLight.lightY;
-                const lightAlpha = yearLight.lightAlpha;
-
-                item.style.setProperty("--year-light-x", `${localLightX.toFixed(1)}%`);
-                item.style.setProperty("--year-light-y", `${localLightY.toFixed(1)}%`);
-                item.style.setProperty("--year-light-alpha", lightAlpha.toFixed(2));
-
-                // 这个值越大，隐藏越早
-                const isFrontFacing = facing > 0.18;
-
-                if (zFront && isFrontFacing) {
-                    item.style.visibility = "initial";
-                } else {
-                    item.style.visibility = "hidden";
+                if (yearLight) {
+                    item.style.setProperty("--year-light-x", `${yearLight.lightX.toFixed(1)}%`);
+                    item.style.setProperty("--year-light-y", `${yearLight.lightY.toFixed(1)}%`);
+                    item.style.setProperty("--year-light-alpha", yearLight.lightAlpha.toFixed(2));
                 }
 
-            })
+                item.style.visibility =
+                    zFront && facing > 0.18 ? "initial" : "hidden";
+            }
+
+            if (!timelineListReady) {
+                document
+                    .querySelector("ul.timeList")
+                    ?.classList.add("is-ready");
+
+                timelineListReady = true;
+            }
         }
 
-        updateBackButtonGlobalIllumination()
-        updateMetricGlobalIllumination()
-        requestAnimationFrame(frame)
-    }
+        if (pointerLight.dirty) {
+            updateBackButtonGlobalIllumination();
+            updateMetricGlobalIllumination();
+            pointerLight.dirty = false;
+        }
+
+        requestAnimationFrame(frame);
+    };
     frame()
 
     /* Unsupervised AI content */
@@ -350,10 +397,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener("resize", syncTimelinePerspective);
 
     let projectShowcase = document.querySelector('div.projectShowcase')
-    let hotzone = document.querySelector(`div.hotzone`)
-    let playzone = document.querySelector(`div.playzone`)
-    let iframeWrappers = document.querySelectorAll(`div.iframe-wrapper`)
-    let iframeMasks = document.querySelectorAll(`div.iframe-mask`)
+    let projectList = document.querySelector(`div.projectList`)
+    let iframes = document.querySelector(`div.iframes`)
 
     let year
     li.forEach((item, index) => {
@@ -389,7 +434,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     const closeProjectShowcase = async () => {
         const projectShowcase = document.querySelector("div.projectShowcase");
-        const iframeWrappers = Array.from(document.querySelectorAll("div.iframe-wrapper"));
+        const iframeWrappers = Array.from(
+            document.querySelectorAll(".iframes > .iframe-wrapper")
+        );
 
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
@@ -414,16 +461,23 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
 
         projectShowcase?.classList.remove("active");
+        clearFocusedIframeWrapper();
 
         await sleep(300);
 
         setWrappersPointerEvents(iframeWrappers, "initial");
         animating = false;
+
+        // document.querySelectorAll(".iframes iframe").forEach((iframe) => {
+        //     iframe.src = "about:blank";
+        // });
     }
 
     const openProjectShowcase = async () => {
         const projectShowcase = document.querySelector("div.projectShowcase");
-        const iframeWrappers = Array.from(document.querySelectorAll("div.iframe-wrapper"));
+        const iframeWrappers = Array.from(
+            document.querySelectorAll(".iframes > .iframe-wrapper")
+        );
 
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
@@ -444,6 +498,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const wrapper = iframeWrappers[i];
 
+            loadIframe(wrapper);
             wrapper.classList.add("active");
             await sleep(50);
         }
@@ -476,11 +531,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         document.addEventListener("click", async (event) => {
             const projectShowcase = document.querySelector("div.projectShowcase");
-            const playzone = document.querySelector("div.playzone");
-            const title = document.querySelector("div.title");
-            const summary = document.querySelector("div.summary");
+            const iframes = document.querySelector("div.playzone > div.iframes");
+            const title = document.querySelector("div.title > p.title");
+            const summary = document.querySelector("div.dashboards > div.summary");
 
-            if (!projectShowcase || !playzone) return;
+            if (!projectShowcase || !iframes) return;
 
             const isOpen = projectShowcase.classList.contains("active");
 
@@ -488,7 +543,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (!isOpen) {
                 const mask = event.target.closest(".iframe-mask");
 
-                if (!mask || !playzone.contains(mask)) return;
+                if (!mask || !iframes.contains(mask)) return;
 
                 event.stopPropagation();
                 await openProjectShowcase();
@@ -499,8 +554,21 @@ window.addEventListener("DOMContentLoaded", async () => {
             const clickedActiveWrapper = event.target.closest(".iframe-wrapper.active");
             const clickedTitle = title?.contains(event.target);
             const clickedSummary = summary?.contains(event.target);
+            const clickedDashboardControl = event.target.closest(
+                ".metric-value, .metric-slot, .metric-label"
+            );
 
-            if (clickedActiveWrapper || clickedTitle || clickedSummary) return;
+            if (
+                clickedActiveWrapper ||
+                clickedTitle ||
+                clickedSummary ||
+                clickedDashboardControl
+            ) return;
+
+            if (iframes.classList.contains("has-focused-wrapper")) {
+                clearFocusedIframeWrapper();
+                return;
+            }
 
             closeProjectShowcase();
         });
@@ -510,11 +578,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     /* Unsupervised AI content */
 
-    const applyStackVars = (playzone, maxN = 10) => {
-        const items = Array.from(playzone.querySelectorAll(".iframe-wrapper"));
+    const applyStackVars = (iframes, maxN = 10) => {
+        const items = Array.from(iframes.querySelectorAll(".iframe-wrapper"));
         const total = items.length;
 
-        playzone.style.setProperty("--count", total);
+        iframes.style.setProperty("--count", total);
 
         const start = Math.max(0, total - maxN);
         const visible = items.slice(start);
@@ -533,14 +601,14 @@ window.addEventListener("DOMContentLoaded", async () => {
             stepPx = Math.max(0, stepPx);
         }
 
-        playzone.style.setProperty("--step-left", `${stepPx}px`);
+        iframes.style.setProperty("--step-left", `${stepPx}px`);
 
         visible.forEach((el, i) => {
-            el.style.setProperty("--i", i);
+            el.style.setProperty("--index", i);
         });
 
         items.slice(0, start).forEach((el) => {
-            el.style.removeProperty("--i");
+            el.style.removeProperty("--index");
         });
     };
 
@@ -756,8 +824,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     let yearColorRippleToken = 0;
 
     function triggerYearColorRipple(targetYear, event, onDone) {
-        const playzone = document.querySelector(".playzone");
-        if (!playzone || !targetYear) return;
+        const iframes = document.querySelector(".iframes");
+        if (!iframes || !targetYear) return;
 
         yearColorRippleToken++;
         const token = yearColorRippleToken;
@@ -769,7 +837,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const yearRgb = getYearCssVar(targetYear, "--year-rgb", "255 255 255");
 
-        const rect = playzone.getBoundingClientRect();
+        const rect = iframes.getBoundingClientRect();
 
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
@@ -784,12 +852,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         const maxDistance = Math.max(...distances);
         const finalRadius = maxDistance * 1.1;
 
-        playzone.classList.add("year-color-rippling");
-        playzone.style.setProperty("--year-ripple-x", `${clickX}px`);
-        playzone.style.setProperty("--year-ripple-y", `${clickY}px`);
-        playzone.style.setProperty("--year-ripple-rgb", yearRgb);
-        playzone.style.setProperty("--year-ripple-alpha", "0.2");
-        playzone.style.setProperty("--year-ripple-radius", "0px");
+        iframes.classList.add("year-color-rippling");
+        iframes.style.setProperty("--year-ripple-x", `${clickX}px`);
+        iframes.style.setProperty("--year-ripple-y", `${clickY}px`);
+        iframes.style.setProperty("--year-ripple-rgb", yearRgb);
+        iframes.style.setProperty("--year-ripple-alpha", "0.2");
+        iframes.style.setProperty("--year-ripple-radius", "0px");
 
         const start = performance.now();
         const duration = PROJECT_RIPPLE_DURATION;
@@ -804,7 +872,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const elapsed = now - start;
 
             if (!dataDateApplied && elapsed >= DATA_DATE_APPLY_TIME) {
-                playzone.setAttribute("data-year", String(targetYear));
+                iframes.setAttribute("data-year", String(targetYear));
                 dataDateApplied = true;
             }
 
@@ -822,26 +890,26 @@ window.addEventListener("DOMContentLoaded", async () => {
             const startAlpha = 0.1;
             const alpha = startAlpha * (1 - t);
 
-            playzone.style.setProperty("--year-ripple-radius", `${radius}px`);
-            playzone.style.setProperty("--year-ripple-alpha", alpha.toFixed(3));
+            iframes.style.setProperty("--year-ripple-radius", `${radius}px`);
+            iframes.style.setProperty("--year-ripple-alpha", alpha.toFixed(3));
 
             if (t < 1) {
                 yearColorRippleRaf = requestAnimationFrame(animate);
             } else {
                 if (!dataDateApplied) {
-                    playzone.setAttribute("data-year", String(targetYear));
+                    iframes.setAttribute("data-year", String(targetYear));
                     dataDateApplied = true;
                 }
 
-                playzone.setAttribute("data-year", String(targetYear));
+                iframes.setAttribute("data-year", String(targetYear));
 
-                playzone.classList.remove("year-color-rippling");
+                iframes.classList.remove("year-color-rippling");
 
-                playzone.style.removeProperty("--year-ripple-x");
-                playzone.style.removeProperty("--year-ripple-y");
-                playzone.style.removeProperty("--year-ripple-rgb");
-                playzone.style.removeProperty("--year-ripple-alpha");
-                playzone.style.removeProperty("--year-ripple-radius");
+                iframes.style.removeProperty("--year-ripple-x");
+                iframes.style.removeProperty("--year-ripple-y");
+                iframes.style.removeProperty("--year-ripple-rgb");
+                iframes.style.removeProperty("--year-ripple-alpha");
+                iframes.style.removeProperty("--year-ripple-radius");
 
                 if (typeof onDone === "function") {
                     onDone();
@@ -943,10 +1011,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         projectRippleRaf = requestAnimationFrame(animate);
     }
 
-    function renderSingleProjectInPlayzone(project, projectIndex = null) {
-        const playzone = document.querySelector(".playzone");
+    function renderSingleProjectInIframes(project, index = null) {
+        const iframes = document.querySelector(".iframes");
 
-        if (!playzone || !project) return;
+        if (!iframes || !project) return;
 
         const { name, URLs } = project;
         const firstURL = URLs?.[0] || "about:blank";
@@ -955,23 +1023,29 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         _clearAllRotators();
 
-        playzone.innerHTML = "";
+        iframes.innerHTML = "";
 
-        playzone.insertAdjacentHTML(
-            "beforeend",
-            `
-        <div class="iframe-wrapper" ${projectIndex !== null ? `data-project-index="${projectIndex}"` : ""}>
-            <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
-            <div class="iframe-mask"></div>
-        </div>
-        `
-        );
+        const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
 
-        const wrapper = playzone.lastElementChild;
+        iframes.insertAdjacentHTML("beforeend", `
+            <div class="iframe-wrapper" data-index="${index}">
+                <iframe
+                    class="${iframeClass}"
+                    data-src="${firstURL}"
+                    data-urls="${safeUrls}"
+                    src="about:blank"
+                    frameborder="0"
+                    tabindex="0">
+                </iframe>
+                <div class="iframe-mask"></div>
+            </div>
+        `);
+
+        const wrapper = iframes.lastElementChild;
         const iframeEl = wrapper.querySelector("iframe");
 
         _attachRotator(iframeEl, URLs, 4000);
-        applyStackVars(playzone, 1);
+        applyStackVars(iframes, 1);
     }
 
     let currentRenderYear = "all";
@@ -1086,11 +1160,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     function shouldHoverAllProjectListItems() {
-        const playzone = document.querySelector(".playzone");
-        if (!playzone) return false;
+        const iframes = document.querySelector(".iframes");
+        if (!iframes) return false;
 
-        const wrappers = playzone.querySelectorAll(".iframe-wrapper[data-project-index]");
-        const activeWrapper = playzone.querySelector(".iframe-wrapper.active");
+        const wrappers = iframes.querySelectorAll(".iframe-wrapper[data-index]");
+        const activeWrapper = iframes.querySelector(".iframe-wrapper.active");
 
         return wrappers.length > 1 && !activeWrapper;
     }
@@ -1100,7 +1174,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (shouldHoverAllProjectListItems()) {
             document
-                .querySelectorAll(".hotzone-list > li[data-project-index]")
+                .querySelectorAll(".hotzone-list > li[data-index]")
                 .forEach((el) => el.classList.add("is-iframe-hover"));
 
             return;
@@ -1109,44 +1183,211 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (index === undefined || index === null || index === "") return;
 
         document
-            .querySelector(`.hotzone-list > li[data-project-index="${index}"]`)
+            .querySelector(`.hotzone-list > li[data-index="${index}"]`)
             ?.classList.add("is-iframe-hover");
+    }
+
+    function isIframesMultiActive() {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframes = document.querySelector(".iframes");
+
+        if (!projectShowcase || !iframes) return false;
+
+        const wrappers = iframes.querySelectorAll(".iframe-wrapper[data-index]");
+
+        return projectShowcase.classList.contains("active") && wrappers.length > 1;
+    }
+
+    function clearFocusedIframeWrapper(options = {}) {
+        const { clearChecked = true } = options;
+
+        const iframes = document.querySelector(".iframes");
+
+        iframes?.classList.remove("has-focused-wrapper");
+
+        document
+            .querySelectorAll(".iframes > .iframe-wrapper.is-single-focus")
+            .forEach((el) => el.classList.remove("is-single-focus"));
+
+        if (clearChecked) {
+            clearProjectListChecked();
+        }
+    }
+
+    function clearProjectListChecked() {
+        document
+            .querySelectorAll(".hotzone-list > li.checked")
+            .forEach((el) => el.classList.remove("checked"));
+    }
+
+    function focusExistingIframeWrapper(index) {
+        const iframes = document.querySelector(".iframes");
+
+        if (!iframes) return false;
+        if (!isIframesMultiActive()) return false;
+
+        const wrapper = iframes.querySelector(
+            `.iframe-wrapper[data-index="${index}"]`
+        );
+
+        if (!wrapper) return false;
+
+        clearFocusedIframeWrapper({ clearChecked: false });
+
+        iframes.classList.add("has-focused-wrapper");
+
+        loadIframe(wrapper);
+        wrapper.classList.add("active");
+        wrapper.classList.add("effect-ready");
+        wrapper.classList.add("is-single-focus");
+        wrapper.querySelector("iframe")?.classList.add("show");
+
+        return true;
+    }
+
+    function escapeAttr(value = "") {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;");
+    }
+
+    function renderProjectListItems(projects, year) {
+        return projects
+            .map(({ name }, index) => {
+                const safeName = escapeAttr(name);
+
+                return `
+                <li data-index="${index}" data-year="${year}">
+                    <span class="project-label" data-text="${safeName}">${safeName}</span>
+                </li>
+            `;
+            })
+            .join("");
+    }
+
+    function renderIframeCards(projects) {
+        return projects
+            .map(({ name, URLs }, index) => {
+                const firstURL = URLs?.[0] || "about:blank";
+                const isMobile = name.trim().endsWith("(mobile)");
+                const iframeClass = isMobile ? "projectShowcase mobile" : "projectShowcase";
+                const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
+
+                return `
+                <div class="iframe-wrapper" data-index="${index}">
+                    <iframe
+                        class="${iframeClass}"
+                        data-src="${firstURL}"
+                        data-urls="${safeUrls}"
+                        src="about:blank"
+                        frameborder="0"
+                        tabindex="0">
+                    </iframe>
+                    <div class="iframe-mask"></div>
+                </div>
+            `;
+            })
+            .join("");
     }
 
     function bindIframeWrapperHoverToProjectList() {
         if (iframeWrapperHoverBound) return;
         iframeWrapperHoverBound = true;
 
-        const playzone = document.querySelector(".playzone");
-        if (!playzone) return;
+        const iframes = document.querySelector(".iframes");
+        if (!iframes) return;
 
-        playzone.addEventListener("pointerover", (event) => {
-            const wrapper = event.target.closest(".iframe-wrapper[data-project-index]");
-            if (!wrapper || !playzone.contains(wrapper)) return;
+        iframes.addEventListener("pointerover", (event) => {
+            const wrapper = event.target.closest(".iframe-wrapper[data-index]");
+            if (!wrapper || !iframes.contains(wrapper)) return;
 
             if (event.relatedTarget && wrapper.contains(event.relatedTarget)) return;
 
-            setIframeHoverProjectList(wrapper.dataset.projectIndex);
+            setIframeHoverProjectList(wrapper.dataset.index);
         });
 
-        playzone.addEventListener("pointerout", (event) => {
-            const wrapper = event.target.closest(".iframe-wrapper[data-project-index]");
-            if (!wrapper || !playzone.contains(wrapper)) return;
+        iframes.addEventListener("pointerout", (event) => {
+            const wrapper = event.target.closest(".iframe-wrapper[data-index]");
+            if (!wrapper || !iframes.contains(wrapper)) return;
 
             if (event.relatedTarget && wrapper.contains(event.relatedTarget)) return;
 
             clearIframeHoverProjectList();
         });
 
-        playzone.addEventListener("pointerleave", clearIframeHoverProjectList);
+        iframes.addEventListener("pointerleave", clearIframeHoverProjectList);
+    }
+
+    function loadIframe(wrapper) {
+        const iframe = wrapper?.querySelector("iframe");
+        if (!iframe) return;
+
+        const src = iframe.dataset.src;
+        if (!src) return;
+
+        if (iframe.getAttribute("src") !== "about:blank") return;
+
+        iframe.src = src;
+
+        const urls = JSON.parse(decodeURIComponent(iframe.dataset.urls || "[]"));
+        _attachRotator(iframe, urls, 4000);
+    }
+
+    function triggerDealInAnimation(iframes) {
+        if (!iframes) return;
+
+        const wrappers = Array.from(
+            iframes.querySelectorAll(".iframe-wrapper")
+        );
+
+        if (!wrappers.length) return;
+
+        iframes.classList.remove("is-dealing");
+
+        wrappers.forEach((wrapper, index) => {
+            const randomX = (Math.random() - 0.5) * 260;
+            const startRot = -45 + Math.random() * 90;
+            const approachRot = 2 + Math.random() * 4;
+            const settleRot = 0.4 + Math.random() * 1.2;
+            const delay = index * 38 + Math.random() * 45;
+
+            wrapper.style.setProperty("--deal-x", `${randomX.toFixed(1)}px`);
+            wrapper.style.setProperty("--deal-start-rot", `${startRot.toFixed(1)}deg`);
+            wrapper.style.setProperty("--deal-approach-rot", `${approachRot.toFixed(1)}deg`);
+            wrapper.style.setProperty("--deal-settle-rot", `${settleRot.toFixed(1)}deg`);
+            wrapper.style.setProperty("--deal-delay", `${delay.toFixed(0)}ms`);
+        });
+
+        // 强制重启动画
+        void iframes.offsetWidth;
+
+        let finishedCount = 0;
+
+        wrappers.forEach((wrapper) => {
+            wrapper.addEventListener(
+                "animationend",
+                () => {
+                    finishedCount++;
+
+                    if (finishedCount >= wrappers.length) {
+                        iframes.classList.remove("is-dealing");
+                    }
+                },
+                { once: true }
+            );
+        });
+
+        iframes.classList.add("is-dealing");
     }
 
     const renderProjects = (year, projects) => {
         const hotzoneList = document.querySelector('.hotzone-list');
-        const playzone = document.querySelector('.playzone');
+        const iframes = document.querySelector('.iframes');
         const backButton = document.querySelector(".project-back-button");
 
-        backButton?.classList.toggle("is-visible", year !== "all");
+        backButton?.classList.toggle("is-visible", year !== `all`);
 
         _clearAllRotators();
 
@@ -1155,62 +1396,29 @@ window.addEventListener("DOMContentLoaded", async () => {
         // console.log(`year:`, year)
 
         if (year != `all`) {
-            // ✅ 清空
-            hotzoneList.innerHTML = '';
-            playzone.innerHTML = '';
+            clearFocusedIframeWrapper();
 
-            projects.forEach(({ name, URLs }, index) => {
-                const firstURL = URLs?.[0] || 'about:blank';
-                const isMobile = name.trim().endsWith('(mobile)');
-                const iframeClass = isMobile ? 'projectShowcase mobile' : 'projectShowcase';
+            hotzoneList.innerHTML = renderProjectListItems(projects, year);
+            iframes.innerHTML = renderIframeCards(projects);
 
-                playzone.setAttribute("data-year", year);
+            iframes.setAttribute("data-year", year);
+            applyStackVars(iframes, projects.length);
 
-                hotzoneList.insertAdjacentHTML(
-                    'beforeend',
-                    `<li data-project-index="${index}" data-year="${year}">
-                        <span class="project-label"></span>
-                    </li>`
-                );
-
-                const label = hotzoneList.lastElementChild.lastElementChild;
-                label.textContent = name;
-                label.dataset.text = name;
-
-                playzone.insertAdjacentHTML('beforeend', `
-                    <div class="iframe-wrapper" data-project-index="${index}">
-                        <iframe class="${iframeClass}" src="${firstURL}" frameborder="0" tabindex="0"></iframe>
-                        <div class="iframe-mask"></div>
-                    </div>
-                `);
-
-                // 给刚插入的 iframe 开启轮播
-                const wrapper = playzone.lastElementChild;
-                const iframeEl = wrapper.querySelector('iframe');
-                _attachRotator(iframeEl, URLs, 4000); // ms
-            });
-
-
-
-            applyStackVars(playzone, projects.length);
-
+            triggerDealInAnimation(iframes);
         } else {
-            hotzoneList.innerHTML = '';
+            hotzoneList.innerHTML = projects
+                .map(({ name, year }, index) => {
+                    const safeName = escapeAttr(name);
 
-            resetPlayzoneToDefault();
+                    return `
+                        <li data-index="${index}" data-year="${year}">
+                            <span class="project-label" data-text="${safeName}">${safeName}</span>
+                        </li>
+                    `;
+                })
+                .join("");
 
-            projects.forEach(({ name, year }, index) => {
-                hotzoneList.insertAdjacentHTML(
-                    'beforeend',
-                    `<li data-project-index="${index}" data-year="${year}">
-                        <span class="project-label"></span>
-                    </li>`
-                );
-
-                const label = hotzoneList.lastElementChild.lastElementChild;
-                label.textContent = name;
-                label.dataset.text = name;
-            });
+            resetIframesToDefault();
         }
 
         if (!projectListClickBound) {
@@ -1227,7 +1435,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 // 这样点击项目不会触发关闭
                 event.stopPropagation();
 
-                const index = Number(li.dataset.projectIndex);
+                const index = Number(li.dataset.index);
                 const project = currentProjects[index];
 
                 if (!project) return;
@@ -1240,7 +1448,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 li.classList.add("checked");
 
-                renderSingleProjectInPlayzone(project, index);
+                const focusedExistingWrapper = focusExistingIframeWrapper(index);
+
+                if (!focusedExistingWrapper) {
+                    renderSingleProjectInIframes(project, index);
+                }
 
                 setCheckedTimelineYear(targetYear);
 
@@ -1288,7 +1500,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.type === 'projects') {
-            console.log(`📦 Projects in ${msg.year}:`, msg.data);
+            // console.log(`📦 Projects in ${msg.year}:`, msg.data);
             // 示例输出格式: [{ name: "...", urls: [...] }, ...]
             renderProjects(msg.year, msg.data.reverse())
         }
@@ -1304,6 +1516,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     /* Unsupervised AI content */
 
+    // Bubble
     (() => {
         const RIGHT_ZONE = 0.5;          // 右侧触发阈值
         const TTL_BASE = 4200;         // 基础 TTL
@@ -1315,13 +1528,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const MESSAGES = [
             { type: 'text', text: "My name is Jack Hao." },
-            { type: 'text', text: "Self-driven and creative." },
-            { type: 'text', text: "Let's talk if you're interested." },
-            { type: 'text', text: "Working with WebGPU." },
-            { type: 'text', text: "Open to full-time opportunities." },
-            { type: 'text', text: "Seeking green card sponsorship." },
-            { type: 'text', text: "3-year OPT after June 2026." },
-            { type: 'text', text: "Play Age of Empires IV." },
             { type: 'email', text: email },
             { type: 'phone', text: phone }
         ];
@@ -1329,9 +1535,37 @@ window.addEventListener("DOMContentLoaded", async () => {
         const bubbles = new Set();
         const states = new Map(); // el -> {x,y,r, t0, ax1.., up, timerId, dieAt, remaining, hover, mx,my}
 
-        hotzone.addEventListener('click', e => {
-            if (e.clientX < innerWidth * RIGHT_ZONE) return;
-            spawnHole(e.clientX, e.clientY);
+        let messageIndex = 0;
+
+        function getNextMessage() {
+            const msg = MESSAGES[messageIndex % MESSAGES.length];
+            messageIndex++;
+
+            return msg;
+        }
+
+        function spawnRandomBubbleInProjectListRightHalf() {
+            if (!projectList) return;
+
+            const rect = projectList.getBoundingClientRect();
+
+            const padding = 36;
+
+            const minX = rect.left + rect.width * 0.5 + padding;
+            const maxX = rect.right - padding;
+            const minY = rect.top + padding;
+            const maxY = rect.bottom - padding;
+
+            if (maxX <= minX || maxY <= minY) return;
+
+            const x = rnd(minX, maxX);
+            const y = rnd(minY, maxY);
+
+            spawnHole(x, y);
+        }
+
+        document.addEventListener("title-firework-bubble", () => {
+            spawnRandomBubbleInProjectListRightHalf();
         });
 
         function spawnHole(x, y) {
@@ -1340,9 +1574,9 @@ window.addEventListener("DOMContentLoaded", async () => {
                 removeHole(oldest);
             }
 
-            const r = 56 + (120 - 56) * Math.pow(Math.random(), 0.35); // 偏大分布
+            const r = 56 + (84 - 56) * Math.pow(Math.random(), 0.35); // 偏大分布
 
-            const msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+            const msg = getNextMessage();
 
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
@@ -1492,18 +1726,19 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // return button
 
-    function resetPlayzoneToDefault() {
-        const playzone = document.querySelector(".playzone");
-        if (!playzone) return;
+    function resetIframesToDefault() {
+        const iframes = document.querySelector(".iframes");
+        if (!iframes) return;
 
         _clearAllRotators();
 
-        playzone.removeAttribute("data-year");
-        playzone.style.removeProperty("--count");
-        playzone.style.removeProperty("--step-left");
+        iframes.removeAttribute("data-year");
+        iframes.style.removeProperty("--count");
+        iframes.style.removeProperty("--step-left");
+        iframes.classList.remove("has-focused-wrapper");
 
-        playzone.innerHTML = `
-        <div class="iframe-wrapper" data-project-index="35">
+        iframes.innerHTML = `
+        <div class="iframe-wrapper" data-index="35">
             <iframe class="projectShowcase"
                 src="https://www.hrjlhy.com/index_old_2025-08-09.html"
                 frameborder="0"
@@ -1513,7 +1748,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         </div>
     `;
 
-        applyStackVars(playzone, 1);
+        applyStackVars(iframes, 1);
     }
 
     document.querySelector(".project-back-button")?.addEventListener("click", async (event) => {
@@ -1529,7 +1764,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         document.querySelector("div.projectShowcase")?.classList.remove("active");
 
-        resetPlayzoneToDefault();
+        resetIframesToDefault();
 
         await getProjects();
     });
@@ -1709,7 +1944,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             () => {
                 if (!activeLi) return;
 
-                setTargetFromLi(activeLi);
+                setTargetFromElement(activeLi, "pill");
                 start();
             },
             { passive: true }
@@ -1718,7 +1953,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         window.addEventListener("resize", () => {
             if (!activeLi) return;
 
-            setTargetFromLi(activeLi);
+            setTargetFromElement(activeLi, "pill");
             start();
         });
 
@@ -1990,9 +2225,19 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
         }, 520);
     }
+    let titleFireworkClickCount = 0;
+
     document
-        .querySelector("span.title")
-        ?.addEventListener("click", triggerTitleRainbowFirework);
+        .querySelector("div.title > :is(p.title, span.title)")
+        ?.addEventListener("click", (event) => {
+            triggerTitleRainbowFirework(event);
+
+            titleFireworkClickCount++;
+
+            if (titleFireworkClickCount % 5 === 0) {
+                document.dispatchEvent(new CustomEvent("title-firework-bubble"));
+            }
+        });
 
     // Background Reveal
 
@@ -2125,14 +2370,22 @@ window.addEventListener("DOMContentLoaded", async () => {
             ctx.restore();
         }
 
+        let revealRaf = 0;
+
+        function startRevealLoop() {
+            if (!revealRaf) {
+                revealRaf = requestAnimationFrame(draw);
+            }
+        }
+
         function draw(now) {
+            revealRaf = 0;
+
             state.time = now;
 
             const rect = mainFrame.getBoundingClientRect();
 
             ctx.clearRect(0, 0, rect.width, rect.height);
-
-            // 先画完整 #ddd 遮罩
             ctx.globalCompositeOperation = "source-over";
             ctx.fillStyle = config.fillColor;
             ctx.fillRect(0, 0, rect.width, rect.height);
@@ -2157,10 +2410,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     (now - state.revealStartTime) / config.revealDuration
                 );
 
-                // ease-in
-                const eased = Math.pow(progress, 3);
-
-                state.radius = state.targetRadius * eased;
+                state.radius = state.targetRadius * Math.pow(progress, 3);
             } else {
                 state.revealStartTime = null;
                 state.radius += (0 - state.radius) * config.shrinkSpeed;
@@ -2168,7 +2418,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             drawIrregularBlob(state.x, state.y, state.radius, now);
 
-            requestAnimationFrame(draw);
+            if (state.started || state.radius > 0.5) {
+                startRevealLoop();
+            }
         }
 
         function stopReveal() {
@@ -2184,6 +2436,22 @@ window.addEventListener("DOMContentLoaded", async () => {
             return !!el?.closest?.(
                 ".iframe-wrapper, ul.timeList > li[data-year]"
             );
+        }
+
+        let idleTimer = 0;
+
+        function scheduleRevealStart() {
+            clearTimeout(idleTimer);
+
+            idleTimer = setTimeout(() => {
+                if (!state.inside) return;
+
+                state.started = true;
+                state.revealStartTime = null;
+                state.targetRadius = getMaxRadius();
+
+                startRevealLoop();
+            }, config.idleDelay);
         }
 
         document.addEventListener("mousemove", (event) => {
@@ -2214,10 +2482,16 @@ window.addEventListener("DOMContentLoaded", async () => {
                 state.started = false;
                 state.targetRadius = 0;
                 state.revealStartTime = null;
+
+                if (state.radius > 0.5) {
+                    startRevealLoop();
+                }
             }
 
             state.lastX = x;
             state.lastY = y;
+
+            scheduleRevealStart();
         });
 
         document.addEventListener("mouseleave", stopReveal);
