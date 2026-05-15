@@ -256,7 +256,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         pointerLight.hasPointer = false;
         pointerLight.dirty = true;
     });
-    
+
     frame = async () => {
         data = await getData();
 
@@ -321,6 +321,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 item.style.transform = `
                 translate3d(${x}px, ${y}px, 0)
+                translate3d(-50%, -50%, 0)
                 rotateX(${angleGlobal.rx}deg)
                 rotateY(${angleGlobal.ry}deg)
                 rotateZ(${angleGlobal.rz}deg)
