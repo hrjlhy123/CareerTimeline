@@ -403,21 +403,50 @@ window.addEventListener("DOMContentLoaded", async () => {
     let iframes = document.querySelector(`div.iframes`)
 
     let year
-    li.forEach((item, index) => {
-        item.addEventListener(`click`, async (event) => {
-            item.parentNode.querySelectorAll('.checked').forEach(el => el.classList.remove('checked'));
-            item.classList.add('checked');
-            year = item.getAttribute('data-year');
-            projectShowcase.classList.remove('active');
-            await getProjects(year)
-            // random num
-            {
-                const now = Date.now();
-                const rand = (now % 1000) / 1000; // 平均落在 [0,1]
 
-                document.body.style.setProperty("--rand-global", rand.toFixed(3));
+    li.forEach((item) => {
+        const itemYear = item.getAttribute("data-year");
+
+        // Accessibility: make year cards keyboard/screen-reader friendly
+        item.setAttribute("role", "button");
+        item.setAttribute("tabindex", "0");
+        item.setAttribute("aria-label", `Show projects from ${itemYear}`);
+        item.setAttribute("aria-pressed", "false");
+
+        item.addEventListener("click", async () => {
+            // visual checked state
+            item.parentNode
+                .querySelectorAll(".checked")
+                .forEach((el) => el.classList.remove("checked"));
+
+            item.classList.add("checked");
+
+            // accessibility pressed state
+            item.parentNode
+                .querySelectorAll('li[data-year][aria-pressed="true"]')
+                .forEach((el) => el.setAttribute("aria-pressed", "false"));
+
+            item.setAttribute("aria-pressed", "true");
+
+            year = itemYear;
+
+            projectShowcase.classList.remove("active");
+
+            await getProjects(year);
+
+            // random num
+            const now = Date.now();
+            const rand = (now % 1000) / 1000;
+
+            document.body.style.setProperty("--rand-global", rand.toFixed(3));
+        });
+
+        item.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                item.click();
             }
-        })
+        });
     });
 
     /* Unsupervised AI content */
@@ -632,6 +661,82 @@ window.addEventListener("DOMContentLoaded", async () => {
     };
 
     bindIframeEvents();
+
+    document.addEventListener("keydown", async (event) => {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframes = document.querySelector("div.playzone > div.iframes");
+        const backButton = document.querySelector(".project-back-button.is-visible");
+
+        if (!projectShowcase || !iframes) return;
+
+        const isOpen = projectShowcase.classList.contains("active");
+
+        // Escape: close current state / go back
+        if (event.key === "Escape") {
+            event.preventDefault();
+
+            // 文件1状态：没有 active，但已经选了某个年份，Back button 可见
+            // 这时 Esc 等于点击 Back to all projects
+            if (!isOpen && backButton) {
+                await goBackToAllProjects();
+                return;
+            }
+
+            // 没打开，但只是 picked 状态
+            if (!isOpen) {
+                if (iframes.classList.contains("has-picked-wrapper")) {
+                    clearPickedIframeWrapper({
+                        deactivate: true,
+                        clearChecked: true
+                    });
+
+                    clearIframeHoverProjectList();
+                }
+
+                return;
+            }
+
+            // active + picked：退出 picked
+            if (iframes.classList.contains("has-picked-wrapper")) {
+                clearPickedIframeWrapper({
+                    deactivate: false,
+                    clearChecked: true
+                });
+
+                clearIframeHoverProjectList();
+
+                await openProjectShowcase();
+
+                return;
+            }
+
+            // 普通 active：关闭 showcase
+            closeProjectShowcase();
+            return;
+        }
+
+        // Enter / Space: operate focused iframe-wrapper
+        if (event.key !== "Enter" && event.key !== " ") return;
+
+        const wrapper = event.target.closest?.(".iframe-wrapper");
+
+        if (!wrapper) return;
+
+        event.preventDefault();
+
+        if (!isOpen) {
+            if (wrapper.classList.contains("is-picked-wrapper")) {
+                openPickedIframeWrapper(wrapper);
+            } else {
+                await openProjectShowcase();
+            }
+
+            return;
+        }
+
+        loadIframe(wrapper);
+        wrapper.querySelector("iframe")?.classList.add("show");
+    });
 
     /* Unsupervised AI content */
 
@@ -1086,14 +1191,22 @@ window.addEventListener("DOMContentLoaded", async () => {
         const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
 
         iframes.insertAdjacentHTML("beforeend", `
-            <div class="iframe-wrapper" data-index="${index}">
+            <div 
+                class="iframe-wrapper" 
+                data-index="${index}"            
+                role="button"
+                tabindex="0"
+                aria-label="Open preview for ${safeName}"
+                data-index="${index}"
+                data-dashboard-key="${safeKey}">
                 <iframe
                     class="${iframeClass}"
+                    title="${safeName} preview"
                     data-src="${firstURL}"
                     data-urls="${safeUrls}"
                     src="about:blank"
                     frameborder="0"
-                    tabindex="0">
+                    tabindex="-1">
                 </iframe>
                 <div class="iframe-mask"></div>
             </div>
@@ -1509,13 +1622,16 @@ window.addEventListener("DOMContentLoaded", async () => {
                 const safeKey = escapeAttr(getProjectDashboardKey(project, index));
 
                 return `
-                <li
-                    data-index="${index}"
-                    data-year="${year}"
-                    data-dashboard-key="${safeKey}">
-                    <span class="project-label" data-text="${safeName}">${safeName}</span>
-                </li>
-            `;
+                    <li
+                        role="button"
+                        tabindex="0"
+                        aria-label="Open project: ${safeName}"
+                        data-index="${index}"
+                        data-year="${year}"
+                        data-dashboard-key="${safeKey}">
+                        <span class="project-label" data-text="${safeName}">${safeName}</span>
+                    </li>
+                        `;
             })
             .join("");
     }
@@ -1525,6 +1641,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             .map((project, index) => {
                 const { name, URLs } = project;
 
+                const safeName = escapeAttr(name);
                 const firstURL = URLs?.[0] || "about:blank";
                 const isMobile = name.trim().endsWith("(mobile)");
                 const iframeClass = isMobile ? "projectShowcase mobile" : "projectShowcase";
@@ -1534,15 +1651,19 @@ window.addEventListener("DOMContentLoaded", async () => {
                 return `
                 <div
                     class="iframe-wrapper"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open preview for ${safeName}"
                     data-index="${index}"
-                    data-dashboard-key="${safeKey}">
+                    data-dashboard-key="${safeKey}">>
                     <iframe
                         class="${iframeClass}"
+                        title="${safeName} preview"
                         data-src="${firstURL}"
                         data-urls="${safeUrls}"
                         src="about:blank"
                         frameborder="0"
-                        tabindex="0">
+                        tabindex="-1">
                     </iframe>
                     <div class="iframe-mask"></div>
                 </div>
@@ -1746,14 +1867,22 @@ window.addEventListener("DOMContentLoaded", async () => {
             updateDashboardFromFirstWrapper();
         } else {
             hotzoneList.innerHTML = projects
-                .map(({ name, year }, index) => {
+                .map((project, index) => {
+                    const { name, year } = project;
                     const safeName = escapeAttr(name);
+                    const safeKey = escapeAttr(getProjectDashboardKey(project, index));
 
                     return `
-                        <li data-index="${index}" data-year="${year}">
-                            <span class="project-label" data-text="${safeName}">${safeName}</span>
-                        </li>
-                    `;
+                    <li
+                        role="button"
+                        tabindex="0"
+                        aria-label="Open project: ${safeName}"
+                        data-index="${index}"
+                        data-year="${year}"
+                        data-dashboard-key="${safeKey}">
+                        <span class="project-label" data-text="${safeName}">${safeName}</span>
+                    </li>
+                        `;
                 })
                 .join("");
 
@@ -1763,6 +1892,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!projectListClickBound) {
             projectListClickBound = true;
+
+            hotzoneList.addEventListener("keydown", (event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+
+                const li = event.target.closest("li[role='button']");
+                if (!li || !hotzoneList.contains(li)) return;
+
+                event.preventDefault();
+                li.click();
+            });
 
             hotzoneList.addEventListener("click", (event) => {
                 const li = event.target.closest("li");
@@ -2173,11 +2312,20 @@ window.addEventListener("DOMContentLoaded", async () => {
         iframes.classList.remove("has-picked-wrapper");
 
         iframes.innerHTML = `
-        <div class="iframe-wrapper" data-index="35">
-            <iframe class="projectShowcase"
+        <div 
+            class="iframe-wrapper" 
+            data-index="35"         
+            role="button"
+            tabindex="0"
+            aria-label="Open preview for ${safeName}"
+            data-index="${index}"
+            data-dashboard-key="${safeKey}">
+            <iframe 
+                class="projectShowcase"
+                title="${safeName} preview"
                 src="https://www.hrjlhy.com/index_old_2025-08-09.html"
                 frameborder="0"
-                tabindex="0">
+                tabindex="-1">
             </iframe>
             <div class="iframe-mask"></div>
         </div>
@@ -2187,23 +2335,38 @@ window.addEventListener("DOMContentLoaded", async () => {
         clearPinnedDashboardWrapper();
     }
 
-    document.querySelector(".project-back-button")?.addEventListener("click", async (event) => {
-        event.stopPropagation();
+    async function goBackToAllProjects(event = null) {
+        event?.stopPropagation?.();
 
         const showcaseArea = document.querySelector("div.projectShowcase");
 
-        triggerProjectListRipple(showcaseArea, event);
+        // 鼠标点击时保留 ripple；键盘 Escape 没有 clientX/clientY，所以跳过 ripple
+        if (
+            event &&
+            Number.isFinite(event.clientX) &&
+            Number.isFinite(event.clientY)
+        ) {
+            triggerProjectListRipple(showcaseArea, event);
+        }
 
         document
             .querySelectorAll("ul.timeList > li[data-year].checked")
             .forEach((el) => el.classList.remove("checked"));
+
+        document
+            .querySelectorAll('ul.timeList > li[data-year][aria-pressed="true"]')
+            .forEach((el) => el.setAttribute("aria-pressed", "false"));
 
         document.querySelector("div.projectShowcase")?.classList.remove("active");
 
         resetIframesToDefault();
 
         await getProjects();
-    });
+    }
+
+    document
+        .querySelector(".project-back-button")
+        ?.addEventListener("click", goBackToAllProjects);
 
     /* Unsupervised AI content */
 
