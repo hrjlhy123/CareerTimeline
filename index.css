@@ -914,7 +914,10 @@ div.projectShowcase > div.playzone {
   justify-content: space-between;
 }
 
-div.playzone:has(> .iframes:not(.has-picked-wrapper) > .iframe-wrapper.active:not(:only-child))
+div.playzone:has(
+    > .iframes:not(.has-picked-wrapper)
+      > .iframe-wrapper.active:not(:only-child)
+  )
   > img.tape {
   display: initial;
 }
@@ -1829,7 +1832,7 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
 /* progress bar */
 .dashboards > .project-metrics {
   width: 100%;
-
+  min-height: 30vh;
   display: none;
   justify-content: space-between;
   align-items: flex-end;
@@ -1838,6 +1841,7 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
   pointer-events: none;
 
   padding: 0 1vw;
+  flex-grow: 1;
 }
 
 .metric-value,
@@ -1939,16 +1943,16 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
 .metric {
   --metric-color: 178 93 103;
   --value: 60%;
-
   width: 30%;
+  height: 100%;
   min-width: 42px;
-
-  display: grid;
+  display: flex;
   grid-template-rows: auto 118px auto;
   justify-items: center;
-  align-items: end;
-
+  align-items: center;
   isolation: isolate;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .metric-value {
@@ -1964,6 +1968,7 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
 
   width: 23px;
   height: 116px;
+  flex-grow: 1;
 
   border-radius: var(--radius-pill);
 
