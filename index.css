@@ -1841,7 +1841,6 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
   pointer-events: none;
 
   padding: 0 1vw;
-  flex-grow: 1;
 }
 
 .metric-value,
@@ -2045,7 +2044,7 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
   transform: translateX(-50%);
 
   width: 15px;
-  height: max(15px, var(--value));
+  height: max(15px, min(var(--value), calc(100% - 9px)));
   border-radius: 999px;
 
   background:
