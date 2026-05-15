@@ -1655,7 +1655,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     tabindex="0"
                     aria-label="Open preview for ${safeName}"
                     data-index="${index}"
-                    data-dashboard-key="${safeKey}">>
+                    data-dashboard-key="${safeKey}">
                     <iframe
                         class="${iframeClass}"
                         title="${safeName} preview"
