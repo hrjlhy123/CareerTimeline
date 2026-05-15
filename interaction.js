@@ -479,6 +479,13 @@ window.addEventListener("DOMContentLoaded", async () => {
         animating = false;
     }
 
+    function showAndLoadIframe(wrapper) {
+        if (!wrapper || !wrapper.isConnected) return;
+
+        loadIframe(wrapper);
+        wrapper.querySelector("iframe")?.classList.add("show");
+    }
+
     const openProjectShowcase = async () => {
         const projectShowcase = document.querySelector("div.projectShowcase");
         const iframeWrappers = Array.from(
@@ -498,6 +505,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         projectShowcase.classList.add("active");
 
+        // 第一阶段：只做卡牌展开，不加载 iframe
         for (let i = iframeWrappers.length - 1; i >= 0; i--) {
             if (currentOpeningId !== openingId) {
                 animating = false;
@@ -506,13 +514,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const wrapper = iframeWrappers[i];
 
-            loadIframe(wrapper);
             wrapper.classList.add("active");
+
             await sleep(50);
         }
 
         await sleep(450);
 
+        // 第二阶段：先只显示卡片外壳，不立刻加载全部 iframe
         for (let i = iframeWrappers.length - 1; i >= 0; i--) {
             if (currentOpeningId !== openingId) {
                 animating = false;
@@ -521,11 +530,22 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const wrapper = iframeWrappers[i];
 
-            wrapper.querySelector("iframe")?.classList.add("show");
             wrapper.classList.add("effect-ready");
 
             await sleep(50);
         }
+
+        // 第三阶段：只先加载第一张，避免 4 个 iframe / PDF 同时抢主线程
+        const firstWrapper = iframeWrappers[0];
+        showAndLoadIframe(firstWrapper);
+
+        // 其他 iframe 延迟加载
+        iframeWrappers.slice(1).forEach((wrapper, index) => {
+            window.setTimeout(() => {
+                if (currentOpeningId !== openingId) return;
+                showAndLoadIframe(wrapper);
+            }, 600 + index * 700);
+        });
 
         if (currentOpeningId === openingId) {
             setWrappersPointerEvents(iframeWrappers, "initial");
