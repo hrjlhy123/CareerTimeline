@@ -24,7 +24,80 @@ const wss = new WebSocketServer({ server: httpsServer });
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || `careerTimeline`
 const collectionName = process.env.MONGODB_COLLECTION || "projects";
-let db
+const dashboardCollectionName =
+    process.env.MONGODB_DASHBOARD_COLLECTION || "dashboards";
+
+let db;
+function getDashboardKey(project) {
+    return `${project.year}::${project.name}`;
+}
+
+function normalizeDashboard(dashboard) {
+    return {
+        description: dashboard?.description || "",
+        complexity: Number(dashboard?.complexity) || 0,
+        ownership: Number(dashboard?.ownership) || 0,
+        impact: Number(dashboard?.impact) || 0,
+    };
+}
+
+async function getProjectsWithDashboards(year) {
+    const query = {};
+
+    if (year) {
+        query.year = parseInt(year);
+    }
+
+    console.log(
+        "Using DB:",
+        dbName,
+        "Projects Collection:",
+        collectionName,
+        "Dashboards Collection:",
+        dashboardCollectionName,
+        "Query:",
+        query
+    );
+
+    const projects = await db.collection(collectionName)
+        .find(query)
+        .project({ _id: 0, name: 1, URLs: 1, year: 1 })
+        .toArray();
+
+    const dashboardKeys = projects.map(getDashboardKey);
+
+    const dashboards = await db.collection(dashboardCollectionName)
+        .find({
+            dashboardKey: { $in: dashboardKeys }
+        })
+        .project({
+            _id: 0,
+            dashboardKey: 1,
+            description: 1,
+            complexity: 1,
+            ownership: 1,
+            impact: 1
+        })
+        .toArray();
+
+    const dashboardMap = new Map(
+        dashboards.map((dashboard) => [
+            dashboard.dashboardKey,
+            dashboard
+        ])
+    );
+
+    return projects.map((project) => {
+        const dashboardKey = getDashboardKey(project);
+        const dashboard = dashboardMap.get(dashboardKey);
+
+        return {
+            ...project,
+            dashboardKey,
+            dashboard: normalizeDashboard(dashboard)
+        };
+    });
+}
 
 MongoClient.connect(uri)
     .then((client) => {
@@ -45,19 +118,11 @@ MongoClient.connect(uri)
                 if (msg.type === 'projects') {
                     const { year } = msg;
 
-                    let query = {};
-                    if (year) {
-                        query.year = parseInt(year);  // year 可以是字符串
-                    }
-                    console.log("Using DB:", dbName, "Collection:", collectionName, "Query:", query);
-                    const projects = await db.collection(collectionName)
-                        .find(query)
-                        .project({ _id: 0, name: 1, URLs: 1, year: 1 })
-                        .toArray();
+                    const projects = await getProjectsWithDashboards(year);
 
                     ws.send(JSON.stringify({
-                        type: 'projects',
-                        year: year || 'all',
+                        type: "projects",
+                        year: year || "all",
                         data: projects
                     }));
                 }

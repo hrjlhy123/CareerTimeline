@@ -5,6 +5,23 @@ import { mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js"
 "use strict";
 // 3D component states
 let results, modelStates, matrix_view, matrix_projection, matrix_transform, matrix_world, canvas
+let timelineScrollPixels = 0;
+
+export function queueTimelineScroll(deltaY = 0) {
+    if (!Number.isFinite(deltaY)) return;
+
+    const MAX_PENDING_SCROLL = 600;
+
+    timelineScrollPixels += deltaY;
+    timelineScrollPixels = Math.max(
+        -MAX_PENDING_SCROLL,
+        Math.min(MAX_PENDING_SCROLL, timelineScrollPixels)
+    );
+}
+
+export function clearTimelineScrollQueue() {
+    timelineScrollPixels = 0;
+}
 window.addEventListener("DOMContentLoaded", async () => {
     // === WebGPU init ===
 
@@ -661,6 +678,30 @@ window.addEventListener("DOMContentLoaded", async () => {
     deltaAngle = 0
     scrollSpeed = 0.01
     rangeAngle = [-10, 10]
+
+    const MAX_SCROLL_PIXELS_PER_FRAME = 90;
+    const MAX_SCROLL_SPEED = 20;
+
+    function consumeTimelineScrollQueue() {
+        if (Math.abs(timelineScrollPixels) < 0.01) {
+            timelineScrollPixels = 0;
+            return;
+        }
+
+        const take =
+            Math.sign(timelineScrollPixels) *
+            Math.min(Math.abs(timelineScrollPixels), MAX_SCROLL_PIXELS_PER_FRAME);
+
+        timelineScrollPixels -= take;
+
+        deltaAngle -= take * scrollSpeed;
+
+        deltaAngle = Math.max(
+            -MAX_SCROLL_SPEED,
+            Math.min(MAX_SCROLL_SPEED, deltaAngle)
+        );
+    }
+
     {
         yaw = 0
         canvas.addEventListener(`mousemove`, (e) => {
@@ -734,9 +775,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         window.addEventListener(`wheel`, (event) => {
             if (event.target.closest('.hotzone-list')) return;
 
-            deltaAngle -= event.deltaY * scrollSpeed
-            deltaAngle = Math.max(rangeAngle[0], Math.min(rangeAngle[1], deltaAngle))
-        })
+            queueTimelineScroll(event.deltaY);
+        });
 
         const hotzoneList = document.querySelector('.hotzone-list');
 
@@ -1053,9 +1093,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     frame = async (now) => {
         deltaTime = (now - lastTime) / 1000
         lastTime = now
-        wheelResistance()
-        render(deltaTime)
-        requestAnimationFrame(frame)
+        consumeTimelineScrollQueue();
+        wheelResistance();
+        render(deltaTime);
+        requestAnimationFrame(frame);
     }
     frame()
 

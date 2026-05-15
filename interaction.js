@@ -1,4 +1,8 @@
-import { getData } from "./3D_model.js";
+import {
+    getData,
+    queueTimelineScroll,
+    clearTimelineScrollQueue
+} from "./3D_model.js";
 import { getCoordinates, getRotations } from "./tools/calculate.js"
 
 "use strict";
@@ -439,6 +443,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
 
+        clearPinnedDashboardWrapper();
+
         animating = true;
         openingId++;
 
@@ -480,6 +486,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
+
+        clearPinnedDashboardWrapper();
 
         animating = true;
 
@@ -667,7 +675,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         const rot = { firstTimeout: null, intervalId: null };
 
         // 首次切换稍微随机一下，避免所有同时换
-        const firstDelay = Math.floor(Math.random() * jitter);
+        const firstDelay = delay + Math.floor(Math.random() * jitter);
         rot.firstTimeout = setTimeout(() => {
             tick();
             rot.intervalId = setInterval(tick, delay);
@@ -1043,6 +1051,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!iframes || !project) return;
 
+        clearPinnedDashboardWrapper();
+
         const { name, URLs } = project;
         const firstURL = URLs?.[0] || "about:blank";
         const isMobile = name.trim().endsWith("(mobile)");
@@ -1116,6 +1126,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        if (timelineCenterTargetYear !== yearStr) {
+            clearTimelineScrollQueue();
+        }
+
         timelineCenterTargetYear = yearStr;
 
         if (!timelineCenterRaf) {
@@ -1130,6 +1144,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             cancelAnimationFrame(timelineCenterRaf);
             timelineCenterRaf = 0;
         }
+
+        clearTimelineScrollQueue();
     }
 
     function centerTimelineYearStep() {
@@ -1156,19 +1172,12 @@ window.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        // 模拟滚轮，复用 3D_model_3.js 里已有的 wheel → deltaAngle 逻辑
-        const deltaY = TIMELINE_WHEEL_DIRECTION * Math.max(
-            -80,
-            Math.min(80, diff * 0.45)
-        );
+        // 模拟滚轮
+        const deltaY =
+            TIMELINE_WHEEL_DIRECTION *
+            Math.max(-60, Math.min(60, diff * 0.75));
 
-        canvas.dispatchEvent(
-            new WheelEvent("wheel", {
-                deltaY,
-                bubbles: true,
-                cancelable: true,
-            })
-        );
+        queueTimelineScroll(deltaY);
 
         timelineCenterRaf = requestAnimationFrame(centerTimelineYearStep);
     }
@@ -1183,18 +1192,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         complexity: 0,
         ownership: 0,
         impact: 0,
-    });
-
-    // 未来可以把这个对象换成一个 JSON 文档或数据库接口。
-    // 推荐 key 格式：project.id 优先；没有 id 时用 year::name。
-    const PROJECT_DASHBOARD_DETAILS = Object.freeze({
-        // 示例：
-        // "2019::Health Food Story Page": {
-        //     description: "A responsive story page for a health food campaign.",
-        //     complexity: 58,
-        //     ownership: 72,
-        //     impact: 65,
-        // },
     });
 
     let dashboardUpdateToken = 0;
@@ -1222,14 +1219,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function getProjectDashboardMeta(project, index) {
-        const key = getProjectDashboardKey(project, index);
-
-        // 未来后端可以替换成：
-        // const response = await fetch(`/api/project-dashboard/${encodeURIComponent(key)}`);
-        // return normalizeDashboardMeta(await response.json());
-
         return normalizeDashboardMeta(
-            PROJECT_DASHBOARD_DETAILS[key] || DEFAULT_DASHBOARD_META
+            project?.dashboard || DEFAULT_DASHBOARD_META
         );
     }
 
@@ -1418,6 +1409,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!wrapper) return false;
 
+        clearPinnedDashboardWrapper();
+
         const wasOpen = projectShowcase.classList.contains("active");
 
         // 如果本来是 active 展开状态，不要 deactivate 旧 wrapper
@@ -1465,6 +1458,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!projectShowcase || !iframes || !wrapper) return false;
         if (!wrapper.classList.contains("is-picked-wrapper")) return false;
+
+        clearPinnedDashboardWrapper();
 
         projectShowcase.classList.add("active");
         iframes.classList.add("has-picked-wrapper");
