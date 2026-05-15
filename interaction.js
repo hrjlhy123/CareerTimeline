@@ -256,7 +256,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         pointerLight.hasPointer = false;
         pointerLight.dirty = true;
     });
-
+    
     frame = async () => {
         data = await getData();
 
@@ -298,8 +298,8 @@ window.addEventListener("DOMContentLoaded", async () => {
                 x = coordinates.x;
                 y = coordinates.y;
 
-                item.style.left = `${x}px`;
-                item.style.top = `${y}px`;
+                item.style.left = "0";
+                item.style.top = "0";
 
                 const angleLocal = {
                     rx:
@@ -320,7 +320,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 };
 
                 item.style.transform = `
-                translate3d(-50%, -50%, 0)
+                translate3d(${x}px, ${y}px, 0)
                 rotateX(${angleGlobal.rx}deg)
                 rotateY(${angleGlobal.ry}deg)
                 rotateZ(${angleGlobal.rz}deg)
@@ -1827,7 +1827,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     //const ws = new WebSocket(`wss://localhost:443`)
     const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${wsProtocol}//${location.host}/ws`;
+    // const wsUrl = `${wsProtocol}//${location.host}/ws`;
+    const wsUrl =
+        location.hostname === "127.0.0.1" || location.hostname === "localhost"
+            ? "ws://127.0.0.1:3000/ws"
+            : `${wsProtocol}//${location.host}/ws`;
 
     let ws = null;
     let reconnectTimer = null;
@@ -2865,7 +2869,15 @@ window.addEventListener("DOMContentLoaded", async () => {
             }, config.idleDelay);
         }
 
-        document.addEventListener("mousemove", (event) => {
+        let lastRevealMove = 0;
+
+        function onRevealPointerMove(event) {
+            const now = performance.now();
+
+            // 每 100ms 最多处理一次 reveal 鼠标逻辑
+            if (now - lastRevealMove < 100) return;
+            lastRevealMove = now;
+
             const rect = mainFrame.getBoundingClientRect();
 
             const inside =
@@ -2889,7 +2901,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             state.y = y;
 
             if (moved > config.moveThreshold) {
-                state.lastMoveTime = performance.now();
+                state.lastMoveTime = now;
                 state.started = false;
                 state.targetRadius = 0;
                 state.revealStartTime = null;
@@ -2903,6 +2915,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             state.lastY = y;
 
             scheduleRevealStart();
+        }
+
+        document.addEventListener("pointermove", onRevealPointerMove, {
+            passive: true
         });
 
         document.addEventListener("mouseleave", stopReveal);

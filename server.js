@@ -109,7 +109,7 @@ MongoClient.connect(uri)
 	const PORT = process.env.PORT || 3000;
 
         httpServer.listen(PORT, () => {
-            console.log(`🚀 Server running at htts://localhost:${PORT}`)
+            console.log(`🚀 Server running at https://localhost:${PORT}`)
         })
 
         wss.on('connection', function connection(ws) {
