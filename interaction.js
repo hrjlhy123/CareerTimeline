@@ -1825,7 +1825,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         bindIframeWrapperHoverToProjectList();
     };
 
-    const ws = new WebSocket(`wss://localhost:443`)
+    //const ws = new WebSocket(`wss://localhost:443`)
+    const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${wsProtocol}//${location.host}/ws`);
     ws.onopen = () => {
         console.log('✅ Connected to server');
         getProjects()

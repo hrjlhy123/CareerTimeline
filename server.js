@@ -1,9 +1,9 @@
 // server.js
 import express from "express";
 import cors from "cors";
-import fs from "fs";
-// import http from "http";
-import https from "https";
+// import fs from "fs";
+import http from "http";
+// import https from "https";
 import { WebSocketServer } from 'ws';
 import { MongoClient } from "mongodb";
 
@@ -13,13 +13,15 @@ const app = express()
 app.use(cors())
 app.use(express.static(`/`))
 
-const options = {
-    key: fs.readFileSync(`./localhost-key.pem`),
-    cert: fs.readFileSync(`./localhost-cert.pem`),
-}
+// const options = {
+//     key: fs.readFileSync(`/etc/letsencrypt/live/hrjlhy.com/privkey.pem`),
+//     cert: fs.readFileSync(`/etc/letsencrypt/live/hrjlhy.com/fullchain.pem`),
+// }
 
-const httpsServer = https.createServer(options, app)
-const wss = new WebSocketServer({ server: httpsServer });
+// const httpsServer = https.createServer(options, app)
+const httpServer = http.createServer(app);
+// const wss = new WebSocketServer({ server: httpsServer });
+const wss = new WebSocketServer({ server: httpServer });
 // const uri = `mongodb://localhost:27017`
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || `careerTimeline`
@@ -104,8 +106,10 @@ MongoClient.connect(uri)
         console.log(`✅ Connected to MongoDB`)
         db = client.db(dbName)
 
-        httpsServer.listen(443, () => {
-            console.log(`🚀 Secure Server running at https://localhost:443`)
+	const PORT = process.env.PORT || 3000;
+
+        httpServer.listen(PORT, () => {
+            console.log(`🚀 Server running at htts://localhost:${PORT}`)
         })
 
         wss.on('connection', function connection(ws) {
