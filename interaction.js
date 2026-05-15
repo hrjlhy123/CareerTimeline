@@ -1827,27 +1827,102 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     //const ws = new WebSocket(`wss://localhost:443`)
     const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${wsProtocol}//${location.host}/ws`);
-    ws.onopen = () => {
-        console.log('✅ Connected to server');
-        getProjects()
-    };
+    const wsUrl = `${wsProtocol}//${location.host}/ws`;
 
-    ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'projects') {
-            // console.log(`📦 Projects in ${msg.year}:`, msg.data);
-            // 示例输出格式: [{ name: "...", urls: [...] }, ...]
-            renderProjects(msg.year, msg.data.reverse())
+    let ws = null;
+    let reconnectTimer = null;
+    let reconnectDelay = 1000;
+    let lastRequestedYear = null;
+
+    function connectWebSocket() {
+        if (
+            ws &&
+            (ws.readyState === WebSocket.OPEN ||
+                ws.readyState === WebSocket.CONNECTING)
+        ) {
+            return;
         }
-    };
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            console.log("✅ WebSocket connected");
+
+            reconnectDelay = 1000;
+
+            // 重新连接后，恢复当前页面数据
+            getProjects(lastRequestedYear);
+        };
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+
+            if (msg.type === "projects") {
+                renderProjects(msg.year, msg.data.reverse());
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.warn("⚠️ WebSocket error:", error);
+            ws.close();
+        };
+
+        ws.onclose = () => {
+            console.warn("❌ WebSocket closed, reconnecting...");
+
+            clearTimeout(reconnectTimer);
+
+            reconnectTimer = setTimeout(() => {
+                connectWebSocket();
+            }, reconnectDelay);
+
+            reconnectDelay = Math.min(reconnectDelay * 1.5, 10000);
+        };
+    }
+
+    function sendWS(message) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            console.warn("WebSocket not ready, reconnecting...");
+
+            connectWebSocket();
+
+            // 等连接恢复后再补发一次
+            setTimeout(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify(message));
+                }
+            }, 500);
+
+            return;
+        }
+
+        ws.send(JSON.stringify(message));
+    }
 
     const getProjects = (year) => {
-        ws.send(JSON.stringify({
-            type: 'projects',
-            ...(year ? { year } : {}) // 如果有 year 就发送 year，没有就不发送
-        }));
+        lastRequestedYear = year || null;
+
+        sendWS({
+            type: "projects",
+            ...(year ? { year } : {})
+        });
     };
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+                connectWebSocket();
+            } else if (ws.readyState === WebSocket.OPEN) {
+                getProjects(lastRequestedYear);
+            }
+        }
+    });
+
+    window.addEventListener("online", () => {
+        connectWebSocket();
+    });
+
+    connectWebSocket();
 
 
     /* Unsupervised AI content */
