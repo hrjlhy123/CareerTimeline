@@ -1130,8 +1130,8 @@ div.playzone > img.tape {
   position: absolute;
   z-index: 25;
   height: calc(4 * var(--u));
-  bottom: calc(57 * var(--u));
-  left: calc(115 * var(--u));
+  bottom: calc(60 * var(--u));
+  left: calc(117.5 * var(--u));
   transform: rotate(-60deg);
   cursor: pointer;
   pointer-events: auto;
