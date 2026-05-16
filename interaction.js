@@ -2724,24 +2724,27 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     function triggerTitleRainbowFirework(event) {
-        let layer = document.querySelector(".rainbow-firework-layer");
+        const titleBox = document.querySelector("div.title") || event.currentTarget;
+
+        let layer = titleBox.querySelector(".rainbow-firework-layer");
 
         if (!layer) {
             layer = document.createElement("div");
             layer.className = "rainbow-firework-layer";
-            document.body.appendChild(layer);
+            titleBox.appendChild(layer);
         }
 
-        const titleBox = document.querySelector("div.title") || event.currentTarget;
-        const rect = titleBox.getBoundingClientRect();
-
-        const u = Math.min(window.innerHeight / 100, window.innerWidth * 0.625 / 100);
+        const u = parseFloat(
+            getComputedStyle(document.documentElement)
+                .getPropertyValue("--u")
+        ) || Math.min(window.innerHeight / 100, window.innerWidth * 0.625 / 100);
 
         const startX = 120;
         const startY = 165;
 
-        const originX = rect.left + rect.width / 2 - 1 * u;
-        const originY = rect.bottom - 5 * u;
+        // div.title 内部坐标，不再用 viewport 坐标
+        const originX = titleBox.clientWidth / 2;
+        const originY = titleBox.clientHeight - 3 * u;
 
         const colors = [
             "#ff2d2d",
