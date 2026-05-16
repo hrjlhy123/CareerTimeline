@@ -25,48 +25,75 @@ export function clearTimelineScrollQueue() {
 window.addEventListener("DOMContentLoaded", async () => {
     // === WebGPU init ===
 
+    function enableNoWebGPUFallback(reason = "WebGPU unavailable") {
+        console.warn(reason);
+
+        document.documentElement.classList.add("no-webgpu");
+        document.body?.classList.add("no-webgpu");
+
+        window.dispatchEvent(
+            new CustomEvent("webgpu-fallback", {
+                detail: { reason }
+            })
+        );
+    }
+
     // let canvas, 
     let context, adapter, device, // GPUEnv
         canvasFormat, alphaMode, dpr // GPUConfig
     // results // Custom
 
     {
-        navigator.gpu
-            ?? (() => { throw new Error(`WebGPU not supported`) })()
-
-        canvas = document.querySelector("canvas.timelineBelt")
-            ?? (() => { throw new Error(`Could not access canvas in page`) })()
-
-        context = canvas.getContext(`webgpu`)
-            ?? (() => { throw new Error(`Could not obtain WebGPU context for canvas`) })()
-
-        adapter = await navigator.gpu.requestAdapter()
-            ?? (() => { throw new Error(`No GPU adapter found`) })()
-
-        console.log("Supported features:");
-        for (const feature of adapter.features) {
-            console.log("  →", feature);
+        if (!navigator.gpu) {
+            enableNoWebGPUFallback("WebGPU not supported");
+            return;
         }
 
-        device = await adapter.requestDevice()
-            ?? (() => { throw new Error(`Failed to create a GPU device`) })()
+        canvas = document.querySelector("canvas.timelineBelt");
 
-        canvasFormat = navigator.gpu.getPreferredCanvasFormat()
+        if (!canvas) {
+            enableNoWebGPUFallback("Could not access timeline canvas");
+            return;
+        }
 
-        alphaMode = `premultiplied`
+        context = canvas.getContext("webgpu");
 
-        dpr = window.devicePixelRatio || 1
+        if (!context) {
+            enableNoWebGPUFallback("Could not obtain WebGPU context");
+            return;
+        }
 
-        canvas.width = canvas.clientWidth * dpr
-        canvas.height = canvas.clientHeight * dpr
-        console.log(`canvas size:`, canvas.width, canvas.height)
+        adapter = await navigator.gpu.requestAdapter();
+
+        if (!adapter) {
+            enableNoWebGPUFallback("No GPU adapter found");
+            return;
+        }
+
+        try {
+            device = await adapter.requestDevice();
+        } catch (error) {
+            enableNoWebGPUFallback("Failed to create WebGPU device");
+            return;
+        }
+
+        canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+
+        alphaMode = `premultiplied`;
+
+        dpr = window.devicePixelRatio || 1;
+
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+
+        console.log(`canvas size:`, canvas.width, canvas.height);
 
         context.configure({
             device: device,
             format: canvasFormat,
             alphaMode: alphaMode,
             size: [canvas.width, canvas.height]
-        })
+        });
     }
 
     // === Prepare data ===

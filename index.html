@@ -14,9 +14,13 @@
             if (isIPhone || isAndroidPhone) {
                 window.location.replace(oldPage);
             }
+
+            if (!("gpu" in navigator)) {
+                document.documentElement.classList.add("no-webgpu");
+            }
         })();
         </script>
-        
+
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="./index.css">
         <title>Jack Hao | AI, WebGPU & Full-Stack Portfolio</title>
