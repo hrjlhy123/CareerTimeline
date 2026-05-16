@@ -25,48 +25,78 @@ export function clearTimelineScrollQueue() {
 window.addEventListener("DOMContentLoaded", async () => {
     // === WebGPU init ===
 
+    function enableNoWebGPULayout(reason = "WebGPU unavailable") {
+        console.warn(reason);
+
+        document.documentElement.classList.add("no-webgpu");
+        window.__NO_WEBGPU__ = true;
+    }
     // let canvas, 
     let context, adapter, device, // GPUEnv
         canvasFormat, alphaMode, dpr // GPUConfig
     // results // Custom
 
     {
-        navigator.gpu
-            ?? (() => { throw new Error(`WebGPU not supported`) })()
+        if (window.__NO_WEBGPU__ || document.documentElement.classList.contains("no-webgpu")) {
+            enableNoWebGPULayout("WebGPU disabled by compatibility fallback");
+            return;
+        }
 
-        canvas = document.querySelector("canvas.timelineBelt")
-            ?? (() => { throw new Error(`Could not access canvas in page`) })()
+        if (!navigator.gpu) {
+            enableNoWebGPULayout("WebGPU not supported");
+            return;
+        }
 
-        context = canvas.getContext(`webgpu`)
-            ?? (() => { throw new Error(`Could not obtain WebGPU context for canvas`) })()
+        canvas = document.querySelector("canvas.timelineBelt");
 
-        adapter = await navigator.gpu.requestAdapter()
-            ?? (() => { throw new Error(`No GPU adapter found`) })()
+        if (!canvas) {
+            enableNoWebGPULayout("Could not access timeline canvas");
+            return;
+        }
+
+        context = canvas.getContext("webgpu");
+
+        if (!context) {
+            enableNoWebGPULayout("Could not obtain WebGPU context");
+            return;
+        }
+
+        adapter = await navigator.gpu.requestAdapter();
+
+        if (!adapter) {
+            enableNoWebGPULayout("No GPU adapter found");
+            return;
+        }
 
         console.log("Supported features:");
         for (const feature of adapter.features) {
             console.log("  →", feature);
         }
 
-        device = await adapter.requestDevice()
-            ?? (() => { throw new Error(`Failed to create a GPU device`) })()
+        try {
+            device = await adapter.requestDevice();
+        } catch (error) {
+            enableNoWebGPULayout("Failed to create a GPU device");
+            return;
+        }
 
-        canvasFormat = navigator.gpu.getPreferredCanvasFormat()
+        canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
-        alphaMode = `premultiplied`
+        alphaMode = `premultiplied`;
 
-        dpr = window.devicePixelRatio || 1
+        dpr = window.devicePixelRatio || 1;
 
-        canvas.width = canvas.clientWidth * dpr
-        canvas.height = canvas.clientHeight * dpr
-        console.log(`canvas size:`, canvas.width, canvas.height)
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+
+        console.log(`canvas size:`, canvas.width, canvas.height);
 
         context.configure({
             device: device,
             format: canvasFormat,
             alphaMode: alphaMode,
             size: [canvas.width, canvas.height]
-        })
+        });
     }
 
     // === Prepare data ===

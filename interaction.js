@@ -769,9 +769,15 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (visibleCount > 1) {
             stepPx = (targetTotalWidth - cardWidth) / (visibleCount - 1);
             stepPx = Math.max(0, stepPx);
-        }
 
-        iframes.style.setProperty("--step-left", `${stepPx}px`);
+            if (stepPx > 0) {
+                iframes.style.setProperty("--step-left", `${stepPx}px`);
+            } else {
+                iframes.style.removeProperty("--step-left");
+            }
+        } else {
+            iframes.style.removeProperty("--step-left");
+        }
 
         visible.forEach((el, i) => {
             el.style.setProperty("--index", i);
@@ -2322,7 +2328,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         iframes.classList.remove("has-picked-wrapper");
 
         const defaultName = "Default portfolio preview";
-        const defaultIndex = "35";
+        const defaultIndex = "36";
         const defaultKey = "default::portfolio";
 
         iframes.innerHTML = `
@@ -2711,11 +2717,16 @@ window.addEventListener("DOMContentLoaded", async () => {
             document.body.appendChild(layer);
         }
 
-        const title = event.currentTarget;
-        const rect = title.getBoundingClientRect();
+        const titleBox = document.querySelector("div.title") || event.currentTarget;
+        const rect = titleBox.getBoundingClientRect();
+
+        const u = Math.min(window.innerHeight / 100, window.innerWidth * 0.75 / 100);
+
+        const startX = 120;
+        const startY = 165;
 
         const originX = rect.left + rect.width / 2;
-        const originY = rect.top + rect.height * 0.45;
+        const originY = rect.bottom - 0.3 * u;
 
         const colors = [
             "#ff2d2d",
@@ -2756,10 +2767,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             svg.classList.add("rainbow-curve");
             svg.setAttribute("viewBox", "0 0 240 180");
 
-            // 起点在 SVG 底部中间
-            const startX = 120;
-            const startY = 165;
-
             // 每条线随机一个发射方向
             // -150 到 -30 度：向左上到右上
             const angle = -130 + Math.random() * 80;
@@ -2790,15 +2797,15 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             path.style.setProperty("--c", color);
 
-            svg.style.setProperty("--x", `${originX - 120}px`);
-            svg.style.setProperty("--y", `${originY - 160}px`);
+            svg.style.setProperty("--x", `${originX - startX}px`);
+            svg.style.setProperty("--y", `${originY - startY}px`);
 
             svg.appendChild(path);
             layer.appendChild(svg);
 
             curveEnds.push({
-                x: originX - 120 + endX,
-                y: originY - 160 + endY
+                x: originX - startX + endX,
+                y: originY - startY + endY
             });
 
             // 每条线略微不同速度，更自然

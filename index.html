@@ -4,41 +4,59 @@
         <meta charset="UTF-8">
 
         <script>
-        (async function () {
-            const oldPage = "https://www.hrjlhy.com/index_old_2025-08-09.html";
-            const ua = navigator.userAgent || "";
+(function () {
+    const oldPage = "https://www.hrjlhy.com/index_old_2025-08-09.html";
+    const ua = navigator.userAgent || "";
 
-            const isIPhone = /iPhone|iPod/i.test(ua);
-            const isAndroidPhone = /Android/i.test(ua) && /Mobile/i.test(ua);
+    const isIPhone = /iPhone|iPod/i.test(ua);
+    const isAndroidPhone = /Android/i.test(ua) && /Mobile/i.test(ua);
 
-            function goOld(reason) {
-                console.warn(reason);
-                window.location.replace(oldPage);
-            }
+    const params = new URLSearchParams(location.search);
+    const forceNoWebGPU = params.has("noWebGPU");
+    const forceNoGraphics = params.has("noGraphics");
 
-            if (isIPhone || isAndroidPhone) {
-                goOld("Phone detected");
-                return;
-            }
+    function goOld(reason) {
+        console.warn(reason);
+        window.location.replace(oldPage);
+    }
 
-            if (!("gpu" in navigator)) {
-                goOld("WebGPU API not available");
-                return;
-            }
+    function hasGraphicsAcceleration() {
+        try {
+            const canvas = document.createElement("canvas");
 
-            try {
-                const adapter = await navigator.gpu.requestAdapter();
+            return !!(
+                canvas.getContext("webgl2") ||
+                canvas.getContext("webgl") ||
+                canvas.getContext("experimental-webgl")
+            );
+        } catch (error) {
+            return false;
+        }
+    }
 
-                if (!adapter) {
-                    goOld("No GPU adapter found");
-                    return;
-                }
-            } catch (error) {
-                goOld("WebGPU check failed");
-                return;
-            }
-        })();
-        </script>
+    // mobile
+    if (isIPhone || isAndroidPhone) {
+        goOld("Phone detected");
+        return;
+    }
+
+    // No graphics acceleration
+    if (forceNoGraphics || !hasGraphicsAcceleration()) {
+        goOld("No graphics acceleration available");
+        return;
+    }
+
+    // No WebGPU
+    if (forceNoWebGPU || !("gpu" in navigator)) {
+        console.warn("Graphics acceleration available, but WebGPU unsupported");
+
+        document.documentElement.classList.add("no-webgpu");
+        window.__NO_WEBGPU__ = true;
+
+        return;
+    }
+})();
+</script>
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="./index.css">
@@ -69,10 +87,10 @@
             <div class="title">
                 <p class="title">Project Gallery</p>
             </div>
-            <div class="mailboxSlot">
-                <!-- <img class="mailboxSlot" src="./resources/mailboxslot.svg"> -->
-                <!-- <canvas class="mailboxSlot"></canvas> -->
-            </div>
+            <!-- <div class="mailboxSlot">
+                <img class="mailboxSlot" src="./resources/mailboxslot.svg">
+                <canvas class="mailboxSlot"></canvas>
+            </div> -->
             <div class="timelineBelt">
                 <ul class="timeList">
                     <li data-year="2017">

@@ -1,8 +1,8 @@
 :root {
-  --u: min(1vh, 0.75vw);
+  --u: min(1vh, 0.625vw);
 
-  --iframe-card-w: calc(101.25 * var(--u));
-  --iframe-card-active-w: calc(120 * var(--u));
+  --iframe-card-w-back: calc(101.25 * var(--u));
+  --iframe-card-w: calc(120 * var(--u));
   --iframe-card-h: calc(67.5 * var(--u));
 
   --iframe-card-large-w: calc(155.5 * var(--u));
@@ -27,8 +27,8 @@
 
 @media (max-aspect-ratio: 4/3) {
   :root {
+    --iframe-card-w-back: calc(85.5 * var(--u));
     --iframe-card-w: calc(86 * var(--u));
-    --iframe-card-active-w: calc(101 * var(--u));
     --iframe-card-h: calc(57 * var(--u));
 
     --iframe-card-large-w: calc(118 * var(--u));
@@ -85,7 +85,7 @@ div.mainFrame {
   padding: 0.5vh 0.5vw;
 
   display: grid;
-  grid-template-columns: 3fr 45fr;
+  grid-template-columns: 9fr 39fr;
   grid-template-rows: 4fr 9fr;
   grid-template-areas:
     "title projectShowcase"
@@ -99,12 +99,108 @@ div.mainFrame {
   overflow: hidden;
 }
 
-/* 小于 4:3：强制按 4:3 舞台居中显示 */
-@media (max-aspect-ratio: 4/3) {
+html.no-webgpu > body > div.mainFrame {
+  display: block;
+  position: relative;
+  left: 0;
+  top: 0;
+}
+
+html.no-webgpu > body > div.mainFrame > div.title {
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  width: calc(12 / 48 * 100%);
+  height: calc(4 / 13 * 100%);
+}
+
+html.no-webgpu > body > div.mainFrame > div.timelineBelt {
+  display: none;
+}
+
+html.no-webgpu > body > div.mainFrame > div.projectShowcase {
+  width: 100%;
+  height: 100%;
+
+  display: grid;
+  grid-template-columns: 12fr 36fr;
+  grid-template-rows: 1fr;
+  grid-template-areas:
+    "projectList playzone"
+    "projectList playzone";
+}
+
+html.no-webgpu div.projectShowcase > div.projectList {
+  grid-area: projectList;
+  /* padding: calc(3 * var(--u)) 0; */
+  top: calc(4 / 13 * 100%);
+
+  width: 100%;
+  height: calc(9 / 13 * 100%);
+  min-width: 0;
+  min-height: 0;
+
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 2.5%,
+    black 97.5%,
+    transparent 100%
+  );
+}
+
+html.no-webgpu div.projectShowcase > div.projectList > ol.hotzone-list {
+  padding: calc(1 * var(--u)) calc(4 * var(--u)) calc(3 * var(--u));
+  gap: calc(1.2 * var(--u));
+}
+
+html.no-webgpu div.projectList > ol.hotzone-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+html.no-webgpu div.projectShowcase > div.playzone {
+  grid-area: playzone;
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+html.no-webgpu
+  div.projectShowcase:not(.active)
+  > .playzone
+  > .iframes
+  > .iframe-wrapper {
+  left: 30%;
+}
+
+html.no-webgpu
+  div.iframes:has(> .iframe-wrapper.active:only-child)
+  > .iframe-wrapper.active {
+  left: calc((100% - var(--iframe-card-large-w)) / 2 - calc(12 * var(--u)));
+}
+html.no-webgpu div.projectShowcase.active div.dashboards {
+  padding-top: calc(5 * var(--u));
+  padding-bottom: calc(5 * var(--u));
+}
+
+html.no-webgpu div.projectShowcase.active div.dashboards > div.summary {
+  display: block;
+}
+html.no-webgpu div.projectShowcase.active div.dashboards > div.project-metrics {
+  display: flex;
+}
+
+@media (max-aspect-ratio: 16/10) {
   img.conceptDesign,
   div.mainFrame {
     width: 100vw;
-    height: 75vw; /* 4:3 => height = width * 3 / 4 */
+    height: 62.5vw;
 
     inset: auto;
 
@@ -169,6 +265,8 @@ div.title {
 
   justify-self: center;
   align-self: center;
+
+  height: 100%;
 }
 
 div.title > p.title {
@@ -1013,7 +1111,7 @@ div.projectShowcase > div.playzone {
   height: calc(67 * var(--u));
   padding: calc(1 * var(--u));
   --step-left: 2%;
-  --left-base: 0%;
+  --left-base: 2%;
   --z-base: 1;
   pointer-events: none;
   display: flex;
@@ -1068,7 +1166,7 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
   position: absolute;
   left: 2%;
   bottom: calc(1 * var(--u));
-  width: var(--iframe-card-w);
+  width: var(--iframe-card-w-back);
   height: var(--iframe-card-h);
   transform-origin: 0 50%;
   border-radius: var(--radius-card);
@@ -1097,7 +1195,7 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
 }
 
 div.iframes > div.iframe-wrapper.active {
-  width: var(--iframe-card-active-w);
+  width: var(--iframe-card-w);
   height: var(--iframe-card-h);
   padding: 2%;
   /* i 从 1 开始：1→最右，越大越靠左 */
@@ -1527,6 +1625,7 @@ div.iframe-wrapper > div.iframe-mask {
   transition:
     opacity 0.5s ease-out,
     filter 1.5s ease-out;
+  border-radius: calc(4 * var(--u));
 }
 
 div.projectShowcase:not(.active) > .playzone > .iframes > .iframe-wrapper {
@@ -1817,6 +1916,12 @@ div.dashboards {
   flex-direction: column;
   justify-content: space-between;
   z-index: 1;
+}
+
+@media (max-aspect-ratio: 16/9) {
+  div.dashboards {
+    display: none !important;
+  }
 }
 
 div.dashboards > div.summary {
