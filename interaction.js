@@ -2740,8 +2740,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         const startX = 120;
         const startY = 165;
 
-        const originX = rect.left + rect.width / 2;
-        const originY = rect.bottom + 3 * u;
+        const originX = rect.left + rect.width / 2 - 1 * u;
+        const originY = rect.bottom - 5 * u;
 
         const colors = [
             "#ff2d2d",
