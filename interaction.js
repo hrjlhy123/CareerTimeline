@@ -2747,7 +2747,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         // div.title 内部坐标，不再用 viewport 坐标
         const originX = titleBox.clientWidth / 2;
-        const originY = titleBox.clientHeight - 3 * u;
+        const originY = titleBox.clientHeight - 5 * u;
 
         const colors = [
             "#ff2d2d",
