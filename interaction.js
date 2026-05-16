@@ -1188,24 +1188,26 @@ window.addEventListener("DOMContentLoaded", async () => {
         clearPinnedDashboardWrapper();
 
         const { name, URLs } = project;
+
+        const safeName = escapeAttr(name);
+        const safeKey = escapeAttr(getProjectDashboardKey(project, index));
+
         const firstURL = URLs?.[0] || "about:blank";
         const isMobile = name.trim().endsWith("(mobile)");
         const iframeClass = isMobile ? "projectShowcase mobile" : "projectShowcase";
+        const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
 
         _clearAllRotators();
 
         iframes.innerHTML = "";
 
-        const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
-
         iframes.insertAdjacentHTML("beforeend", `
             <div 
                 class="iframe-wrapper" 
-                data-index="${index}"            
+                data-index="${index ?? ""}"        
                 role="button"
                 tabindex="0"
                 aria-label="Open preview for ${safeName}"
-                data-index="${index}"
                 data-dashboard-key="${safeKey}">
                 <iframe
                     class="${iframeClass}"
@@ -2319,18 +2321,21 @@ window.addEventListener("DOMContentLoaded", async () => {
         iframes.style.removeProperty("--step-left");
         iframes.classList.remove("has-picked-wrapper");
 
+        const defaultName = "Default portfolio preview";
+        const defaultIndex = "35";
+        const defaultKey = "default::portfolio";
+
         iframes.innerHTML = `
         <div 
             class="iframe-wrapper" 
-            data-index="35"         
+            data-index="${defaultIndex}"         
             role="button"
             tabindex="0"
-            aria-label="Open preview for ${safeName}"
-            data-index="${index}"
-            data-dashboard-key="${safeKey}">
+            aria-label="Open preview for ${defaultName}"
+            data-dashboard-key="${defaultKey}">
             <iframe 
                 class="projectShowcase"
-                title="${safeName} preview"
+                title="${defaultName} preview"
                 src="https://www.hrjlhy.com/index_old_2025-08-09.html"
                 frameborder="0"
                 tabindex="-1">

@@ -815,8 +815,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const dy = event.clientY - timelineTouchLastY;
 
             if (Math.abs(dy) > 1) {
-                // 手指向上拖 dy 为负数，转换成类似 wheel deltaY 正数
-                queueTimelineScroll(-dy * TOUCH_SCROLL_MULTIPLIER);
+                queueTimelineScroll(dy * TOUCH_SCROLL_MULTIPLIER);
 
                 if (Math.abs(dy) > 4) {
                     timelineTouchMoved = true;
