@@ -1,6 +1,13 @@
 :root {
   --u: min(1vh, 0.75vw);
 
+  --iframe-card-w: calc(101.25 * var(--u));
+  --iframe-card-active-w: calc(120 * var(--u));
+  --iframe-card-h: calc(67.5 * var(--u));
+
+  --iframe-card-large-w: calc(155.5 * var(--u));
+  --iframe-card-large-h: calc(87.5 * var(--u));
+
   --bubble-fill: rgba(255, 255, 255, 0.08);
   --bubble-glow: rgba(255, 255, 255, 0.08);
   --bubble-inner-shadow: rgba(0, 0, 0, 0.06);
@@ -16,6 +23,17 @@
 
   --transition-fast: 0.25s ease;
   --transition-card: 0.3s ease-out;
+}
+
+@media (max-aspect-ratio: 4/3) {
+  :root {
+    --iframe-card-w: calc(86 * var(--u));
+    --iframe-card-active-w: calc(101 * var(--u));
+    --iframe-card-h: calc(57 * var(--u));
+
+    --iframe-card-large-w: calc(118 * var(--u));
+    --iframe-card-large-h: calc(66.375 * var(--u));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -179,6 +197,15 @@ div.mailboxSlot > canvas {
   width: 80%;
   height: 100%;
   object-fit: contain;
+}
+
+div.timelineBelt,
+div.timelineBelt > canvas.timelineBelt,
+div.timelineBelt > ul.timeList,
+ul.timeList > li[data-year] {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 div.timelineBelt {
@@ -1041,8 +1068,8 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
   position: absolute;
   left: 2%;
   bottom: calc(1 * var(--u));
-  width: calc(101.25 * var(--u));
-  height: calc(67.5 * var(--u));
+  width: var(--iframe-card-w);
+  height: var(--iframe-card-h);
   transform-origin: 0 50%;
   border-radius: var(--radius-card);
   box-shadow: 0 calc(0.6 * var(--u)) calc(1.2 * var(--u)) rgb(0 0 0 / 0.32);
@@ -1070,8 +1097,8 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
 }
 
 div.iframes > div.iframe-wrapper.active {
-  width: calc(120 * var(--u));
-  height: calc(67.5 * var(--u));
+  width: var(--iframe-card-active-w);
+  height: var(--iframe-card-h);
   padding: 2%;
   /* i 从 1 开始：1→最右，越大越靠左 */
   left: calc(var(--left-base) + var(--index) * var(--step-left));
@@ -1130,9 +1157,9 @@ div.iframes.year-color-rippling::after {
 
 div.iframes:has(> .iframe-wrapper.active:only-child) > .iframe-wrapper.active,
 div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
-  width: calc(155.5 * var(--u));
-  height: calc(87.5 * var(--u));
-  left: calc((100% - calc(155.5 * var(--u))) / 2 - calc(3 * var(--u)));
+  width: var(--iframe-card-large-w);
+  height: var(--iframe-card-large-h);
+  left: calc((100% - var(--iframe-card-large-w)) / 2 - calc(3 * var(--u)));
   bottom: calc(4.25 * var(--u));
   z-index: 24;
   padding: 0;
@@ -1155,8 +1182,8 @@ div.iframes:has(> .iframe-wrapper.active:only-child)
 div.iframes.has-picked-wrapper
   > .iframe-wrapper.active.is-picked-wrapper
   > iframe.mobile {
-  width: calc(calc(49.21875 * var(--u)) / 0.85);
-  height: calc(calc(87.5 * var(--u)) / 0.85);
+  width: calc(var(--iframe-card-large-h) * 0.5625 / 0.85);
+  height: calc(var(--iframe-card-large-h) / 0.85);
   border-radius: 0;
 }
 
@@ -1722,8 +1749,8 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.is-picked-wrapper > iframe {
 div.iframes.has-picked-wrapper
   > .iframe-wrapper.is-picked-wrapper
   > iframe.mobile {
-  width: calc(49.21875 * var(--u) / 0.85);
-  height: calc(87.5 * var(--u) / 0.85);
+  width: calc(var(--iframe-card-large-h) * 0.5625 / 0.85);
+  height: calc(var(--iframe-card-large-h) / 0.85);
   border-radius: 0;
 }
 

@@ -786,6 +786,71 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             hotzoneList.scrollLeft += event.deltaY;
         }, { passive: false });
+
+        const timelineBelt = document.querySelector("div.timelineBelt");
+
+        let timelineTouchActive = false;
+        let timelineTouchLastY = 0;
+        let timelineTouchMoved = false;
+        let suppressTimelineClickUntil = 0;
+
+        const TOUCH_SCROLL_MULTIPLIER = 2.2;
+
+        timelineBelt?.addEventListener("pointerdown", (event) => {
+            if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+            if (event.isPrimary === false) return;
+
+            timelineTouchActive = true;
+            timelineTouchMoved = false;
+            timelineTouchLastY = event.clientY;
+
+            timelineBelt.setPointerCapture?.(event.pointerId);
+
+            event.preventDefault();
+        }, { passive: false });
+
+        timelineBelt?.addEventListener("pointermove", (event) => {
+            if (!timelineTouchActive) return;
+
+            const dy = event.clientY - timelineTouchLastY;
+
+            if (Math.abs(dy) > 1) {
+                // 手指向上拖 dy 为负数，转换成类似 wheel deltaY 正数
+                queueTimelineScroll(-dy * TOUCH_SCROLL_MULTIPLIER);
+
+                if (Math.abs(dy) > 4) {
+                    timelineTouchMoved = true;
+                }
+            }
+
+            timelineTouchLastY = event.clientY;
+
+            event.preventDefault();
+        }, { passive: false });
+
+        function endTimelineTouch(event) {
+            if (!timelineTouchActive) return;
+
+            timelineTouchActive = false;
+
+            if (timelineTouchMoved) {
+                suppressTimelineClickUntil = performance.now() + 350;
+            }
+
+            timelineBelt?.releasePointerCapture?.(event.pointerId);
+        }
+
+        timelineBelt?.addEventListener("pointerup", endTimelineTouch);
+        timelineBelt?.addEventListener("pointercancel", endTimelineTouch);
+        timelineBelt?.addEventListener("pointerleave", endTimelineTouch);
+
+        // 防止拖动年份牌之后，又误触发 li click
+        timelineBelt?.addEventListener("click", (event) => {
+            if (performance.now() > suppressTimelineClickUntil) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+        }, true);
     }
     const wheelResistance = () => {
         if (Math.abs(deltaAngle) < 0.01) {

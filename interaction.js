@@ -753,8 +753,16 @@ window.addEventListener("DOMContentLoaded", async () => {
         const vh = window.innerHeight / 100;
         const vw = window.innerWidth / 100;
 
-        const targetTotalWidth = 66 * vw - 6 * vh;
-        const cardWidth = 120 * vh;
+        const u = Math.min(window.innerHeight / 100, window.innerWidth * 0.75 / 100);
+        const isFourThreeOrNarrow = window.matchMedia("(max-aspect-ratio: 4/3)").matches;
+
+        const availableWidth = iframes.getBoundingClientRect().width;
+
+        // const targetTotalWidth = 66 * vw - 6 * vh;
+        // const cardWidth = 120 * vh;
+
+        const targetTotalWidth = availableWidth - 6 * u;
+        const cardWidth = (isFourThreeOrNarrow ? 101 : 120) * u;
 
         let stepPx = 0;
 
