@@ -2502,7 +2502,7 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
 .rainbow-curve {
   position: absolute;
   left: 0;
-  top: calc(11.25 * var(--u));
+  top: 0;
   width: calc(36 * var(--u));
   height: calc(27 * var(--u));
   overflow: visible;
@@ -2526,7 +2526,7 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
 .rainbow-dot {
   position: absolute;
   left: var(--x);
-  top: calc(var(--y) + calc(11.25 * var(--u)));
+  top: var(--y);
 
   width: var(--s, calc(0.6 * var(--u)));
   height: var(--s, calc(0.6 * var(--u)));

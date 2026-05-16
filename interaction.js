@@ -1305,24 +1305,39 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!year) return;
 
         const item = document.querySelector(`ul.timeList > li[data-year="${year}"]`);
-        const canvas = document.querySelector("canvas.timelineBelt");
+        const belt = document.querySelector("div.timelineBelt");
 
-        if (!item || !canvas) return;
+        if (!item || !belt) {
+            stopCenterTimelineYear();
+            return;
+        }
 
-        const currentTop = parseFloat(item.style.top);
+        // 关键：每一帧都重新检查是否已经显示出来
+        // 一旦年份已经到正面，就停止继续 queueTimelineScroll
+        if (isTimelineYearFront(year)) {
+            stopCenterTimelineYear();
+            return;
+        }
 
-        if (!Number.isFinite(currentTop)) {
+        const itemRect = item.getBoundingClientRect();
+        const beltRect = belt.getBoundingClientRect();
+
+        // 因为现在位置在 transform 里，所以不能再用 item.style.top
+        const currentCenterY =
+            itemRect.top - beltRect.top + itemRect.height / 2;
+
+        if (!Number.isFinite(currentCenterY)) {
             timelineCenterRaf = requestAnimationFrame(centerTimelineYearStep);
             return;
         }
 
-        const diff = currentTop - TIMELINE_TARGET_TOP;
+        const diff = currentCenterY - TIMELINE_TARGET_TOP;
 
         if (Math.abs(diff) <= TIMELINE_CENTER_TOLERANCE) {
+            stopCenterTimelineYear();
             return;
         }
 
-        // 模拟滚轮
         const deltaY =
             TIMELINE_WHEEL_DIRECTION *
             Math.max(-60, Math.min(60, diff * 0.75));
@@ -2720,13 +2735,13 @@ window.addEventListener("DOMContentLoaded", async () => {
         const titleBox = document.querySelector("div.title") || event.currentTarget;
         const rect = titleBox.getBoundingClientRect();
 
-        const u = Math.min(window.innerHeight / 100, window.innerWidth * 0.75 / 100);
+        const u = Math.min(window.innerHeight / 100, window.innerWidth * 0.625 / 100);
 
         const startX = 120;
         const startY = 165;
 
         const originX = rect.left + rect.width / 2;
-        const originY = rect.bottom - 0.3 * u;
+        const originY = rect.bottom + 3 * u;
 
         const colors = [
             "#ff2d2d",
