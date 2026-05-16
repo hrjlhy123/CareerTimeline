@@ -4,19 +4,38 @@
         <meta charset="UTF-8">
 
         <script>
-        (function () {
+        (async function () {
             const oldPage = "https://www.hrjlhy.com/index_old_2025-08-09.html";
             const ua = navigator.userAgent || "";
 
             const isIPhone = /iPhone|iPod/i.test(ua);
             const isAndroidPhone = /Android/i.test(ua) && /Mobile/i.test(ua);
 
-            if (isIPhone || isAndroidPhone) {
+            function goOld(reason) {
+                console.warn(reason);
                 window.location.replace(oldPage);
             }
 
+            if (isIPhone || isAndroidPhone) {
+                goOld("Phone detected");
+                return;
+            }
+
             if (!("gpu" in navigator)) {
-                document.documentElement.classList.add("no-webgpu");
+                goOld("WebGPU API not available");
+                return;
+            }
+
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+
+                if (!adapter) {
+                    goOld("No GPU adapter found");
+                    return;
+                }
+            } catch (error) {
+                goOld("WebGPU check failed");
+                return;
             }
         })();
         </script>
