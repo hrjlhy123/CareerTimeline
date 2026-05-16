@@ -2739,8 +2739,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 .getPropertyValue("--u")
         ) || Math.min(window.innerHeight / 100, window.innerWidth * 0.625 / 100);
 
-        const startX = 120;
-        const startY = 165;
+        const svgW = 36 * u;
+        const svgH = 27 * u;
+
+        const startX = svgW / 2;
+        const startY = svgH - 2.25 * u;
 
         // div.title 内部坐标，不再用 viewport 坐标
         const originX = titleBox.clientWidth / 2;
@@ -2783,7 +2786,9 @@ window.addEventListener("DOMContentLoaded", async () => {
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
             svg.classList.add("rainbow-curve");
-            svg.setAttribute("viewBox", "0 0 240 180");
+            svg.setAttribute("viewBox", `0 0 ${svgW} ${svgH}`);
+            svg.style.width = `${svgW}px`;
+            svg.style.height = `${svgH}px`;
 
             // 每条线随机一个发射方向
             // -150 到 -30 度：向左上到右上
@@ -2815,8 +2820,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             path.style.setProperty("--c", color);
 
-            svg.style.setProperty("--x", `${originX - startX}px`);
-            svg.style.setProperty("--y", `${originY - startY}px`);
+            svg.style.left = `${originX - startX}px`;
+            svg.style.top = `${originY - startY}px`;
 
             svg.appendChild(path);
             layer.appendChild(svg);
