@@ -1625,7 +1625,6 @@ div.iframe-wrapper > div.iframe-mask {
   transition:
     opacity 0.5s ease-out,
     filter 1.5s ease-out;
-  border-radius: calc(4 * var(--u));
 }
 
 div.projectShowcase:not(.active) > .playzone > .iframes > .iframe-wrapper {
