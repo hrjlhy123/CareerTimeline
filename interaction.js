@@ -15,6 +15,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         angle
 
     let timelineListReady = false;
+    const YEAR_LABEL_POP_Z = 2.5;
+    const YEAR_LABEL_X_PARALLAX = 0.25;
+    const YEAR_LABEL_Y_PARALLAX = 1.00;
 
     li = document.querySelectorAll('ul.timeList > li[data-year]');
     angle = {
@@ -257,6 +260,33 @@ window.addEventListener("DOMContentLoaded", async () => {
         pointerLight.dirty = true;
     });
 
+    function normalizeDeg(deg) {
+        return ((deg % 360) + 360) % 360;
+    }
+
+    function getTimelineYearOpacity(rxDeg) {
+        const angle = normalizeDeg(rxDeg);
+
+        // 0 - 75: fully visible
+        if (angle <= 75) return 1;
+
+        // 75 - 90: fade out 1 -> 0
+        if (angle < 90) {
+            return 1 - (angle - 75) / 15;
+        }
+
+        // 90 - 270: hidden
+        if (angle <= 270) return 0;
+
+        // 270 - 285: fade in 0 -> 1
+        if (angle < 285) {
+            return (angle - 270) / 15;
+        }
+
+        // 285 - 360: fully visible
+        return 1;
+    }
+
     frame = async () => {
         data = await getData();
 
@@ -275,28 +305,46 @@ window.addEventListener("DOMContentLoaded", async () => {
             for (let index = 0; index < li.length; index++) {
                 const item = li[index];
 
-                let x =
+                const modelX =
                     data.modelStates[index].center.x +
                     data.modelStates[index].translation.x;
 
-                let y =
+                const modelY =
                     data.modelStates[index].center.y +
                     data.modelStates[index].translation.y;
 
-                let z =
+                const baseZ =
                     data.modelStates[index].center.z +
                     data.modelStates[index].translation.z;
 
-                const coordinates = await getCoordinates(
-                    [x, y, z],
+                // 原始位置：和 WebGPU timelineBelt 完全对齐
+                const baseCoordinates = await getCoordinates(
+                    [modelX, modelY, baseZ],
                     data.matrix_view,
                     data.matrix_projection,
                     data.matrix_world,
                     data.canvas
                 );
 
-                x = coordinates.x;
-                y = coordinates.y;
+                // 突出位置：让 li 看起来在玻璃外面
+                const popZ = baseZ - YEAR_LABEL_POP_Z;
+
+                const popCoordinates = await getCoordinates(
+                    [modelX, modelY, popZ],
+                    data.matrix_view,
+                    data.matrix_projection,
+                    data.matrix_world,
+                    data.canvas
+                );
+
+                // x 只吃一部分突出后的偏移，避免 yaw 时左右漂太多
+                const x =
+                    baseCoordinates.x +
+                    (popCoordinates.x - baseCoordinates.x) * YEAR_LABEL_X_PARALLAX;
+
+                const y =
+                    baseCoordinates.y +
+                    (popCoordinates.y - baseCoordinates.y) * YEAR_LABEL_Y_PARALLAX;
 
                 item.style.left = "0";
                 item.style.top = "0";
@@ -330,17 +378,15 @@ window.addEventListener("DOMContentLoaded", async () => {
                 rotateZ(${angleLocal.rz}deg)
             `;
 
-                const zFront =
-                    data.modelStates[index].center.z +
-                    data.modelStates[index].translation.z <
-                    data.results.center[2] - 0.5;
-
                 const localRx =
                     data.modelStates[index].angle.rx -
                     data.modelStates[index].deltaAngle.rx;
 
-                const facing = Math.cos(localRx);
-                const frontLight = clamp(facing, 0.25, 1);
+                const timelineYearOpacity = getTimelineYearOpacity(angleLocal.rx);
+                const shouldShow = timelineYearOpacity > 0.01;
+
+                // 如果 lighting 还想跟透明度一起变化，用 opacity 比 cos 更直观
+                const frontLight = clamp(0.25 + timelineYearOpacity * 0.75, 0.25, 1);
 
                 const yearLight = getGlobalLightForElement(item, {
                     defaultLightX: beltRect.left + beltRect.width * 0.32,
@@ -361,8 +407,9 @@ window.addEventListener("DOMContentLoaded", async () => {
                     item.style.setProperty("--year-light-alpha", yearLight.lightAlpha.toFixed(2));
                 }
 
-                item.style.visibility =
-                    zFront && facing > 0.18 ? "initial" : "hidden";
+                item.style.opacity = timelineYearOpacity.toFixed(3);
+                item.style.visibility = shouldShow ? "initial" : "hidden";
+                item.style.pointerEvents = timelineYearOpacity > 0.5 ? "all" : "none";
             }
 
             if (!timelineListReady) {
@@ -386,13 +433,15 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     /* Unsupervised AI content */
     function syncTimelinePerspective() {
-        const belt = document.querySelector("div.timelineBelt");
-        if (!belt) return;
+        const canvas = document.querySelector("canvas.timelineBelt");
+        const timeList = document.querySelector("ul.timeList");
+
+        if (!canvas || !timeList) return;
 
         const fov = 30 * Math.PI / 180;
-        const perspective = belt.clientHeight / (2 * Math.tan(fov / 2));
+        const perspective = canvas.clientHeight / (2 * Math.tan(fov / 2));
 
-        belt.style.setProperty("--timeline-perspective", `${perspective}px`);
+        timeList.style.setProperty("--timeline-perspective", `${perspective}px`);
     }
 
     syncTimelinePerspective();
@@ -523,6 +572,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
+
+        applyStackVars(iframes, iframeWrappers.length);
 
         clearPinnedDashboardWrapper();
 
@@ -750,34 +801,41 @@ window.addEventListener("DOMContentLoaded", async () => {
         const visible = items.slice(start);
         const visibleCount = visible.length;
 
-        const vh = window.innerHeight / 100;
-        const vw = window.innerWidth / 100;
+        const u = Math.min(
+            window.innerHeight / 100,
+            window.innerWidth * 0.625 / 100
+        );
 
-        const u = Math.min(window.innerHeight / 100, window.innerWidth * 0.75 / 100);
-        const isFourThreeOrNarrow = window.matchMedia("(max-aspect-ratio: 4/3)").matches;
+        if (visibleCount <= 1) {
+            iframes.style.removeProperty("--step-left");
+
+            visible.forEach((el, i) => {
+                el.style.setProperty("--index", i);
+            });
+
+            items.slice(0, start).forEach((el) => {
+                el.style.removeProperty("--index");
+            });
+
+            return;
+        }
 
         const availableWidth = iframes.getBoundingClientRect().width;
+        const cardWidth = 108 * u;
 
-        // const targetTotalWidth = 66 * vw - 6 * vh;
-        // const cardWidth = 120 * vh;
+        const minStep = 1.8 * u;
+        const maxStep = 4.5 * u;
 
-        const targetTotalWidth = availableWidth - 6 * u;
-        const cardWidth = (isFourThreeOrNarrow ? 101 : 120) * u;
+        let stepPx = (availableWidth - cardWidth - 6 * u) / (visibleCount - 1);
 
-        let stepPx = 0;
-
-        if (visibleCount > 1) {
-            stepPx = (targetTotalWidth - cardWidth) / (visibleCount - 1);
-            stepPx = Math.max(0, stepPx);
-
-            if (stepPx > 0) {
-                iframes.style.setProperty("--step-left", `${stepPx}px`);
-            } else {
-                iframes.style.removeProperty("--step-left");
-            }
-        } else {
-            iframes.style.removeProperty("--step-left");
+        // 防止窗口最小化/恢复时拿到 0 或异常宽度
+        if (!Number.isFinite(stepPx)) {
+            stepPx = minStep;
         }
+
+        stepPx = Math.max(minStep, Math.min(maxStep, stepPx));
+
+        iframes.style.setProperty("--step-left", `${stepPx}px`);
 
         visible.forEach((el, i) => {
             el.style.setProperty("--index", i);
@@ -787,6 +845,31 @@ window.addEventListener("DOMContentLoaded", async () => {
             el.style.removeProperty("--index");
         });
     };
+
+    let stackResizeRaf = 0;
+
+    function refreshIframeStackVars() {
+        const iframes = document.querySelector(".iframes");
+        if (!iframes) return;
+
+        const wrappers = iframes.querySelectorAll(".iframe-wrapper");
+        if (!wrappers.length) return;
+
+        applyStackVars(iframes, wrappers.length);
+    }
+
+    function scheduleRefreshIframeStackVars() {
+        cancelAnimationFrame(stackResizeRaf);
+
+        // 等浏览器恢复布局，尤其是最小化后回来
+        stackResizeRaf = requestAnimationFrame(() => {
+            stackResizeRaf = requestAnimationFrame(() => {
+                refreshIframeStackVars();
+            });
+        });
+    }
+
+    window.addEventListener("resize", scheduleRefreshIframeStackVars);
 
     // —— 全局轮播管理 —— //
     const _IFRAME_ROTATORS = new Set();
@@ -1253,7 +1336,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let timelineCenterRaf = 0;
     let timelineCenterTargetYear = null;
 
-    const TIMELINE_TARGET_TOP = 232;
+    const TIMELINE_TARGET_TOP_RATIO = 0.38;
     const TIMELINE_CENTER_TOLERANCE = 2;
 
     const TIMELINE_WHEEL_DIRECTION = -1;
@@ -1331,7 +1414,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const diff = currentCenterY - TIMELINE_TARGET_TOP;
+        const targetTop = beltRect.height * TIMELINE_TARGET_TOP_RATIO;
+        const diff = currentCenterY - targetTop;
 
         if (Math.abs(diff) <= TIMELINE_CENTER_TOLERANCE) {
             stopCenterTimelineYear();
@@ -2104,13 +2188,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     };
 
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-            if (!ws || ws.readyState === WebSocket.CLOSED) {
-                connectWebSocket();
-            } else if (ws.readyState === WebSocket.OPEN) {
-                getProjects(lastRequestedYear);
-            }
+        if (document.visibilityState !== "visible") return;
+
+        if (!ws || ws.readyState === WebSocket.CLOSED) {
+            connectWebSocket();
         }
+
+        scheduleRefreshIframeStackVars();
     });
 
     window.addEventListener("online", () => {
@@ -2148,18 +2232,22 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             return msg;
         }
-
         function spawnRandomBubbleInProjectListRightHalf() {
-            if (!projectList) return;
+            const frame = document.querySelector("div.mainFrame");
+            if (!frame) return;
 
-            const rect = projectList.getBoundingClientRect();
+            const rect = frame.getBoundingClientRect();
+            const u = parseFloat(
+                getComputedStyle(document.documentElement).getPropertyValue("--u")
+            ) || 1;
 
-            const padding = 36;
+            const padding = 20 * u;
 
             const minX = rect.left + rect.width * 0.5 + padding;
             const maxX = rect.right - padding;
+
             const minY = rect.top + padding;
-            const maxY = rect.bottom - padding;
+            const maxY = rect.top + rect.height * 0.5 - padding;
 
             if (maxX <= minX || maxY <= minY) return;
 
@@ -2179,7 +2267,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 removeHole(oldest);
             }
 
-            const r = 56 + (84 - 56) * Math.pow(Math.random(), 0.35); // 偏大分布
+            const u = parseFloat(
+                getComputedStyle(document.documentElement).getPropertyValue("--u")
+            ) || Math.min(window.innerHeight / 100, window.innerWidth * 0.625 / 100);
+
+            const r = (10 + 5 * Math.random()) * u;
 
             const msg = getNextMessage();
 
@@ -2209,13 +2301,15 @@ window.addEventListener("DOMContentLoaded", async () => {
             const st = {
                 x, y, r,
                 t0: now,
-                ax1: rnd(3, 9), ax2: rnd(1, 5),
-                ay1: rnd(2, 8), ay2: rnd(1, 4),
+                ax1: rnd(0.5 * u, 1.5 * u),
+                ax2: rnd(0.2 * u, 0.8 * u),
+                ay1: rnd(0.4 * u, 1.3 * u),
+                ay2: rnd(0.2 * u, 0.7 * u),
                 fx1: rnd(0.3, 0.7), fx2: rnd(0.9, 1.6),
                 fy1: rnd(0.4, 0.9), fy2: rnd(1.0, 1.8),
                 p1: rnd(0, Math.PI * 2), p2: rnd(0, Math.PI * 2),
                 p3: rnd(0, Math.PI * 2), p4: rnd(0, Math.PI * 2),
-                up: rnd(10, 22),
+                up: rnd(1.5 * u, 3.5 * u),
                 hover: false, mx: x, my: y,
                 dieAt: now + ttl, remaining: ttl, timerId: null,
                 // NEW:
@@ -2302,10 +2396,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                     const dx = s.mx - s.x;
                     const dy = s.my - s.y;
                     let bx = dx * 0.05, by = dy * 0.05;             // 你的吸附力度
-                    const amp = Math.min(14, s.r * 0.35);
+                    const amp = Math.min(2.2 * u, s.r * 0.35);
                     bx += amp * Math.sin(s.fx1 * t + s.p1) * 0.6;
                     by += amp * Math.sin(s.fy1 * t + s.p3) * 0.6;
-                    const maxLen = Math.max(0, s.r - 6);
+                    const maxLen = Math.max(0, s.r - 1 * u);
                     const len = Math.hypot(bx, by) || 1;
                     const k = Math.min(1, maxLen / len);
                     tx = bx * k;
@@ -2481,19 +2575,21 @@ window.addEventListener("DOMContentLoaded", async () => {
             const hostRect = host.getBoundingClientRect();
 
             if (shape === "circle") {
-                const size = Math.max(rect.width, rect.height) + 22;
+                const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1;
+                const size = Math.max(rect.width, rect.height) + 3 * u;
 
                 target.x = rect.left - hostRect.left + rect.width / 2 - size / 2;
                 target.y = rect.top - hostRect.top + rect.height / 2 - size / 2;
                 target.w = size;
                 target.h = size;
             } else {
-                const paddingX = 8;
-                const paddingY = 8;
+                const paddingX = 1.2 * u;
+                const paddingY = 1.2 * u;
+                const extraX = 5 * u;
 
-                target.x = rect.left - hostRect.left - paddingX / 2 - 38;
+                target.x = rect.left - hostRect.left - paddingX / 2 - extraX;
                 target.y = rect.top - hostRect.top - paddingY;
-                target.w = rect.width - paddingX * 2 + 38 * 2;
+                target.w = rect.width - paddingX * 2 + extraX * 2;
                 target.h = rect.height + paddingY * 2;
             }
 
@@ -2796,20 +2892,20 @@ window.addEventListener("DOMContentLoaded", async () => {
             const rad = angle * Math.PI / 180;
 
             // 每条线随机长度
-            const length = 105 + Math.random() * 85;
+            const length = (12 + Math.random() * 9) * u;
 
             // 终点
             const endX = startX + Math.cos(rad) * length;
             const endY = startY + Math.sin(rad) * length;
 
             // 控制点：沿发射方向走一段，再加横向偏移制造曲线
-            const curveBend = (Math.random() - 0.5) * 90;
+            const curveBend = (Math.random() - 0.5) * 10 * u;
 
             const c1X = startX + Math.cos(rad) * length * 0.28 + curveBend * 0.25;
             const c1Y = startY + Math.sin(rad) * length * 0.28;
 
             const c2X = startX + Math.cos(rad) * length * 0.72 + curveBend;
-            const c2Y = startY + Math.sin(rad) * length * 0.72 + (Math.random() - 0.5) * 30;
+            const c2Y = startY + Math.sin(rad) * length * 0.72 + (Math.random() - 0.5) * 4 * u;
 
             path.setAttribute(
                 "d",
@@ -2851,9 +2947,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 const end = curveEnds[Math.floor(Math.random() * curveEnds.length)];
 
-                dot.style.setProperty("--x", `${end.x + (Math.random() - 0.5) * 50}px`);
-                dot.style.setProperty("--y", `${end.y + (Math.random() - 0.5) * 50}px`);
-                dot.style.setProperty("--s", `${1}px`);
+                dot.style.setProperty("--x", `${end.x + (Math.random() - 0.5) * 6 * u}px`);
+                dot.style.setProperty("--y", `${end.y + (Math.random() - 0.5) * 6 * u}px`);
+                dot.style.setProperty("--s", `${0.18 * u}px`);
                 dot.style.setProperty("--c", color);
 
                 // 每个星星闪烁节奏不同

@@ -35,6 +35,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     let context, adapter, device, // GPUEnv
         canvasFormat, alphaMode, dpr // GPUConfig
     // results // Custom
+    let resizeCanvasBackingStore = () => false;
+    let recreateRenderTargets = () => { };
+    let updateProjectionForResize = () => { };
+    let resizeTimelineGPU = () => { };
 
     {
         if (window.__NO_WEBGPU__ || document.documentElement.classList.contains("no-webgpu")) {
@@ -84,19 +88,39 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         alphaMode = `premultiplied`;
 
-        dpr = window.devicePixelRatio || 1;
+        resizeCanvasBackingStore = () => {
+            dpr = Math.min(2, window.devicePixelRatio || 1);
 
-        canvas.width = canvas.clientWidth * dpr;
-        canvas.height = canvas.clientHeight * dpr;
+            const cssWidth = canvas.clientWidth;
+            const cssHeight = canvas.clientHeight;
 
-        console.log(`canvas size:`, canvas.width, canvas.height);
+            if (cssWidth <= 0 || cssHeight <= 0) {
+                return false;
+            }
 
-        context.configure({
-            device: device,
-            format: canvasFormat,
-            alphaMode: alphaMode,
-            size: [canvas.width, canvas.height]
-        });
+            const width = Math.max(2, Math.floor(cssWidth * dpr));
+            const height = Math.max(2, Math.floor(cssHeight * dpr));
+
+            if (canvas.width === width && canvas.height === height) {
+                return false;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            context.configure({
+                device,
+                format: canvasFormat,
+                alphaMode,
+                size: [canvas.width, canvas.height],
+            });
+
+            console.log(`Timeline canvas resized:`, canvas.width, canvas.height);
+
+            return true;
+        };
+
+        resizeCanvasBackingStore();
     }
 
     // === Prepare data ===
@@ -320,6 +344,22 @@ window.addEventListener("DOMContentLoaded", async () => {
                     matrix_projection = mat4.create()
 
                     mat4.perspective(matrix_projection, fov, aspect, near, far)
+
+                    updateProjectionForResize = () => {
+                        if (!matrix_projection || !cameraUniformBuffer) return;
+
+                        aspect = canvas.width / canvas.height;
+
+                        mat4.perspective(
+                            matrix_projection,
+                            fov,
+                            aspect,
+                            near,
+                            far
+                        );
+
+                        device.queue.writeBuffer(cameraUniformBuffer, 0, matrix_projection);
+                    };
                 }
 
                 // View matrix
@@ -434,43 +474,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     // === Prepare texture ===
     let MSAATexture, colorAccumTexture, colorResolvedTexture, depthTexture, alphaAccumTexture, alphaResolvedTexture
     {
-        MSAATexture = device.createTexture({
-            size: [canvas.width, canvas.height],
-            format: canvasFormat,
-            sampleCount: 4,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-        })
-        colorAccumTexture = device.createTexture({
-            size: [canvas.width, canvas.height],
-            format: canvasFormat,
-            sampleCount: 4,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        })
-        colorResolvedTexture = device.createTexture({
-            size: [canvas.width, canvas.height],
-            format: canvasFormat,
-            sampleCount: 1,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-        })
-        depthTexture = device.createTexture({
-            size: [canvas.width, canvas.height],
-            format: `depth24plus`,
-            sampleCount: 4,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        })
-        alphaAccumTexture = device.createTexture({
-            size: [canvas.width, canvas.height],
-            format: `rgba16float`,
-            sampleCount: 4,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        })
-        alphaResolvedTexture = device.createTexture({
-            size: [canvas.width, canvas.height],
-            format: `rgba16float`,
-            sampleCount: 1,
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
-        })
-
         compositeBindGroupLayout = device.createBindGroupLayout({
             entries: [
                 {
@@ -484,23 +487,98 @@ window.addEventListener("DOMContentLoaded", async () => {
                     texture: {},
                 }
             ]
-        })
+        });
 
-        compositeBindGroup = device.createBindGroup({
-            layout: compositeBindGroupLayout,
-            entries: [
-                {
-                    binding: 0,
-                    // resource: MSAATexture.createView(),
-                    resource: colorResolvedTexture.createView(),
-                },
-                {
-                    binding: 1,
-                    resource: alphaResolvedTexture.createView(),
-                },
+        recreateRenderTargets = () => {
+            MSAATexture?.destroy?.();
+            colorAccumTexture?.destroy?.();
+            colorResolvedTexture?.destroy?.();
+            depthTexture?.destroy?.();
+            alphaAccumTexture?.destroy?.();
+            alphaResolvedTexture?.destroy?.();
 
-            ]
-        })
+            const size = [canvas.width, canvas.height];
+
+            MSAATexture = device.createTexture({
+                size,
+                format: canvasFormat,
+                sampleCount: 4,
+                usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            });
+
+            colorAccumTexture = device.createTexture({
+                size,
+                format: canvasFormat,
+                sampleCount: 4,
+                usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            });
+
+            colorResolvedTexture = device.createTexture({
+                size,
+                format: canvasFormat,
+                sampleCount: 1,
+                usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            });
+
+            depthTexture = device.createTexture({
+                size,
+                format: `depth24plus`,
+                sampleCount: 4,
+                usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            });
+
+            alphaAccumTexture = device.createTexture({
+                size,
+                format: `rgba16float`,
+                sampleCount: 4,
+                usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            });
+
+            alphaResolvedTexture = device.createTexture({
+                size,
+                format: `rgba16float`,
+                sampleCount: 1,
+                usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            });
+
+            compositeBindGroup = device.createBindGroup({
+                layout: compositeBindGroupLayout,
+                entries: [
+                    {
+                        binding: 0,
+                        resource: colorResolvedTexture.createView(),
+                    },
+                    {
+                        binding: 1,
+                        resource: alphaResolvedTexture.createView(),
+                    },
+                ],
+            });
+        };
+
+        recreateRenderTargets();
+    }
+
+    {
+        resizeTimelineGPU = () => {
+            const changed = resizeCanvasBackingStore();
+
+            if (!changed) return;
+
+            updateProjectionForResize();
+            recreateRenderTargets();
+        };
+
+        const timelineResizeObserver = new ResizeObserver(() => {
+            resizeTimelineGPU();
+        });
+
+        timelineResizeObserver.observe(canvas);
+
+        window.addEventListener("resize", resizeTimelineGPU);
+
+        // 等 CSS / grid / --u 完成布局后再检查一次
+        requestAnimationFrame(resizeTimelineGPU);
     }
 
     // === Prepare pipeline layout ===
@@ -1185,13 +1263,17 @@ window.addEventListener("DOMContentLoaded", async () => {
     let frame, lastTime, deltaTime
     lastTime = performance.now()
     frame = async (now) => {
-        deltaTime = (now - lastTime) / 1000
-        lastTime = now
+        deltaTime = (now - lastTime) / 1000;
+        lastTime = now;
+
+        resizeTimelineGPU();
+
         consumeTimelineScrollQueue();
         wheelResistance();
         render(deltaTime);
+
         requestAnimationFrame(frame);
-    }
+    };
     frame()
 
 })

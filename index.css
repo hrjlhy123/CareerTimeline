@@ -2,7 +2,7 @@
   --u: min(1vh, 0.625vw);
 
   --iframe-card-w-back: calc(101.25 * var(--u));
-  --iframe-card-w: calc(120 * var(--u));
+  --iframe-card-w: calc(108 * var(--u));
   --iframe-card-h: calc(67.5 * var(--u));
 
   --iframe-card-large-w: calc(155.5 * var(--u));
@@ -25,16 +25,16 @@
   --transition-card: 0.3s ease-out;
 }
 
-@media (max-aspect-ratio: 4/3) {
+/* @media (max-aspect-ratio: 4/3) {
   :root {
     --iframe-card-w-back: calc(85.5 * var(--u));
-    --iframe-card-w: calc(86 * var(--u));
+    --iframe-card-w: calc(85.5 * var(--u));
     --iframe-card-h: calc(57 * var(--u));
 
     --iframe-card-large-w: calc(118 * var(--u));
     --iframe-card-large-h: calc(66.375 * var(--u));
   }
-}
+} */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -102,8 +102,6 @@ div.mainFrame {
 html.no-webgpu > body > div.mainFrame {
   display: block;
   position: relative;
-  left: 0;
-  top: 0;
 }
 
 html.no-webgpu > body > div.mainFrame > div.title {
@@ -113,6 +111,10 @@ html.no-webgpu > body > div.mainFrame > div.title {
 
   width: calc(12 / 48 * 100%);
   height: calc(4 / 13 * 100%);
+}
+
+html.no-webgpu div.mainFrame:not(:has(div.iframe-wrapper.active)) > div.title {
+  z-index: 3;
 }
 
 html.no-webgpu > body > div.mainFrame > div.timelineBelt {
@@ -172,22 +174,13 @@ html.no-webgpu div.projectShowcase > div.playzone {
 }
 
 html.no-webgpu
-  div.projectShowcase:not(.active)
-  > .playzone
-  > .iframes
-  > .iframe-wrapper {
-  left: 30%;
-}
-
-html.no-webgpu
   div.iframes:has(> .iframe-wrapper.active:only-child)
   > .iframe-wrapper.active {
-  left: calc((100% - var(--iframe-card-large-w)) / 2 - calc(12 * var(--u)));
+  left: calc((100% - var(--iframe-card-large-w)) / 2 - calc(24 * var(--u)));
   transform: none;
 }
 html.no-webgpu div.projectShowcase.active div.dashboards {
-  padding-top: calc(5 * var(--u));
-  padding-bottom: calc(5 * var(--u));
+  padding: calc(4.5 * var(--u)) 0 calc(4.5 * var(--u)) calc(2 * var(--u));
 }
 
 html.no-webgpu div.projectShowcase.active div.dashboards > div.summary {
@@ -195,6 +188,12 @@ html.no-webgpu div.projectShowcase.active div.dashboards > div.summary {
 }
 html.no-webgpu div.projectShowcase.active div.dashboards > div.project-metrics {
   display: flex;
+}
+
+html.no-webgpu
+  .iframes:has(> .iframe-wrapper:only-child)
+  > div.iframe-wrapper.active {
+  left: calc(-1 / 4 * 100vw + 0.25vw) !important
 }
 
 @media (max-aspect-ratio: 16/10) {
@@ -429,8 +428,8 @@ ul.timeList > li[data-year] {
 div.timelineBelt {
   grid-area: timelineBelt;
   position: relative;
-  perspective: var(--timeline-perspective, calc(180 * var(--u)));
-  perspective-origin: 50% 50%;
+  /* perspective: var(--timeline-perspective, calc(180 * var(--u)));
+  perspective-origin: 50% 50%; */
 }
 
 div.timelineBelt > canvas {
@@ -448,9 +447,13 @@ div.timelineBelt > ul.timeList {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
+  /* pointer-events: none; */
   z-index: 1;
+
+  perspective: var(--timeline-perspective, calc(180 * var(--u)));
+  perspective-origin: 50% 50%;
   transform-style: preserve-3d;
+
   opacity: 0;
   visibility: hidden;
   filter: blur(calc(0.6 * var(--u)));
@@ -477,7 +480,7 @@ ul.timeList > li[data-year] {
   margin: 0;
   list-style: none;
 
-  width: calc(21 * var(--u));
+  width: calc(20.8 * var(--u));
   height: calc(11.8 * var(--u));
 
   cursor: pointer;
@@ -612,7 +615,7 @@ ul.timeList > li[data-year] > span::before {
   filter: blur(calc(0.075 * var(--u)));
   opacity: 0.72;
 
-  pointer-events: none;
+  /* pointer-events: none; */
 }
 
 ul.timeList > li[data-year] > span::after {
@@ -630,7 +633,7 @@ ul.timeList > li[data-year] > span::after {
   filter: blur(calc(0.6 * var(--u)));
   opacity: 0.9;
 
-  pointer-events: none;
+  /* pointer-events: none; */
 }
 
 ul.timeList > li[data-year] {
@@ -1231,7 +1234,7 @@ div.projectShowcase > div.playzone {
   height: calc(67 * var(--u));
   padding: calc(1 * var(--u));
   --step-left: 2%;
-  --left-base: 2%;
+  --left-base: 0%;
   --z-base: 1;
   pointer-events: none;
   display: flex;
@@ -1250,8 +1253,9 @@ div.playzone > img.tape {
   position: absolute;
   z-index: 25;
   height: calc(4 * var(--u));
-  bottom: calc(60 * var(--u));
-  left: calc(117.5 * var(--u));
+  /* bottom: calc(60 * var(--u)); */
+  /* left: calc(117.5 * var(--u)); */
+  left: calc(var(--iframe-card-w));
   transform: rotate(-60deg);
   cursor: pointer;
   pointer-events: auto;
@@ -1269,7 +1273,7 @@ div.playzone > img.tape:hover {
 }
 
 div.playzone > div.iframes {
-  /* position: relative; */
+  position: relative;
   inset: 0;
   pointer-events: none;
   height: 100%;
@@ -1378,7 +1382,7 @@ div.iframes:has(> .iframe-wrapper.active:only-child) > .iframe-wrapper.active,
 div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
   width: var(--iframe-card-large-w);
   height: var(--iframe-card-large-h);
-  left: calc(15 / 39 * 100% - 1vw);
+  left: 50%;
   transform: translateX(-50%);
   bottom: calc(4.25 * var(--u));
   z-index: 24;
@@ -1730,9 +1734,11 @@ div.iframe-wrapper > iframe {
 }
 
 div.iframe-wrapper > iframe.mobile {
-  width: calc(75.9375 * var(--u));
-  height: calc(135 * var(--u));
+  width: calc(var(--iframe-card-h) * 0.5625);
+  height: calc(var(--iframe-card-h));
   border-radius: 0;
+
+  transform: scale(1);
 }
 
 div.iframe-wrapper > div.iframe-mask {
@@ -1751,7 +1757,7 @@ div.iframe-wrapper > div.iframe-mask {
 
 div.projectShowcase:not(.active) > .playzone > .iframes > .iframe-wrapper {
   left: 12.5%;
-  bottom: -13%;
+  bottom: -20%;
 
   --final-rot: calc(12deg - var(--rand-global) * 30deg - 45deg);
   --deal-final-transform: scale(0.5) rotateZ(var(--final-rot));
@@ -2030,18 +2036,23 @@ div.projectShowcase.active .projectList {
 }
 
 div.dashboards {
-  width: calc((99vw - calc(2 * var(--u))) / 6);
+  /* width: calc((99vw - calc(2 * var(--u))) / 6); */
+  width: calc(3 / 16 * 100vw);
   height: 100%;
-  padding: 0 0 0 calc(2 * var(--u));
+  /* padding: 0 0 0 calc(2 * var(--u)); */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   z-index: 1;
 }
 
-@media (max-aspect-ratio: 16/9) {
+@media (max-aspect-ratio: 2) {
   div.dashboards {
     display: none !important;
+  }
+  .iframes:has(> .iframe-wrapper:only-child) > div.iframe-wrapper.active {
+    left: calc(-3 / 13 * 100% + 0.5vw) !important;
+    transform: none !important;
   }
 }
 
