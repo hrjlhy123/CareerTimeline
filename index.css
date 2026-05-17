@@ -183,6 +183,7 @@ html.no-webgpu
   div.iframes:has(> .iframe-wrapper.active:only-child)
   > .iframe-wrapper.active {
   left: calc((100% - var(--iframe-card-large-w)) / 2 - calc(12 * var(--u)));
+  transform: none;
 }
 html.no-webgpu div.projectShowcase.active div.dashboards {
   padding-top: calc(5 * var(--u));
@@ -869,13 +870,6 @@ div.iframes[data-year] > .iframe-wrapper > .iframe-mask {
 div.projectShowcase {
   position: relative;
   grid-area: projectShowcase;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    black 2.5%,
-    black 97.5%,
-    transparent 100%
-  );
 }
 
 div.projectShowcase.is-rippling {
@@ -928,6 +922,13 @@ div.projectShowcase > div.projectList {
   z-index: 2;
   position: relative;
   height: calc(29 * var(--u));
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 2.5%,
+    black 97.5%,
+    transparent 100%
+  );
 }
 
 div.projectShowcase > div.projectList:has(ol.hotzone-list > li:hover) {
@@ -1268,6 +1269,7 @@ div.playzone > img.tape:hover {
 }
 
 div.playzone > div.iframes {
+  /* position: relative; */
   inset: 0;
   pointer-events: none;
   height: 100%;
@@ -1376,7 +1378,8 @@ div.iframes:has(> .iframe-wrapper.active:only-child) > .iframe-wrapper.active,
 div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
   width: var(--iframe-card-large-w);
   height: var(--iframe-card-large-h);
-  left: calc((100% - var(--iframe-card-large-w)) / 2 - calc(3 * var(--u)));
+  left: calc(15 / 39 * 100% - 1vw);
+  transform: translateX(-50%);
   bottom: calc(4.25 * var(--u));
   z-index: 24;
   padding: 0;
