@@ -4,68 +4,57 @@
 
 CareerTimeline is an interactive portfolio website for presenting my software development history, project experience, and technical growth through a WebGPU-powered timeline and a game-style project gallery.
 
-The project is not a traditional static resume page. It combines a 3D timeline, MongoDB-backed project records, WebSocket-based data loading, animated project cards, project dashboards, and custom visual effects to make my past work easier to explore.
+It is designed as more than a static resume page. Visitors can browse projects by year, open live previews, view short project summaries, and interact with a custom 3D timeline.
 
 ## Overview
 
-This site was built to organize my work across web development, AI-integrated systems, full-stack applications, and 3D visualization. Instead of listing projects in a plain text format, CareerTimeline presents projects by year, lets visitors explore them through an animated card interface, and shows short project summaries with simple metrics.
+This site organizes my work across web development, AI-integrated systems, full-stack applications, and 3D visualization. The current version is mainly built with vanilla JavaScript, HTML, CSS, WebGPU, Node.js, WebSocket, and MongoDB, with a Vite-based frontend build workflow.
 
-The current version is still mainly written in vanilla JavaScript, HTML, CSS, WebGPU, Node.js, and MongoDB, but the project has been cleaned up and moved toward a more maintainable Vite-based workflow.
+Recent updates focused on making the site more reliable across different browsers, screen ratios, and device capabilities while keeping the original interactive experience.
 
 ## Key Features
 
 ### WebGPU 3D Timeline
 
-- Renders a custom 3D timeline belt using WebGPU.
-- Loads and parses a COLLADA `.dae` model directly in the browser.
-- Uses `gl-matrix` for camera, projection, and model transforms.
-- Synchronizes 3D model positions with DOM-based year labels.
-- Supports capped scroll input to avoid excessive timeline motion.
-- Auto-centers timeline years when hovering project list items.
+- Custom WebGPU timeline belt rendered in the browser.
+- COLLADA `.dae` model parsing for timeline geometry.
+- DOM year labels synchronized with 3D model positions.
+- Scroll and hover interactions for browsing projects by year.
 
-### MongoDB + WebSocket Project Data
-
-- Loads project data from MongoDB / MongoDB Atlas.
-- Uses a Node.js + Express backend with the `ws` WebSocket library.
-- The browser requests all projects or projects from a selected year through `/ws`.
-- Dashboard metadata is joined from a separate dashboard collection.
-- Project cards and project summaries are rendered dynamically from database records.
-
-### Interactive Project Gallery
+### Project Gallery
 
 - Year-based project filtering.
-- Horizontal project list with hover and checked states.
 - Animated project card stack.
-- Lazy iframe loading through `data-src` so demos are not loaded until needed.
-- Support for multiple URLs per project with iframe rotation.
-- Picked-card mode for focusing one selected project from a larger stack.
-- Back button to return from a selected year to the full project list.
+- Lazy iframe loading for live demos.
+- Support for multiple URLs per project.
+- Picked-card mode for focusing on one selected project.
+- Back button for returning to the full project list.
 
-### Project Dashboard UI
+### Project Dashboard
 
-- Dashboard panel with project title, description, and live link.
-- Three simple project metrics: Complexity, Ownership, and Impact.
-- Dashboard content updates when hovering project list items or iframe cards.
-- Tape-based pinning lets the user lock one dashboard card while browsing.
-- Hover synchronization between iframe cards and project list items.
+- Project title, description, and live link.
+- Simple metrics for Complexity, Ownership, and Impact.
+- Dashboard updates when hovering project list items or cards.
+- Tape-based pinning for locking a selected project summary.
 
-### Visual and Interaction Effects
+### Compatibility and Accessibility
+
+- Mobile users are redirected to the legacy portfolio page.
+- Browsers without graphics acceleration fall back to the legacy page.
+- Browsers without WebGPU can still use a simplified project-list layout.
+- Layout adjustments for 16:9, 16:10, 4:3, and iPad-like screen ratios.
+- Keyboard support for major interactions, including Enter, Space, and Escape.
+- Improved focus styles, ARIA states, and reduced-motion handling.
+
+### Visual Effects
 
 - Liquid-style project list hover effect.
-- Timeline-colored ripple transition when selecting projects.
+- Timeline-colored ripple transition.
 - Project card deal-in animation.
-- Glass-like card styling and year-label highlights.
-- Pointer-based global illumination for timeline labels, dashboard metrics, and the back button.
-- Title click firework animation.
-- Floating contact bubbles as a small easter egg.
-- Background reveal easter egg using a canvas mask after idle interaction.
-
-### Deployment-Oriented Updates
-
-- Vite is used for frontend development and production builds.
-- Backend runs separately through `node server.js`.
-- Production deployment is designed to run the backend behind an Nginx reverse proxy.
-- WebSocket requests use the same-origin `/ws` path, which works well behind Nginx.
+- Pointer-based lighting on timeline labels and dashboard elements.
+- Title click firework effect.
+- Floating contact bubbles as an easter egg.
+- Background reveal effect after idle interaction.
 
 ## Tech Stack
 
@@ -74,8 +63,7 @@ The current version is still mainly written in vanilla JavaScript, HTML, CSS, We
 - HTML5
 - CSS3
 - Vanilla JavaScript ES modules
-- WebGPU
-- WGSL shaders
+- WebGPU / WGSL
 - Vite
 - `gl-matrix`
 
@@ -100,23 +88,21 @@ The current version is still mainly written in vanilla JavaScript, HTML, CSS, We
 ```text
 CareerTimeline/
 ├── index.html              # Main page structure
-├── index.css               # Main visual design and interaction styles
-├── 3D_model.js             # WebGPU timeline rendering and model animation
-├── interaction.js          # UI interactions, project cards, dashboard, WebSocket client
-├── read_dae.js             # COLLADA .dae parser for timeline model data
+├── index.css               # Main visual design and responsive styles
+├── 3D_model.js             # WebGPU timeline rendering
+├── interaction.js          # UI interaction, project cards, dashboard, WebSocket client
+├── read_dae.js             # COLLADA .dae parser
 ├── server.js               # Express + WebSocket + MongoDB backend
-├── vite.config.mjs         # Vite build configuration
+├── vite.config.mjs         # Vite configuration
 ├── package.json            # Scripts and dependencies
 ├── resources/              # Images, icons, models, and visual assets
-├── tools/                  # Helper utilities for geometry and coordinate calculation
+├── tools/                  # Helper utilities
 └── *.wgsl                  # WebGPU shader files
 ```
 
 ## Data Model
 
 ### `projects` collection
-
-Each project record should include at least:
 
 ```json
 {
@@ -130,7 +116,7 @@ Each project record should include at least:
 
 ### `dashboards` collection
 
-Dashboard records are matched by `dashboardKey`, which is built as:
+Dashboard records are matched by `dashboardKey`:
 
 ```text
 year::project name
@@ -147,8 +133,6 @@ Example:
   "impact": 85
 }
 ```
-
-The backend normalizes missing dashboard fields, so projects can still render even if dashboard data is incomplete.
 
 ## Environment Variables
 
@@ -194,41 +178,16 @@ Preview the production build:
 npm run preview
 ```
 
-## Important Local Development Note
+## Production Notes
 
-The current frontend WebSocket client connects to:
-
-```js
-/ws
-```
-
-This assumes the frontend and backend are served from the same origin, usually through Nginx in production.
-
-When using Vite dev server locally, the page may run on `localhost:5173`, while the backend may run on `localhost:3000`. In that case, either use a local proxy or add a Vite dev-server proxy for `/ws`.
-
-Example Vite proxy idea:
-
-```js
-server: {
-  proxy: {
-    "/ws": {
-      target: "ws://localhost:3000",
-      ws: true
-    }
-  }
-}
-```
-
-## Production Deployment Notes
-
-A typical production setup is:
+A typical deployment setup is:
 
 1. Build the frontend with Vite.
 2. Serve the generated `dist` folder through Nginx.
-3. Run `server.js` as a backend process on a local port such as `3000`.
+3. Run `server.js` as a backend process.
 4. Proxy `/ws` from Nginx to the Node.js backend.
 
-Example Nginx WebSocket proxy block:
+Example WebSocket proxy block:
 
 ```nginx
 location /ws {
@@ -244,43 +203,30 @@ location /ws {
 }
 ```
 
-If the frontend is deployed under a subpath, make sure Vite `base`, asset paths, Nginx routing, and WebSocket routing are all aligned.
+## Recent Updates
 
-## Recent Major Updates
+Recent work focused on:
 
-Recent work focused on making the portfolio feel more complete, interactive, and deployment-ready:
-
-- Cleaned up tracked local files and prepared the repository for refactoring.
-- Added Vite-based build and preview workflow.
-- Improved project index UI.
-- Added a liquid project list hover effect.
-- Optimized iframe showcase behavior and project selection.
-- Added timeline-colored ripple transitions for project cards.
-- Refined year labels and iframe transitions.
-- Added a project back button and background reveal easter egg.
-- Added checked and hover synchronization for project list items.
-- Refined portfolio interactions and insight UI.
-- Added project card deal-in animation.
-- Consolidated picked-card state and refined project interactions.
-- Added tape-based pinning for project dashboard hover.
-- Routed timeline auto-centering through a capped scroll queue.
-- Updated backend deployment to run behind an Nginx proxy.
+- Vite build workflow.
+- Project dashboard and card interactions.
+- Lazy iframe loading and iframe performance.
+- Responsive layout adjustments.
+- WebGPU / no-WebGPU compatibility handling.
+- Mobile and low-graphics fallback behavior.
+- Keyboard and accessibility improvements.
+- Visual refinements such as firework, ripple, hover, and lighting effects.
 
 ## Current Status
 
-This is an actively evolving personal portfolio project. The current implementation prioritizes originality, interaction design, and technical experimentation. It is also being gradually cleaned up so the codebase can be easier for recruiters, interviewers, and future collaborators to understand.
+CareerTimeline is an actively evolving personal portfolio project. The current version prioritizes originality, interaction design, and technical experimentation while gradually improving maintainability and compatibility.
 
 ## Future Improvements
 
-Planned or possible next steps:
-
 - Split large JavaScript files into smaller modules.
-- Add clearer project categories and technology filters.
-- Improve mobile and small-screen layout behavior.
-- Add stronger WebSocket reconnection handling.
-- Add screenshots or fallback previews for demos that should not load immediately.
-- Improve accessibility for keyboard navigation and reduced-motion users.
-- Continue moving toward a cleaner React / TypeScript or component-based structure if needed.
+- Add clearer project filters and categories.
+- Improve fallback previews for live demos.
+- Continue improving accessibility and small-screen behavior.
+- Consider moving toward a cleaner component-based structure.
 
 ## Author
 
