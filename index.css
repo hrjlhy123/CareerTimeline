@@ -5,7 +5,7 @@
   --iframe-card-w: calc(108 * var(--u));
   --iframe-card-h: calc(67.5 * var(--u));
 
-  --iframe-card-large-w: calc(155.5 * var(--u));
+  --iframe-card-large-w: calc(140 * var(--u));
   --iframe-card-large-h: calc(87.5 * var(--u));
 
   --bubble-fill: rgba(255, 255, 255, 0.08);
@@ -193,10 +193,14 @@ html.no-webgpu div.projectShowcase.active div.dashboards > div.project-metrics {
 html.no-webgpu
   .iframes:has(> .iframe-wrapper:only-child)
   > div.iframe-wrapper.active {
-  left: calc(-1 / 4 * 100vw + 0.25vw) !important
+  left: calc(-1 / 4 * 100vw + 0.25vw) !important;
 }
 
 @media (max-aspect-ratio: 16/10) {
+  :root {
+    --u: 0.625vw;
+  }
+
   img.conceptDesign,
   div.mainFrame {
     width: 100vw;
@@ -2051,7 +2055,7 @@ div.dashboards {
     display: none !important;
   }
   .iframes:has(> .iframe-wrapper:only-child) > div.iframe-wrapper.active {
-    left: calc(-3 / 13 * 100% + 0.5vw) !important;
+    left: calc(-3 / 16 * 100vw + 0.25vw) !important;
     transform: none !important;
   }
 }
