@@ -1,6 +1,6 @@
 import { find_components } from "./tools/find.js";
 import { geometryData } from "./read_dae.js"
-import { mat4, vec3 } from "./node_modules/gl-matrix/esm/index.js"
+import { mat4, vec3 } from "gl-matrix";
 
 "use strict";
 // 3D component states
@@ -132,10 +132,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     {
         // === Prepare model data ===
         {
-            results = await geometryData(`./resources/scroll bar_4.dae`)
+            const scrollModelUrl = new URL("./resources/scroll bar_4.dae", import.meta.url).href;
+
+            results = await geometryData(scrollModelUrl);
             // console.log(`results: ${JSON.stringify(results)}`)
             // console.log(`results.size: ${results.size}`)
-            console.log(`results.center: ${results.center}`)
+            // console.log(`results.center: ${results.center}`)
         }
 
         // === Prepare camera/transform buffer/bindGroup/bindGroupLayout ===
@@ -437,10 +439,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         vertex3DCode, fragmentCode, vertex2DCode, compositeCode,
         vertex3DModule, fragmentModule, vertex2DModule, compositeModule
     {
-        vertex3DCodePath = `vertex3D.wgsl`
-        fragmentCodePath = `fragment.wgsl`
-        vertex2DCodePath = `vertex2D.wgsl`
-        compositeCodePath = `composite.wgsl`
+        vertex3DCodePath = new URL("./vertex3D.wgsl", import.meta.url).href;
+        fragmentCodePath = new URL("./fragment.wgsl", import.meta.url).href;
+        vertex2DCodePath = new URL("./vertex2D.wgsl", import.meta.url).href;
+        compositeCodePath = new URL("./composite.wgsl", import.meta.url).href;
 
         res = await fetch(vertex3DCodePath)
         vertex3DCode = await res.text()

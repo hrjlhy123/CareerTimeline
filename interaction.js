@@ -1281,10 +1281,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         const safeName = escapeAttr(name);
         const safeKey = escapeAttr(getProjectDashboardKey(project, index));
 
-        const firstURL = URLs?.[0] || "about:blank";
+        const sanitizedUrls = sanitizeProjectUrls(URLs);
+        const firstURL = sanitizedUrls[0] || "about:blank";
+
         const isMobile = name.trim().endsWith("(mobile)");
         const iframeClass = isMobile ? "projectShowcase mobile" : "projectShowcase";
-        const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
+
+        const safeFirstURL = escapeAttr(firstURL);
+        const safeUrls = encodeURIComponent(JSON.stringify(sanitizedUrls));
 
         _clearAllRotators();
 
@@ -1301,7 +1305,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 <iframe
                     class="${iframeClass}"
                     title="${safeName} preview"
-                    data-src="${firstURL}"
+                    data-src="${safeFirstURL}"
                     data-urls="${safeUrls}"
                     src="about:blank"
                     frameborder="0"
@@ -1730,6 +1734,32 @@ window.addEventListener("DOMContentLoaded", async () => {
             .replaceAll(">", "&gt;");
     }
 
+    function sanitizeProjectUrl(rawUrl = "") {
+        if (!rawUrl) return "about:blank";
+        if (rawUrl === "about:blank") return "about:blank";
+
+        try {
+            const url = new URL(rawUrl, window.location.origin);
+
+            // 先挡掉 javascript:, data:, file: 这类危险协议
+            if (!["http:", "https:"].includes(url.protocol)) {
+                return "about:blank";
+            }
+
+            return url.href;
+        } catch {
+            return "about:blank";
+        }
+    }
+
+    function sanitizeProjectUrls(urls = []) {
+        if (!Array.isArray(urls)) return [];
+
+        return urls
+            .map(sanitizeProjectUrl)
+            .filter((url) => url !== "about:blank");
+    }
+
     function renderProjectListItems(projects, year) {
         return projects
             .map((project, index) => {
@@ -1757,10 +1787,15 @@ window.addEventListener("DOMContentLoaded", async () => {
                 const { name, URLs } = project;
 
                 const safeName = escapeAttr(name);
-                const firstURL = URLs?.[0] || "about:blank";
+
+                const sanitizedUrls = sanitizeProjectUrls(URLs);
+                const firstURL = sanitizedUrls[0] || "about:blank";
+
                 const isMobile = name.trim().endsWith("(mobile)");
                 const iframeClass = isMobile ? "projectShowcase mobile" : "projectShowcase";
-                const safeUrls = encodeURIComponent(JSON.stringify(URLs || []));
+
+                const safeFirstURL = escapeAttr(firstURL);
+                const safeUrls = encodeURIComponent(JSON.stringify(sanitizedUrls));
                 const safeKey = escapeAttr(getProjectDashboardKey(project, index));
 
                 return `
@@ -1774,7 +1809,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     <iframe
                         class="${iframeClass}"
                         title="${safeName} preview"
-                        data-src="${firstURL}"
+                        data-src="${safeFirstURL}"
                         data-urls="${safeUrls}"
                         src="about:blank"
                         frameborder="0"
@@ -1903,15 +1938,22 @@ window.addEventListener("DOMContentLoaded", async () => {
         const iframe = wrapper?.querySelector("iframe");
         if (!iframe) return;
 
-        const src = iframe.dataset.src;
+        const src = sanitizeProjectUrl(iframe.dataset.src);
         if (!src) return;
 
         if (iframe.getAttribute("src") !== "about:blank") return;
 
         iframe.src = src;
 
-        const urls = JSON.parse(decodeURIComponent(iframe.dataset.urls || "[]"));
-        _attachRotator(iframe, urls, 4000);
+        let urls = [];
+
+        try {
+            urls = JSON.parse(decodeURIComponent(iframe.dataset.urls || "[]"));
+        } catch {
+            urls = [];
+        }
+
+        _attachRotator(iframe, sanitizeProjectUrls(urls), 4000);
     }
 
     function triggerDealInAnimation(iframes) {
