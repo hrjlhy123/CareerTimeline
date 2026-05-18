@@ -2155,6 +2155,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let reconnectTimer = null;
     let reconnectDelay = 1000;
     let lastRequestedYear = null;
+    let hasLoadedProjects = false;
 
     function connectWebSocket() {
         if (
@@ -2172,14 +2173,18 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             reconnectDelay = 1000;
 
-            // 重新连接后，恢复当前页面数据
-            getProjects(lastRequestedYear);
+            // 只在第一次加载时请求数据；
+            // 不要每次从后台回来 / WebSocket 重连时都重置 UI
+            if (!hasLoadedProjects) {
+                getProjects(lastRequestedYear);
+            }
         };
 
         ws.onmessage = (event) => {
             const msg = JSON.parse(event.data);
 
             if (msg.type === "projects") {
+                hasLoadedProjects = true;
                 renderProjects(msg.year, msg.data.reverse());
             }
         };
@@ -2467,9 +2472,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     })();
 
     // return button
-
     function resetIframesToDefault() {
         const iframes = document.querySelector(".iframes");
+        const projectShowcase = document.querySelector("div.projectShowcase");
+
         if (!iframes) return;
 
         _clearAllRotators();
@@ -2483,16 +2489,18 @@ window.addEventListener("DOMContentLoaded", async () => {
         const defaultIndex = "36";
         const defaultKey = "default::portfolio";
 
+        projectShowcase?.classList.add("active");
+
         iframes.innerHTML = `
         <div 
-            class="iframe-wrapper" 
+            class="iframe-wrapper active effect-ready" 
             data-index="${defaultIndex}"         
             role="button"
             tabindex="0"
             aria-label="Open preview for ${defaultName}"
             data-dashboard-key="${defaultKey}">
             <iframe 
-                class="projectShowcase"
+                class="projectShowcase show"
                 title="${defaultName} preview"
                 src="https://www.hrjlhy.com/index_old.html"
                 frameborder="0"
@@ -2500,7 +2508,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             </iframe>
             <div class="iframe-mask"></div>
         </div>
-    `;
+        `;
 
         applyStackVars(iframes, 1);
         clearPinnedDashboardWrapper();
