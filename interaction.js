@@ -1442,6 +1442,68 @@ window.addEventListener("DOMContentLoaded", async () => {
     let lastHoverTimelineYear = null;
     let currentProjects = [];
 
+    let defaultAutoOpenTimer = 0;
+    let defaultAutoOpenDone = false;
+    let hasUserInteractedBeforeAutoOpen = false;
+
+    function hasProjectDeepLinkParams() {
+        const params = new URLSearchParams(window.location.search);
+
+        return (
+            params.has(PINNED_YEAR_PARAM) ||
+            params.has(PINNED_PROJECT_PARAM)
+        );
+    }
+
+    function cancelDefaultAutoOpen() {
+        hasUserInteractedBeforeAutoOpen = true;
+
+        if (defaultAutoOpenTimer) {
+            clearTimeout(defaultAutoOpenTimer);
+            defaultAutoOpenTimer = 0;
+        }
+    }
+
+    ["pointerdown", "keydown", "wheel", "touchstart"].forEach((eventName) => {
+        document.addEventListener(eventName, cancelDefaultAutoOpen, {
+            once: true,
+            passive: true,
+            capture: true,
+        });
+    });
+
+    function scheduleDefaultAutoOpen() {
+        if (defaultAutoOpenDone) return;
+        if (defaultAutoOpenTimer) return;
+        if (hasProjectDeepLinkParams()) return;
+        if (pendingPinnedProjectLink) return;
+
+        defaultAutoOpenTimer = window.setTimeout(() => {
+            defaultAutoOpenTimer = 0;
+
+            if (defaultAutoOpenDone) return;
+            if (hasUserInteractedBeforeAutoOpen) return;
+            if (hasProjectDeepLinkParams()) return;
+            if (pendingPinnedProjectLink) return;
+
+            const projectShowcase = document.querySelector("div.projectShowcase");
+            const iframes = document.querySelector(".iframes");
+
+            if (!projectShowcase || !iframes) return;
+            if (projectShowcase.classList.contains("active")) return;
+            if (iframes.classList.contains("has-picked-wrapper")) return;
+
+            const mask = iframes.querySelector(".iframe-wrapper .iframe-mask");
+
+            if (!mask) return;
+
+            defaultAutoOpenDone = true;
+
+            // 模拟用户点击卡牌 mask，走原本 openProjectShowcase 动画逻辑
+            mask.click();
+        }, 200);
+    }
+
     const PINNED_PROJECT_PARAM = "project";
     const PINNED_YEAR_PARAM = "year";
 
@@ -2263,10 +2325,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 })
                 .join("");
 
-            const shouldKeepDefaultOpen =
-                document.querySelector("div.projectShowcase")?.classList.contains("active");
-
-            resetIframesToDefault({ open: shouldKeepDefaultOpen });
+            resetIframesToDefault({ open: false });
             updateDashboardFromFirstWrapper();
         }
 
@@ -2365,6 +2424,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         bindIframeEvents();
         bindIframeWrapperHoverToProjectList();
+
+        if (year === "all") {
+            scheduleDefaultAutoOpen();
+        }
     };
 
     //const ws = new WebSocket(`wss://localhost:443`)
