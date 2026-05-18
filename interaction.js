@@ -1082,8 +1082,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     let yearColorRippleToken = 0;
 
     function triggerYearColorRipple(targetYear, event, onDone) {
+        const rippleHost = document.querySelector("div.projectShowcase");
         const iframes = document.querySelector(".iframes");
-        if (!iframes || !targetYear) return;
+
+        if (!rippleHost || !iframes || !targetYear) return;
 
         yearColorRippleToken++;
         const token = yearColorRippleToken;
@@ -1110,12 +1112,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         const maxDistance = Math.max(...distances);
         const finalRadius = maxDistance * 1.1;
 
-        iframes.classList.add("year-color-rippling");
-        iframes.style.setProperty("--year-ripple-x", `${clickX}px`);
-        iframes.style.setProperty("--year-ripple-y", `${clickY}px`);
-        iframes.style.setProperty("--year-ripple-rgb", yearRgb);
-        iframes.style.setProperty("--year-ripple-alpha", "0.2");
-        iframes.style.setProperty("--year-ripple-radius", "0px");
+        const rect = rippleHost.getBoundingClientRect();
+
+        rippleHost.classList.add("year-color-rippling");
+        rippleHost.style.setProperty("--year-ripple-x", `${clickX}px`);
+        rippleHost.style.setProperty("--year-ripple-y", `${clickY}px`);
+        rippleHost.style.setProperty("--year-ripple-rgb", yearRgb);
+        rippleHost.style.setProperty("--year-ripple-alpha", "0.2");
+        rippleHost.style.setProperty("--year-ripple-radius", "0px");
 
         const start = performance.now();
         const duration = PROJECT_RIPPLE_DURATION;
@@ -1148,8 +1152,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             const startAlpha = 0.1;
             const alpha = startAlpha * (1 - t);
 
-            iframes.style.setProperty("--year-ripple-radius", `${radius}px`);
-            iframes.style.setProperty("--year-ripple-alpha", alpha.toFixed(3));
+            rippleHost.style.setProperty("--year-ripple-radius", `${radius}px`);
+            rippleHost.style.setProperty("--year-ripple-alpha", alpha.toFixed(3));
 
             if (t < 1) {
                 yearColorRippleRaf = requestAnimationFrame(animate);
@@ -1161,14 +1165,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 iframes.setAttribute("data-year", String(targetYear));
 
-                iframes.classList.remove("year-color-rippling");
+                rippleHost.classList.remove("year-color-rippling");
 
-                iframes.style.removeProperty("--year-ripple-x");
-                iframes.style.removeProperty("--year-ripple-y");
-                iframes.style.removeProperty("--year-ripple-rgb");
-                iframes.style.removeProperty("--year-ripple-alpha");
-                iframes.style.removeProperty("--year-ripple-radius");
-
+                rippleHost.style.removeProperty("--year-ripple-x");
+                rippleHost.style.removeProperty("--year-ripple-y");
+                rippleHost.style.removeProperty("--year-ripple-rgb");
+                rippleHost.style.removeProperty("--year-ripple-alpha");
+                rippleHost.style.removeProperty("--year-ripple-radius");
                 if (typeof onDone === "function") {
                     onDone();
                 }

@@ -1357,7 +1357,7 @@ div.projectShowcase.is-dashboard-pinned
   z-index: 20;
 }
 
-div.iframes.year-color-rippling::after {
+div.projectShowcase.year-color-rippling::after {
   content: "";
   position: absolute;
   inset: 0;
