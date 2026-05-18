@@ -1501,7 +1501,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             // 模拟用户点击卡牌 mask，走原本 openProjectShowcase 动画逻辑
             mask.click();
-        }, 1000);
+        }, 1200);
     }
 
     const PINNED_PROJECT_PARAM = "project";
@@ -1538,6 +1538,55 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     let pendingPinnedProjectLink = getPinnedProjectLinkFromUrl();
     let pinnedProjectLinkApplied = false;
+
+    const DEEP_LINK_LOADER_MIN_MS = 2000;
+    const DEEP_LINK_LOADER_FAILSAFE_MS = 5000;
+
+    const deepLinkLoaderStartedAt = performance.now();
+
+    let deepLinkLoaderHideRequested = false;
+    let deepLinkLoaderHideTimer = 0;
+    let deepLinkLoaderRemoveTimer = 0;
+    let deepLinkLoaderFailsafeTimer = 0;
+
+    function hasInitialDeepLinkLoader() {
+        return document.documentElement.classList.contains("deep-link-loading");
+    }
+
+    function finishInitialDeepLinkLoader() {
+        if (!hasInitialDeepLinkLoader()) return;
+        if (deepLinkLoaderHideRequested) return;
+
+        deepLinkLoaderHideRequested = true;
+
+        clearTimeout(deepLinkLoaderFailsafeTimer);
+        clearTimeout(deepLinkLoaderHideTimer);
+        clearTimeout(deepLinkLoaderRemoveTimer);
+
+        const elapsed = performance.now() - deepLinkLoaderStartedAt;
+        const delay = Math.max(0, DEEP_LINK_LOADER_MIN_MS - elapsed);
+
+        deepLinkLoaderHideTimer = window.setTimeout(() => {
+            document.documentElement.classList.add("deep-link-loader-hiding");
+
+            deepLinkLoaderRemoveTimer = window.setTimeout(() => {
+                document.documentElement.classList.remove(
+                    "deep-link-loading",
+                    "deep-link-loader-hiding"
+                );
+
+                document.querySelector(".deep-link-loader")?.remove();
+            }, 320);
+        }, delay);
+    }
+
+    // 防止 project 参数无效 / WebSocket 慢 / 数据没命中时 loading 卡死
+    if (hasInitialDeepLinkLoader()) {
+        deepLinkLoaderFailsafeTimer = window.setTimeout(
+            finishInitialDeepLinkLoader,
+            DEEP_LINK_LOADER_FAILSAFE_MS
+        );
+    }
 
     function findProjectIndexFromLink(projects, projectName) {
         const targetName = normalizeProjectLookupName(projectName);
@@ -1605,7 +1654,13 @@ window.addEventListener("DOMContentLoaded", async () => {
         );
 
         if (index < 0) {
-            console.warn("Pinned project from URL was not found:", pendingPinnedProjectLink.project);
+            console.warn(
+                "Pinned project from URL was not found:",
+                pendingPinnedProjectLink.project
+            );
+
+            finishInitialDeepLinkLoader();
+
             return false;
         }
 
@@ -1667,6 +1722,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         setDashboardHoverWrapper(pinnedDashboardWrapper);
         setTapePinned(true);
         setPinnedProjectUrl(wrapper);
+
+        finishInitialDeepLinkLoader();
 
         return true;
     }
@@ -2303,6 +2360,16 @@ window.addEventListener("DOMContentLoaded", async () => {
                     getProjects(pendingPinnedProjectLink.year);
                     return;
                 }
+
+                console.warn(
+                    "Pinned project from URL was not found:",
+                    pendingPinnedProjectLink.project
+                );
+
+                pendingPinnedProjectLink = null;
+                pinnedProjectLinkApplied = true;
+
+                finishInitialDeepLinkLoader();
             }
 
             hotzoneList.innerHTML = projects
