@@ -2044,7 +2044,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                 })
                 .join("");
 
-            resetIframesToDefault();
+            const shouldKeepDefaultOpen =
+                document.querySelector("div.projectShowcase")?.classList.contains("active");
+
+            resetIframesToDefault({ open: shouldKeepDefaultOpen });
             updateDashboardFromFirstWrapper();
         }
 
@@ -2472,7 +2475,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     })();
 
     // return button
-    function resetIframesToDefault() {
+    function resetIframesToDefault(options = {}) {
+        const { open = false } = options;
+
         const iframes = document.querySelector(".iframes");
         const projectShowcase = document.querySelector("div.projectShowcase");
 
@@ -2488,21 +2493,24 @@ window.addEventListener("DOMContentLoaded", async () => {
         const defaultName = "Default portfolio preview";
         const defaultIndex = "36";
         const defaultKey = "default::portfolio";
+        const defaultUrl = "https://www.hrjlhy.com/index_old.html";
 
-        projectShowcase?.classList.add("active");
+        projectShowcase?.classList.toggle("active", open);
 
         iframes.innerHTML = `
         <div 
-            class="iframe-wrapper active effect-ready" 
+            class="iframe-wrapper${open ? " active effect-ready" : ""}" 
             data-index="${defaultIndex}"         
             role="button"
             tabindex="0"
             aria-label="Open preview for ${defaultName}"
             data-dashboard-key="${defaultKey}">
             <iframe 
-                class="projectShowcase show"
+                class="projectShowcase${open ? " show" : ""}"
                 title="${defaultName} preview"
-                src="https://www.hrjlhy.com/index_old.html"
+                data-src="${defaultUrl}"
+                data-urls="${encodeURIComponent(JSON.stringify([defaultUrl]))}"
+                src="${open ? defaultUrl : "about:blank"}"
                 frameborder="0"
                 tabindex="-1">
             </iframe>
@@ -2538,7 +2546,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         document.querySelector("div.projectShowcase")?.classList.remove("active");
 
-        resetIframesToDefault();
+        resetIframesToDefault({ open: false });
 
         await getProjects();
     }
