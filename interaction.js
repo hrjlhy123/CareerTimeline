@@ -2493,7 +2493,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             <iframe 
                 class="projectShowcase"
                 title="${defaultName} preview"
-                src="https://www.hrjlhy.com/index_old_2025-08-09.html"
+                src="https://www.hrjlhy.com/index_old.html"
                 frameborder="0"
                 tabindex="-1">
             </iframe>

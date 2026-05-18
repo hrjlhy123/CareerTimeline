@@ -5,7 +5,7 @@
 
         <script>
 (function () {
-    const oldPage = "https://www.hrjlhy.com/index_old_2025-08-09.html";
+    const oldPage = "https://www.hrjlhy.com/index_old.html";
     const ua = navigator.userAgent || "";
 
     const isIPhone = /iPhone|iPod/i.test(ua);
@@ -15,8 +15,18 @@
     const forceNoWebGPU = params.has("noWebGPU");
     const forceNoGraphics = params.has("noGraphics");
 
+    // 新增：测试现代版，不跳旧版
+    const forceModern = params.has("modern");
+
     function goOld(reason) {
         console.warn(reason);
+
+        // 如果带 ?modern，就不要跳旧版
+        if (forceModern) {
+            console.warn("Modern page forced by URL parameter");
+            return;
+        }
+
         window.location.replace(oldPage);
     }
 
@@ -43,6 +53,13 @@
     // No graphics acceleration
     if (forceNoGraphics || !hasGraphicsAcceleration()) {
         goOld("No graphics acceleration available");
+
+        // 如果 ?modern 阻止了跳转，就降级成 no-webgpu layout
+        if (forceModern) {
+            document.documentElement.classList.add("no-webgpu");
+            window.__NO_WEBGPU__ = true;
+        }
+
         return;
     }
 
@@ -182,7 +199,7 @@
                             <iframe
                                 class="projectShowcase"
                                 title="Default portfolio preview"
-                                src="https://www.hrjlhy.com/index_old_2025-08-09.html"
+                                src="https://www.hrjlhy.com/index_old.html"
                                 frameborder="0"
                                 tabindex="-1">
                             </iframe>
