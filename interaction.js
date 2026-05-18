@@ -1097,22 +1097,20 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const yearRgb = getYearCssVar(targetYear, "--year-rgb", "255 255 255");
 
-        const rect = iframes.getBoundingClientRect();
+        const rippleRect = rippleHost.getBoundingClientRect();
 
-        const clickX = event.clientX - rect.left;
-        const clickY = event.clientY - rect.top;
+        const clickX = event.clientX - rippleRect.left;
+        const clickY = event.clientY - rippleRect.top;
 
         const distances = [
             Math.hypot(clickX, clickY),
-            Math.hypot(rect.width - clickX, clickY),
-            Math.hypot(clickX, rect.height - clickY),
-            Math.hypot(rect.width - clickX, rect.height - clickY),
+            Math.hypot(rippleRect.width - clickX, clickY),
+            Math.hypot(clickX, rippleRect.height - clickY),
+            Math.hypot(rippleRect.width - clickX, rippleRect.height - clickY),
         ];
 
         const maxDistance = Math.max(...distances);
         const finalRadius = maxDistance * 1.1;
-
-        const rect = rippleHost.getBoundingClientRect();
 
         rippleHost.classList.add("year-color-rippling");
         rippleHost.style.setProperty("--year-ripple-x", `${clickX}px`);
