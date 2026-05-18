@@ -1501,7 +1501,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             // 模拟用户点击卡牌 mask，走原本 openProjectShowcase 动画逻辑
             mask.click();
-        }, 200);
+        }, 1000);
     }
 
     const PINNED_PROJECT_PARAM = "project";
