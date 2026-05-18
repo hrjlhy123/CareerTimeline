@@ -1490,43 +1490,63 @@ div.projectShowcase:has(.hotzone-list > li[data-index="9"]:hover)
     0 0 calc(1.5 * var(--u)) rgba(255, 255, 255, 0.75);
 }
 
-div.projectShowcase.active:has(.hotzone-list > li[data-index="0"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="0"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="0"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="1"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="1"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="1"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="2"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="2"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="2"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="3"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="3"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="3"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="4"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="4"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="4"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="5"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="5"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="5"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="6"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="6"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="6"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="7"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="7"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="7"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="8"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="8"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="8"],
-div.projectShowcase.active:has(.hotzone-list > li[data-index="9"]:hover)
+div.projectShowcase.active:not(.is-dashboard-pinned):has(
+    .hotzone-list > li[data-index="9"]:hover
+  )
   > .playzone
   > .iframes
   > .iframe-wrapper[data-index="9"] {
