@@ -1337,13 +1337,20 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
       rgb(var(--year-rgb) / 0.08) 66%,
       rgb(255 255 255 / 0.1) 100%
     );
+
   transition:
-    transform 0.3s ease-out,
+    left 360ms cubic-bezier(0.16, 0.86, 0.24, 1),
+    bottom 360ms cubic-bezier(0.16, 0.86, 0.24, 1),
+    width 360ms cubic-bezier(0.16, 0.86, 0.24, 1),
+    height 360ms cubic-bezier(0.16, 0.86, 0.24, 1),
+    padding 360ms cubic-bezier(0.16, 0.86, 0.24, 1),
+    transform 360ms cubic-bezier(0.16, 0.86, 0.24, 1),
     filter 1.5s ease-out,
-    left 0.2s ease-out,
     background-color 0.5s ease-out;
+
   pointer-events: auto;
   z-index: 0;
+  will-change: left, bottom, width, height, transform;
 }
 
 div.iframes > div.iframe-wrapper.active {
@@ -1524,6 +1531,18 @@ div.projectShowcase.active:has(.hotzone-list > li[data-index="9"]:hover)
   > .iframes
   > .iframe-wrapper[data-index="9"] {
   z-index: 20;
+}
+
+/* During picked/unpicked transition, prevent hover transform from fighting layout transform */
+div.iframes.is-mode-switching > div.iframe-wrapper {
+  pointer-events: none !important;
+}
+
+div.projectShowcase:has(.iframes.is-mode-switching)
+  > .playzone
+  > .iframes:not(.has-picked-wrapper)
+  > div.iframe-wrapper.active {
+  transform: none !important;
 }
 
 /* Optional hover effect */

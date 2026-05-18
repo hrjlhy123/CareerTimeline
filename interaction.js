@@ -701,8 +701,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 });
 
                 clearIframeHoverProjectList();
-
-                await openProjectShowcase();
+                updateDashboardFromFirstWrapper();
 
                 return;
             }
@@ -755,8 +754,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 });
 
                 clearIframeHoverProjectList();
-
-                await openProjectShowcase();
+                updateDashboardFromFirstWrapper();
 
                 return;
             }
@@ -1621,11 +1619,32 @@ window.addEventListener("DOMContentLoaded", async () => {
             .forEach((el) => el.classList.remove("checked"));
     }
 
+    let iframeModeTransitionTimer = 0;
+
+    function startIframeModeTransition(duration = 420) {
+        const iframes = document.querySelector(".iframes");
+        if (!iframes) return;
+
+        iframes.classList.add("is-mode-switching");
+
+        clearTimeout(iframeModeTransitionTimer);
+
+        iframeModeTransitionTimer = window.setTimeout(() => {
+            iframes.classList.remove("is-mode-switching");
+        }, duration);
+    }
+
     function clearPickedIframeWrapper(options = {}) {
         const { deactivate = false, clearChecked = true } = options;
 
         const iframes = document.querySelector(".iframes");
         if (!iframes) return;
+
+        const hadPickedWrapper = iframes.classList.contains("has-picked-wrapper");
+
+        if (hadPickedWrapper) {
+            startIframeModeTransition();
+        }
 
         iframes.classList.remove("has-picked-wrapper");
 
@@ -1674,6 +1693,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             clearChecked: false
         });
 
+        startIframeModeTransition();
+
         iframes.classList.add("has-picked-wrapper");
         wrapper.classList.add("is-picked-wrapper");
 
@@ -1714,6 +1735,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!wrapper.classList.contains("is-picked-wrapper")) return false;
 
         clearPinnedDashboardWrapper();
+
+        startIframeModeTransition();
 
         projectShowcase.classList.add("active");
         iframes.classList.add("has-picked-wrapper");
