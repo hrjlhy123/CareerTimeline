@@ -111,7 +111,20 @@
             <div class="deep-link-loader-panel">
                 <div class="deep-link-loader-kicker">Project Gallery</div>
                 <div class="deep-link-loader-title">Loading shared project</div>
-                <div class="deep-link-loader-bar" aria-hidden="true">
+
+                <div class="deep-link-loader-status">
+                    <span class="deep-link-loader-status-text">Preparing shared
+                        project</span>
+                    <span class="deep-link-loader-percent">0%</span>
+                </div>
+
+                <div
+                    class="deep-link-loader-bar"
+                    role="progressbar"
+                    aria-label="Shared project loading progress"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0">
                     <span></span>
                 </div>
             </div>

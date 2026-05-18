@@ -1539,18 +1539,105 @@ window.addEventListener("DOMContentLoaded", async () => {
     let pendingPinnedProjectLink = getPinnedProjectLinkFromUrl();
     let pinnedProjectLinkApplied = false;
 
-    const DEEP_LINK_LOADER_MIN_MS = 2000;
-    const DEEP_LINK_LOADER_FAILSAFE_MS = 5000;
-
-    const deepLinkLoaderStartedAt = performance.now();
+    const DEEP_LINK_LOADER_FAILSAFE_MS = 15000;
 
     let deepLinkLoaderHideRequested = false;
-    let deepLinkLoaderHideTimer = 0;
     let deepLinkLoaderRemoveTimer = 0;
     let deepLinkLoaderFailsafeTimer = 0;
+    let deepLinkLoaderProgress = 0;
 
     function hasInitialDeepLinkLoader() {
         return document.documentElement.classList.contains("deep-link-loading");
+    }
+
+    function setDeepLinkLoaderProgress(value, label = "") {
+        if (!hasInitialDeepLinkLoader()) return;
+
+        const progress = clamp(
+            Number(value) || 0,
+            deepLinkLoaderProgress,
+            1
+        );
+
+        deepLinkLoaderProgress = progress;
+
+        const percent = Math.round(progress * 100);
+
+        document.documentElement.style.setProperty(
+            "--deep-link-progress",
+            progress.toFixed(3)
+        );
+
+        const bar = document.querySelector(".deep-link-loader-bar");
+        const percentEl = document.querySelector(".deep-link-loader-percent");
+        const statusEl = document.querySelector(".deep-link-loader-status-text");
+
+        bar?.setAttribute("aria-valuenow", String(percent));
+
+        if (percentEl) {
+            percentEl.textContent = `${percent}%`;
+        }
+
+        if (statusEl && label) {
+            statusEl.textContent = label;
+        }
+    }
+
+    function waitForNextPaint(frameCount = 2) {
+        return new Promise((resolve) => {
+            let remaining = frameCount;
+
+            function step() {
+                remaining--;
+
+                if (remaining <= 0) {
+                    resolve();
+                    return;
+                }
+
+                requestAnimationFrame(step);
+            }
+
+            requestAnimationFrame(step);
+        });
+    }
+
+    function waitForIframeLoad(iframe, timeout = 12000) {
+        if (!iframe) return Promise.resolve(false);
+
+        return new Promise((resolve) => {
+            let settled = false;
+            let timer = 0;
+
+            const cleanup = () => {
+                clearTimeout(timer);
+                iframe.removeEventListener("load", onLoad);
+                iframe.removeEventListener("error", onError);
+            };
+
+            const done = (loaded) => {
+                if (settled) return;
+
+                settled = true;
+                cleanup();
+
+                if (loaded) {
+                    iframe.dataset.deepLinkLoaded = "true";
+                }
+
+                resolve(loaded);
+            };
+
+            const onLoad = () => done(true);
+            const onError = () => done(false);
+
+            iframe.addEventListener("load", onLoad, { once: true });
+            iframe.addEventListener("error", onError, { once: true });
+
+            // 这是兜底，不是正常进度逻辑。
+            // 避免目标站点阻塞 iframe / 网络异常时 loader 永远不消失。
+            timer = window.setTimeout(() => done(false), timeout);
+        });
     }
 
     function finishInitialDeepLinkLoader() {
@@ -1560,32 +1647,97 @@ window.addEventListener("DOMContentLoaded", async () => {
         deepLinkLoaderHideRequested = true;
 
         clearTimeout(deepLinkLoaderFailsafeTimer);
-        clearTimeout(deepLinkLoaderHideTimer);
         clearTimeout(deepLinkLoaderRemoveTimer);
 
-        const elapsed = performance.now() - deepLinkLoaderStartedAt;
-        const delay = Math.max(0, DEEP_LINK_LOADER_MIN_MS - elapsed);
+        setDeepLinkLoaderProgress(1, "Ready");
 
-        deepLinkLoaderHideTimer = window.setTimeout(() => {
-            document.documentElement.classList.add("deep-link-loader-hiding");
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document.documentElement.classList.add("deep-link-loader-hiding");
 
-            deepLinkLoaderRemoveTimer = window.setTimeout(() => {
-                document.documentElement.classList.remove(
-                    "deep-link-loading",
-                    "deep-link-loader-hiding"
-                );
+                deepLinkLoaderRemoveTimer = window.setTimeout(() => {
+                    document.documentElement.classList.remove(
+                        "deep-link-loading",
+                        "deep-link-loader-hiding"
+                    );
 
-                document.querySelector(".deep-link-loader")?.remove();
-            }, 320);
-        }, delay);
+                    document.documentElement.style.removeProperty("--deep-link-progress");
+
+                    document.querySelector(".deep-link-loader")?.remove();
+
+                    document.dispatchEvent(
+                        new CustomEvent("deep-link-loader-finished")
+                    );
+                }, 320);
+            });
+        });
     }
 
-    // 防止 project 参数无效 / WebSocket 慢 / 数据没命中时 loading 卡死
-    if (hasInitialDeepLinkLoader()) {
-        deepLinkLoaderFailsafeTimer = window.setTimeout(
-            finishInitialDeepLinkLoader,
-            DEEP_LINK_LOADER_FAILSAFE_MS
+    async function loadDeepLinkTargetIframeAndFinish(wrapper) {
+        if (!wrapper) {
+            finishInitialDeepLinkLoader();
+            return;
+        }
+
+        const iframe = wrapper.querySelector("iframe");
+
+        if (!iframe) {
+            finishInitialDeepLinkLoader();
+            return;
+        }
+
+        setDeepLinkLoaderProgress(0.72, "Opening pinned project preview");
+
+        // 注意：必须先监听 load，再设置 src。
+        const iframeLoaded = waitForIframeLoad(iframe);
+
+        showAndLoadIframe(wrapper);
+
+        setDeepLinkLoaderProgress(0.84, "Loading preview content");
+
+        const loaded = await iframeLoaded;
+
+        setDeepLinkLoaderProgress(
+            loaded ? 0.96 : 0.92,
+            loaded ? "Preview loaded" : "Preview delayed; showing page"
         );
+
+        await waitForNextPaint(2);
+
+        finishInitialDeepLinkLoader();
+    }
+
+    function scheduleLazyIframeLoads(wrappers, targetWrapper, baseDelay = 700) {
+        const remainingWrappers = wrappers.filter(
+            (wrapper) => wrapper !== targetWrapper
+        );
+
+        if (!remainingWrappers.length) return;
+
+        const start = () => {
+            remainingWrappers.forEach((wrapper, index) => {
+                window.setTimeout(() => {
+                    showAndLoadIframe(wrapper);
+                }, baseDelay + index * 700);
+            });
+        };
+
+        if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(start, { timeout: 2500 });
+        } else {
+            window.setTimeout(start, baseDelay);
+        }
+    }
+
+    // 防止 project 参数无效 / WebSocket 慢 / 数据没命中时 loading 卡死。
+    // 正常情况下不会靠这个时间消失，而是等目标 iframe load。
+    if (hasInitialDeepLinkLoader()) {
+        setDeepLinkLoaderProgress(0.06, "Preparing shared project");
+
+        deepLinkLoaderFailsafeTimer = window.setTimeout(() => {
+            setDeepLinkLoaderProgress(0.98, "Opening page");
+            finishInitialDeepLinkLoader();
+        }, DEEP_LINK_LOADER_FAILSAFE_MS);
     }
 
     function findProjectIndexFromLink(projects, projectName) {
@@ -1659,6 +1811,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 pendingPinnedProjectLink.project
             );
 
+            setDeepLinkLoaderProgress(0.98, "Project not found; opening gallery");
             finishInitialDeepLinkLoader();
 
             return false;
@@ -1694,17 +1847,24 @@ window.addEventListener("DOMContentLoaded", async () => {
             item.classList.add("active", "effect-ready");
         });
 
-        // 优先加载被 pin 的项目
-        showAndLoadIframe(wrapper);
+        setDeepLinkLoaderProgress(0.62, "Restoring shared project state");
 
-        // 其他 iframe 延迟加载，避免瞬间抢主线程
-        wrappers
-            .filter((item) => item !== wrapper)
-            .forEach((item, index) => {
-                window.setTimeout(() => {
-                    showAndLoadIframe(item);
-                }, 250 + index * 350);
-            });
+        // 初始 deep-link 加载时，只先加载目标 iframe。
+        // 其它 iframe 等 loader 消失后再慢慢加载，避免首屏同时抢主线程。
+        if (hasInitialDeepLinkLoader()) {
+            document.addEventListener(
+                "deep-link-loader-finished",
+                () => {
+                    scheduleLazyIframeLoads(wrappers, wrapper, 900);
+                },
+                { once: true }
+            );
+
+            loadDeepLinkTargetIframeAndFinish(wrapper);
+        } else {
+            showAndLoadIframe(wrapper);
+            scheduleLazyIframeLoads(wrappers, wrapper, 250);
+        }
 
         clearIframeWrapperHoverState();
         clearIframeHoverProjectList();
@@ -1722,8 +1882,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         setDashboardHoverWrapper(pinnedDashboardWrapper);
         setTapePinned(true);
         setPinnedProjectUrl(wrapper);
-
-        finishInitialDeepLinkLoader();
 
         return true;
     }
@@ -2332,11 +2490,15 @@ window.addEventListener("DOMContentLoaded", async () => {
         // console.log(`year:`, year)
 
         if (year != `all`) {
+            setDeepLinkLoaderProgress(0.50, `Rendering ${year} project cards`);
+
             hotzoneList.innerHTML = renderProjectListItems(projects, year);
             iframes.innerHTML = renderIframeCards(projects);
 
             iframes.setAttribute("data-year", year);
             applyStackVars(iframes, projects.length);
+
+            setDeepLinkLoaderProgress(0.58, "Project cards ready");
 
             const restoredFromUrl = restorePinnedProjectLinkState(projects, year);
 
@@ -2527,8 +2689,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             reconnectDelay = 1000;
 
-            // 只在第一次加载时请求数据；
-            // 不要每次从后台回来 / WebSocket 重连时都重置 UI
+            setDeepLinkLoaderProgress(0.18, "Connected to project data");
+
             if (!hasLoadedProjects) {
                 getProjects(pendingPinnedProjectLink?.year || lastRequestedYear);
             }
@@ -2539,6 +2701,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             if (msg.type === "projects") {
                 hasLoadedProjects = true;
+                setDeepLinkLoaderProgress(0.42, "Project data received");
                 renderProjects(msg.year, msg.data.reverse());
             }
         };
@@ -2582,6 +2745,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     const getProjects = (year) => {
         lastRequestedYear = year || null;
+
+        setDeepLinkLoaderProgress(
+            year ? 0.28 : 0.22,
+            year ? `Requesting ${year} projects` : "Requesting project list"
+        );
 
         sendWS({
             type: "projects",
