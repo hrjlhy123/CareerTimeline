@@ -3557,8 +3557,127 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
         });
 
-    // Background Reveal
+    function initLegacyPrintProxy() {
+        const LEGACY_PRINT_URL = new URL("/index_old.html", window.location.origin).href;
 
+        let legacyPrintFrame = null;
+        let printingLegacy = false;
+        let menuPrintRedirecting = false;
+
+        function waitForFrameLoad(frame) {
+            return new Promise((resolve) => {
+                let settled = false;
+
+                const done = () => {
+                    if (settled) return;
+                    settled = true;
+                    resolve(frame);
+                };
+
+                frame.addEventListener("load", done, { once: true });
+
+                try {
+                    if (frame.contentDocument?.readyState === "complete") {
+                        done();
+                        return;
+                    }
+                } catch {
+                    // ignore cross-frame edge cases
+                }
+
+                // fallback，避免极端网络情况卡死
+                window.setTimeout(done, 5000);
+            });
+        }
+
+        async function ensureLegacyPrintFrame() {
+            if (legacyPrintFrame?.isConnected) {
+                return legacyPrintFrame;
+            }
+
+            legacyPrintFrame = document.createElement("iframe");
+            legacyPrintFrame.className = "legacy-print-frame";
+            legacyPrintFrame.title = "Legacy printable portfolio";
+            legacyPrintFrame.src = `${LEGACY_PRINT_URL}?printSource=modern`;
+            legacyPrintFrame.setAttribute("aria-hidden", "true");
+            legacyPrintFrame.tabIndex = -1;
+
+            Object.assign(legacyPrintFrame.style, {
+                position: "fixed",
+                right: "0",
+                bottom: "0",
+                width: "1px",
+                height: "1px",
+                border: "0",
+                opacity: "0",
+                pointerEvents: "none",
+                zIndex: "-1",
+            });
+
+            document.body.appendChild(legacyPrintFrame);
+
+            await waitForFrameLoad(legacyPrintFrame);
+
+            return legacyPrintFrame;
+        }
+
+        async function printLegacyPage() {
+            if (printingLegacy) return;
+
+            printingLegacy = true;
+
+            try {
+                const frame = await ensureLegacyPrintFrame();
+
+                // 等一帧，确保旧页面布局完成
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+
+                frame.contentWindow?.focus();
+                frame.contentWindow?.print();
+            } finally {
+                window.setTimeout(() => {
+                    printingLegacy = false;
+                }, 1000);
+            }
+        }
+
+        // 让代码里调用 window.print() 时也打印旧版
+        window.print = printLegacyPage;
+
+        // 拦截 Ctrl+P / Cmd+P
+        document.addEventListener(
+            "keydown",
+            (event) => {
+                const key = event.key?.toLowerCase();
+
+                if ((event.ctrlKey || event.metaKey) && key === "p") {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+
+                    printLegacyPage();
+                }
+            },
+            true
+        );
+
+        // 浏览器菜单 Print 的 fallback：
+        // 不能保证所有浏览器 100% 可取消原打印，但大多数情况下会跳到旧页再打印。
+        window.addEventListener("beforeprint", () => {
+            if (printingLegacy || menuPrintRedirecting) return;
+
+            menuPrintRedirecting = true;
+
+            const url = new URL(LEGACY_PRINT_URL);
+            url.searchParams.set("print", "1");
+
+            window.location.href = url.href;
+        });
+    }
+
+    initLegacyPrintProxy();
+
+    // Background Reveal
     function initMainFrameVideoReveal() {
         const mainFrame = document.querySelector("div.mainFrame");
         const canvas = document.querySelector(".mainFrame-reveal-canvas");

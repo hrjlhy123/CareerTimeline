@@ -79,6 +79,27 @@
         return;
     }
 })();
+
+(function () {
+    const params = new URLSearchParams(location.search);
+
+    if (!params.has("print")) return;
+
+    window.addEventListener("load", () => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.print();
+            });
+        });
+    });
+
+    window.addEventListener("afterprint", () => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("print");
+
+        window.history.replaceState(null, "", url);
+    });
+})();
 </script>
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
