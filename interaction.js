@@ -481,6 +481,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             projectShowcase.classList.remove("active");
 
+            clearPinnedProjectUrl();
+
             await getProjects(year);
 
             // random num
@@ -522,6 +524,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
 
+        clearPinnedProjectUrl();
         clearPinnedDashboardWrapper();
 
         animating = true;
@@ -1439,6 +1442,173 @@ window.addEventListener("DOMContentLoaded", async () => {
     let lastHoverTimelineYear = null;
     let currentProjects = [];
 
+    const PINNED_PROJECT_PARAM = "project";
+    const PINNED_YEAR_PARAM = "year";
+
+    function normalizeProjectLookupName(value = "") {
+        return String(value)
+            .trim()
+            .replace(/\s+/g, " ")
+            .toLowerCase();
+    }
+
+    function projectSlug(value = "") {
+        return String(value)
+            .trim()
+            .toLowerCase()
+            .replace(/&/g, " and ")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+    }
+
+    function getPinnedProjectLinkFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const project = params.get(PINNED_PROJECT_PARAM);
+        const year = params.get(PINNED_YEAR_PARAM);
+
+        if (!project) return null;
+
+        return {
+            project: project.trim(),
+            year: /^\d{4}$/.test(year || "") ? year : null,
+        };
+    }
+
+    let pendingPinnedProjectLink = getPinnedProjectLinkFromUrl();
+    let pinnedProjectLinkApplied = false;
+
+    function findProjectIndexFromLink(projects, projectName) {
+        const targetName = normalizeProjectLookupName(projectName);
+        const targetSlug = projectSlug(projectName);
+
+        return projects.findIndex((project) => {
+            const name = project?.name || "";
+
+            return (
+                normalizeProjectLookupName(name) === targetName ||
+                projectSlug(name) === targetSlug
+            );
+        });
+    }
+
+    function getProjectByWrapper(wrapper) {
+        const index = Number(wrapper?.dataset.index);
+
+        if (!Number.isInteger(index)) return null;
+
+        return currentProjects[index] || null;
+    }
+
+    function setPinnedProjectUrl(wrapper) {
+        const project = getProjectByWrapper(wrapper);
+
+        if (!project) return;
+
+        const url = new URL(window.location.href);
+
+        url.searchParams.set(PINNED_YEAR_PARAM, getProjectYear(project));
+        url.searchParams.set(PINNED_PROJECT_PARAM, project.name);
+
+        window.history.replaceState(null, "", url);
+    }
+
+    function clearPinnedProjectUrl() {
+        const url = new URL(window.location.href);
+
+        const changed =
+            url.searchParams.has(PINNED_PROJECT_PARAM) ||
+            url.searchParams.has(PINNED_YEAR_PARAM);
+
+        url.searchParams.delete(PINNED_PROJECT_PARAM);
+        url.searchParams.delete(PINNED_YEAR_PARAM);
+
+        if (changed) {
+            window.history.replaceState(null, "", url);
+        }
+    }
+
+    function restorePinnedProjectLinkState(projects, year) {
+        if (!pendingPinnedProjectLink || pinnedProjectLinkApplied) return false;
+
+        if (
+            pendingPinnedProjectLink.year &&
+            String(pendingPinnedProjectLink.year) !== String(year)
+        ) {
+            return false;
+        }
+
+        const index = findProjectIndexFromLink(
+            projects,
+            pendingPinnedProjectLink.project
+        );
+
+        if (index < 0) {
+            console.warn("Pinned project from URL was not found:", pendingPinnedProjectLink.project);
+            return false;
+        }
+
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframes = document.querySelector(".iframes");
+        const hotzoneList = document.querySelector(".hotzone-list");
+
+        if (!projectShowcase || !iframes) return false;
+
+        const wrapper = iframes.querySelector(
+            `.iframe-wrapper[data-index="${index}"]`
+        );
+
+        if (!wrapper) return false;
+
+        pinnedProjectLinkApplied = true;
+        pendingPinnedProjectLink = null;
+
+        // 关键：这是 file1 状态，不是 picked 状态
+        iframes.classList.remove("has-picked-wrapper", "is-dealing");
+        projectShowcase.classList.add("active");
+
+        const wrappers = Array.from(
+            iframes.querySelectorAll(".iframe-wrapper")
+        );
+
+        applyStackVars(iframes, wrappers.length);
+
+        wrappers.forEach((item) => {
+            item.classList.remove("is-picked-wrapper");
+            item.classList.add("active", "effect-ready");
+        });
+
+        // 优先加载被 pin 的项目
+        showAndLoadIframe(wrapper);
+
+        // 其他 iframe 延迟加载，避免瞬间抢主线程
+        wrappers
+            .filter((item) => item !== wrapper)
+            .forEach((item, index) => {
+                window.setTimeout(() => {
+                    showAndLoadIframe(item);
+                }, 250 + index * 350);
+            });
+
+        clearIframeWrapperHoverState();
+        clearIframeHoverProjectList();
+        clearProjectListChecked();
+
+        hotzoneList
+            ?.querySelector(`li[data-index="${index}"]`)
+            ?.classList.add("is-iframe-hover");
+
+        setCheckedTimelineYear(year);
+
+        pinnedDashboardWrapper = wrapper;
+        pinnedDashboardWrapper.classList.add("is-dashboard-pinned");
+
+        setDashboardHoverWrapper(pinnedDashboardWrapper);
+        setTapePinned(true);
+        setPinnedProjectUrl(wrapper);
+
+        return true;
+    }
+
     const DEFAULT_DASHBOARD_META = Object.freeze({
         description: "",
         complexity: 0,
@@ -1931,6 +2101,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                 currentWrapper.classList.remove("is-dashboard-pinned");
                 pinnedDashboardWrapper = null;
                 setTapePinned(false);
+
+                resetDashboardHoverState();
+                clearPinnedProjectUrl();
+
                 return;
             }
 
@@ -1941,6 +2115,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             setDashboardHoverWrapper(pinnedDashboardWrapper);
             setTapePinned(true);
+            setPinnedProjectUrl(pinnedDashboardWrapper);
         });
 
         iframes.addEventListener("pointerleave", (event) => {
@@ -2044,9 +2219,30 @@ window.addEventListener("DOMContentLoaded", async () => {
             iframes.setAttribute("data-year", year);
             applyStackVars(iframes, projects.length);
 
-            triggerDealInAnimation(iframes);
-            updateDashboardFromFirstWrapper();
+            const restoredFromUrl = restorePinnedProjectLinkState(projects, year);
+
+            if (!restoredFromUrl) {
+                triggerDealInAnimation(iframes);
+                updateDashboardFromFirstWrapper();
+            }
         } else {
+            if (
+                pendingPinnedProjectLink &&
+                !pinnedProjectLinkApplied &&
+                !pendingPinnedProjectLink.year
+            ) {
+                const targetIndex = findProjectIndexFromLink(
+                    projects,
+                    pendingPinnedProjectLink.project
+                );
+
+                if (targetIndex >= 0) {
+                    pendingPinnedProjectLink.year = String(projects[targetIndex].year);
+                    getProjects(pendingPinnedProjectLink.year);
+                    return;
+                }
+            }
+
             hotzoneList.innerHTML = projects
                 .map((project, index) => {
                     const { name, year } = project;
@@ -2110,6 +2306,8 @@ window.addEventListener("DOMContentLoaded", async () => {
                     .forEach((el) => el.classList.remove("checked"));
 
                 li.classList.add("checked");
+
+                clearPinnedProjectUrl();
 
                 const pickedExistingWrapper = pickExistingIframeWrapper(index);
 
@@ -2202,7 +2400,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             // 只在第一次加载时请求数据；
             // 不要每次从后台回来 / WebSocket 重连时都重置 UI
             if (!hasLoadedProjects) {
-                getProjects(lastRequestedYear);
+                getProjects(pendingPinnedProjectLink?.year || lastRequestedYear);
             }
         };
 
@@ -2549,6 +2747,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         event?.stopPropagation?.();
 
         const showcaseArea = document.querySelector("div.projectShowcase");
+
+        clearPinnedProjectUrl();
 
         // 鼠标点击时保留 ripple；键盘 Escape 没有 clientX/clientY，所以跳过 ripple
         if (
