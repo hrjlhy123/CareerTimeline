@@ -425,8 +425,31 @@ div.timelineBelt > canvas.timelineBelt,
 div.timelineBelt > ul.timeList,
 ul.timeList > li[data-year] {
   touch-action: none;
+}
+
+/* 允许年份真实文字被选中 */
+div.timelineBelt,
+div.timelineBelt > ul.timeList,
+ul.timeList > li[data-year],
+ul.timeList > li[data-year] > span {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* canvas 和装饰层不参与文字选择 */
+div.timelineBelt > canvas.timelineBelt,
+ul.timeList > li[data-year]::after,
+ul.timeList > li[data-year] > span::before,
+ul.timeList > li[data-year] > span::after {
   user-select: none;
   -webkit-user-select: none;
+  pointer-events: none;
+}
+
+/* 拖拽选择时，让透明 span 的文字变得可见 */
+ul.timeList > li[data-year] > span::selection {
+  color: white;
+  background: rgb(0 120 255 / 0.35);
 }
 
 div.timelineBelt {
