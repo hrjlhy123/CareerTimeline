@@ -2376,8 +2376,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!showcase || !iframes) return;
 
         showcase.addEventListener("pointerover", (event) => {
-            if (event.pointerType && event.pointerType !== "mouse") return;
-            if (event.target.closest(".tape-hitbox")) return;
             if (pinnedDashboardWrapper) return;
 
             const wrapper = event.target.closest(".iframe-wrapper[data-index]");
@@ -2389,12 +2387,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
 
         tape?.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
             event.stopPropagation();
         });
 
         tape?.addEventListener("click", (event) => {
-            event.preventDefault();
             event.stopPropagation();
 
             const currentWrapper =
