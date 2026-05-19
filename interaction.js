@@ -519,7 +519,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         const iframeWrappers = Array.from(
             document.querySelectorAll(".iframes > .iframe-wrapper")
         );
-        const dashboards = document.querySelector(".playzone > .dashboards");
+        const dashboards = document.querySelector(".dashboards");
 
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
@@ -548,6 +548,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const wrapper = iframeWrappers[i];
             wrapper.classList.remove("active");
         }
+        syncResponsiveDashboardPlacement();
 
         projectShowcase?.classList.remove("active");
         dashboards?.classList.remove("is-closing");
@@ -601,6 +602,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             await sleep(50);
         }
+        scheduleLargeCardGlobalCenter(iframes);
+        syncResponsiveDashboardPlacement();
 
         await sleep(450);
 
@@ -621,6 +624,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         // 第三阶段：只先加载第一张，避免 4 个 iframe / PDF 同时抢主线程
         const firstWrapper = iframeWrappers[0];
         showAndLoadIframe(firstWrapper);
+
+        scheduleLargeCardGlobalCenter(iframes);
+        syncResponsiveDashboardPlacement();
 
         // 其他 iframe 延迟加载
         iframeWrappers.slice(1).forEach((wrapper, index) => {
@@ -791,11 +797,144 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     /* Unsupervised AI content */
+    const DASHBOARD_HIDDEN_QUERY = "(max-aspect-ratio: 2)";
+    // 如果你 CSS 改成 16/10，这里也要改成：
+    // const DASHBOARD_HIDDEN_QUERY = "(max-aspect-ratio: 16/10)";
+
+    let largeCardCenterRaf = 0;
+
+    function updateLargeCardGlobalCenter(iframes = document.querySelector(".iframes")) {
+        if (!iframes) return;
+
+        const shouldUseGlobalCenter =
+            window.matchMedia(DASHBOARD_HIDDEN_QUERY).matches ||
+            document.documentElement.classList.contains("no-webgpu");
+
+        if (!shouldUseGlobalCenter) {
+            iframes.style.removeProperty("--large-card-left");
+            iframes.style.removeProperty("--large-card-transform");
+            return;
+        }
+
+        const wrapper =
+            iframes.querySelector(".iframe-wrapper.active.is-picked-wrapper") ||
+            (
+                iframes.classList.contains("is-single-wrapper")
+                    ? iframes.querySelector(".iframe-wrapper.active")
+                    : null
+            );
+
+        if (!wrapper) return;
+
+        const mainFrame = document.querySelector(".mainFrame");
+        if (!mainFrame) return;
+
+        const frameRect = mainFrame.getBoundingClientRect();
+        const iframesRect = iframes.getBoundingClientRect();
+
+        const targetCenterX = frameRect.left + frameRect.width / 2;
+        const centerLeft = targetCenterX - iframesRect.left;
+
+        iframes.style.setProperty("--large-card-left", `${centerLeft}px`);
+        iframes.style.setProperty("--large-card-transform", "translateX(-50%)");
+    }
+
+    function scheduleLargeCardGlobalCenter(iframes = document.querySelector(".iframes")) {
+        cancelAnimationFrame(largeCardCenterRaf);
+
+        largeCardCenterRaf = requestAnimationFrame(() => {
+            largeCardCenterRaf = requestAnimationFrame(() => {
+                updateLargeCardGlobalCenter(iframes);
+            });
+        });
+    }
+
+    const dashboardLayoutQuery = window.matchMedia(DASHBOARD_HIDDEN_QUERY);
+
+    function syncResponsiveDashboardPlacement() {
+        const showcase = document.querySelector("div.projectShowcase");
+        const titleBox = document.querySelector("div.title");
+        const projectList = document.querySelector("div.projectList");
+        const playzone = document.querySelector("div.playzone");
+        const iframes = document.querySelector(".iframes");
+        const dashboards = document.querySelector("div.dashboards");
+        const hotzoneList = document.querySelector("ol.hotzone-list");
+
+        if (
+            !showcase ||
+            !titleBox ||
+            !projectList ||
+            !playzone ||
+            !iframes ||
+            !dashboards ||
+            !hotzoneList
+        ) return;
+
+        const isNoWebGPU =
+            document.documentElement.classList.contains("no-webgpu") ||
+            window.__NO_WEBGPU__ === true;
+
+        const activeCount = Array.from(iframes.children).filter((el) => {
+            return (
+                el.classList.contains("iframe-wrapper") &&
+                el.classList.contains("active")
+            );
+        }).length;
+
+        const shouldUseNarrowMultiLayout =
+            dashboardLayoutQuery.matches &&
+            activeCount > 1 &&
+            !isNoWebGPU;
+
+        const shouldMoveDashboardToProjectList = shouldUseNarrowMultiLayout;
+
+        const shouldMoveHotzoneToTitle = shouldUseNarrowMultiLayout && !isNoWebGPU;
+
+        showcase.classList.toggle(
+            "dashboard-in-list",
+            shouldMoveDashboardToProjectList
+        );
+
+        showcase.classList.toggle(
+            "hotzone-in-title",
+            shouldMoveHotzoneToTitle
+        );
+
+        hotzoneList.classList.toggle(
+            "is-title-hotzone",
+            shouldMoveHotzoneToTitle
+        );
+
+        // dashboards: narrow + multi active 时进入 projectList
+        if (shouldMoveDashboardToProjectList) {
+            if (dashboards.parentElement !== projectList) {
+                projectList.appendChild(dashboards);
+            }
+        } else {
+            if (dashboards.parentElement !== playzone) {
+                playzone.appendChild(dashboards);
+            }
+        }
+
+        // hotzone-list: narrow + multi active + 非 no-webgpu 时进入 div.title
+        if (shouldMoveHotzoneToTitle) {
+            if (hotzoneList.parentElement !== titleBox) {
+                titleBox.appendChild(hotzoneList);
+            }
+        } else {
+            if (hotzoneList.parentElement !== projectList) {
+                projectList.appendChild(hotzoneList);
+            }
+        }
+
+        scheduleLargeCardGlobalCenter();
+    }
 
     const applyStackVars = (iframes, maxN = 10) => {
         const items = Array.from(iframes.querySelectorAll(".iframe-wrapper"));
         const total = items.length;
 
+        iframes.classList.toggle("is-single-wrapper", total === 1);
         iframes.style.setProperty("--count", total);
 
         const start = Math.max(0, total - maxN);
@@ -818,6 +957,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 el.style.removeProperty("--index");
             });
 
+            scheduleLargeCardGlobalCenter(iframes);
             return;
         }
 
@@ -845,6 +985,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         items.slice(0, start).forEach((el) => {
             el.style.removeProperty("--index");
         });
+
+        scheduleLargeCardGlobalCenter(iframes);
     };
 
     let stackResizeRaf = 0;
@@ -871,6 +1013,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     window.addEventListener("resize", scheduleRefreshIframeStackVars);
+
+    syncResponsiveDashboardPlacement();
+
+    if (dashboardLayoutQuery.addEventListener) {
+        dashboardLayoutQuery.addEventListener("change", syncResponsiveDashboardPlacement);
+    } else {
+        dashboardLayoutQuery.addListener(syncResponsiveDashboardPlacement);
+    }
+
+    window.addEventListener("resize", syncResponsiveDashboardPlacement);
 
     // —— 全局轮播管理 —— //
     const _IFRAME_ROTATORS = new Set();
@@ -1847,6 +1999,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             item.classList.add("active", "effect-ready");
         });
 
+        syncResponsiveDashboardPlacement();
+
         setDeepLinkLoaderProgress(0.62, "Restoring shared project state");
 
         // 初始 deep-link 加载时，只先加载目标 iframe。
@@ -2110,6 +2264,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (clearChecked) {
             clearProjectListChecked();
         }
+
+        syncResponsiveDashboardPlacement();
+        scheduleLargeCardGlobalCenter(iframes);
     }
 
     function pickExistingIframeWrapper(index) {
@@ -2160,6 +2317,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             window.setTimeout(() => {
                 if (wrapper.classList.contains("is-picked-wrapper")) {
                     wrapper.classList.add("effect-ready");
+                    scheduleLargeCardGlobalCenter(iframes);
                 }
             }, 300);
         } else {
@@ -2171,6 +2329,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             wrapper.querySelector("iframe")?.classList.remove("show");
         }
 
+        syncResponsiveDashboardPlacement();
+        scheduleLargeCardGlobalCenter(iframes);
         return true;
     }
 
@@ -2194,6 +2354,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         wrapper.classList.add("effect-ready");
         wrapper.querySelector("iframe")?.classList.add("show");
 
+        syncResponsiveDashboardPlacement();
+        scheduleLargeCardGlobalCenter(iframes);
         return true;
     }
 
@@ -3039,6 +3201,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         applyStackVars(iframes, 1);
         clearPinnedDashboardWrapper();
+        syncResponsiveDashboardPlacement();
     }
 
     async function goBackToAllProjects(event = null) {
