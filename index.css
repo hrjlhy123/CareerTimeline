@@ -2337,6 +2337,11 @@ div.dashboards {
     padding: calc(1 * var(--u)) 0 calc(3 * var(--u));
     justify-content: center;
   }
+
+  div.project-metrics div.metric-slot {
+      height: calc(15.4 * var(--u));
+  }
+
   html:not(.no-webgpu) div.title > p.title {
     padding: calc(1 * var(--u)) calc(3 * var(--u));
   }
