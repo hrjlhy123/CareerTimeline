@@ -1433,26 +1433,41 @@ div.playzone:has(
     > .iframes:not(.has-picked-wrapper)
       > .iframe-wrapper.active:not(:only-child)
   )
-  > img.tape {
-  display: initial;
+  > .tape-hitbox {
+  display: flex;
 }
 
-div.playzone > img.tape {
+div.playzone > .tape-hitbox {
   position: absolute;
   z-index: 25;
-  height: calc(4 * var(--u));
+
   left: calc(var(--iframe-card-w));
-  transform: rotate(-60deg);
-  cursor: pointer;
-  pointer-events: auto;
-  transform-origin: 0 50%;
+  width: calc(9 * var(--u));
+  height: calc(9 * var(--u));
+
   display: none;
-  opacity: 0.8;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  pointer-events: auto;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-div.playzone > img.tape:hover {
+div.playzone > .tape-hitbox > img.tape {
+  height: calc(4 * var(--u));
+  transform: rotate(-60deg);
+  transform-origin: center center;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+div.playzone > .tape-hitbox:hover > img.tape {
   filter: drop-shadow(calc(0.15 * var(--u)) 0 0 rgb(255 255 255 / 0.5))
     drop-shadow(calc(-0.15 * var(--u)) 0 0 rgb(255 255 255 / 0.5))
     drop-shadow(0 calc(0.15 * var(--u)) 0 rgb(255 255 255 / 0.5))
@@ -2313,7 +2328,8 @@ div.dashboards {
   }
 
   html:not(.no-webgpu):has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     div.title
     > div.project-metrics {
@@ -2385,14 +2401,21 @@ div.dashboards {
     left: -2%;
   }
 
+  div.projectShowcase:has(.iframes > .iframe-wrapper.is-picked-wrapper)
+    > .playzone {
+    z-index: 4;
+  }
+
   div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     > .projectList {
     z-index: 3;
   }
   div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     > .projectList
     > .hotzone-list {
@@ -2400,7 +2423,8 @@ div.dashboards {
   }
 
   div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     > div.dashboards {
     flex-direction: row;
@@ -2414,7 +2438,8 @@ div.dashboards {
   }
 
   div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     > div.dashboards
     > div.summary {
@@ -2424,7 +2449,8 @@ div.dashboards {
   }
 
   div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     > div.dashboards
     > div.summary
@@ -2433,7 +2459,8 @@ div.dashboards {
   }
 
   div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     > div.dashboards
     > div.project-metrics {
@@ -2444,7 +2471,8 @@ div.dashboards {
   }
 
   div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
     )
     > div.dashboards
     > div.project-metrics

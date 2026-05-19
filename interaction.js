@@ -1313,6 +1313,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         const safeUrls = encodeURIComponent(JSON.stringify(sanitizedUrls));
 
         _clearAllRotators();
+        resetTapePinBeforeIframeUpdate();
 
         iframes.innerHTML = "";
 
@@ -2081,6 +2082,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         setTapePinned(false);
     }
 
+    function resetTapePinBeforeIframeUpdate() {
+        clearPinnedDashboardWrapper();
+        clearPinnedProjectUrl();
+        clearIframeWrapperHoverState();
+    }
+
     function clearIframeHoverProjectList() {
         document
             .querySelectorAll(".hotzone-list > li.is-iframe-hover")
@@ -2345,13 +2352,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     function setTapePinned(isPinned) {
-        const tape = document.querySelector(".tape");
+        const tapeButton = document.querySelector(".tape-hitbox");
+        const tapeImage = document.querySelector(".tape");
         const showcase = document.querySelector("div.projectShowcase");
 
-        if (!tape) return;
+        if (!tapeButton || !tapeImage) return;
 
-        tape.src = isPinned ? "/resources/tape_2.png" : "/resources/tape.png";
-        tape.classList.toggle("is-pinned", isPinned);
+        tapeImage.src = isPinned ? "/resources/tape_2.png" : "/resources/tape.png";
+
+        tapeButton.classList.toggle("is-pinned", isPinned);
+        tapeImage.classList.toggle("is-pinned", isPinned);
         showcase?.classList.toggle("is-dashboard-pinned", isPinned);
     }
 
@@ -2361,7 +2371,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const showcase = document.querySelector("div.projectShowcase");
         const iframes = document.querySelector(".iframes");
-        const tape = document.querySelector(".tape");
+        const tape = document.querySelector(".tape-hitbox");
 
         if (!showcase || !iframes) return;
 
@@ -2494,10 +2504,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         backButton?.classList.toggle("is-visible", year !== `all`);
 
         _clearAllRotators();
+        resetTapePinBeforeIframeUpdate();
 
         currentProjects = projects;
         currentRenderYear = year;
-        // console.log(`year:`, year)
 
         if (year != `all`) {
             setDeepLinkLoaderProgress(0.50, `Rendering ${year} project cards`);
@@ -3013,6 +3023,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!iframes) return;
 
         _clearAllRotators();
+        resetTapePinBeforeIframeUpdate();
 
         iframes.removeAttribute("data-year");
         iframes.style.removeProperty("--count");
