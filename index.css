@@ -2403,6 +2403,7 @@ div.dashboards {
 
   div.projectShowcase:has(.iframes > .iframe-wrapper.is-picked-wrapper)
     > .playzone {
+    position: relative;
     z-index: 4;
   }
 
