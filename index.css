@@ -27,17 +27,6 @@
   --transition-card: 0.3s ease-out;
 }
 
-/* @media (max-aspect-ratio: 4/3) {
-  :root {
-    --iframe-card-w-back: calc(85.5 * var(--u));
-    --iframe-card-w: calc(85.5 * var(--u));
-    --iframe-card-h: calc(57 * var(--u));
-
-    --iframe-card-large-w: calc(118 * var(--u));
-    --iframe-card-large-h: calc(66.375 * var(--u));
-  }
-} */
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -277,9 +266,9 @@ html.no-webgpu > body > div.mainFrame > div.projectShowcase {
 
   display: grid;
   grid-template-columns: 12fr 36fr;
-  grid-template-rows: 1fr;
+  grid-template-rows: 4fr 9fr;
   grid-template-areas:
-    "projectList playzone"
+    "projectList dashboards"
     "projectList playzone";
 }
 
@@ -326,24 +315,46 @@ html.no-webgpu div.projectShowcase > div.playzone {
 html.no-webgpu
   div.iframes:has(> .iframe-wrapper.active:only-child)
   > .iframe-wrapper.active {
-  left: calc((100% - var(--iframe-card-large-w)) / 2 - calc(24 * var(--u)));
+  left: 0;
   transform: none;
 }
-html.no-webgpu div.projectShowcase.active div.dashboards {
-  padding: calc(4.5 * var(--u)) 0 calc(4.5 * var(--u)) calc(2 * var(--u));
-}
 
-html.no-webgpu div.projectShowcase.active div.dashboards > div.summary {
+/* html.no-webgpu div.projectShowcase.active div.dashboards > div.summary {
   display: block;
 }
 html.no-webgpu div.projectShowcase.active div.dashboards > div.project-metrics {
   display: flex;
+} */
+
+html.no-webgpu div.dashboards {
+  position: initial;
+  flex-direction: row;
+  width: 100%;
+  height: calc(29 * var(--u));
+  padding: calc(1 * var(--u)) calc(1 * var(--u)) calc(3 * var(--u)) 12.5% !important;
+  justify-content: flex-start;
+  z-index: 1;
 }
 
-html.no-webgpu
-  .iframes:has(> .iframe-wrapper:only-child)
-  > div.iframe-wrapper.active {
-  left: calc(-1 / 4 * 100vw + 0.25vw) !important;
+html.no-webgpu div.dashboards > div.summary {
+  display: initial !important;
+  width: calc(58.3333 * var(--u));
+  background: rgba(221, 221, 221, 0.5);
+}
+
+html.no-webgpu div.dashboards > div.summary > p.title {
+  padding-right: var(6 * var(--u));
+}
+
+html.no-webgpu div.dashboards > div.project-metrics {
+  display: flex;
+  width: calc(35 * var(--u)) !important;
+  min-height: 20vh !important;
+  padding: 0 2vw;
+}
+
+html.no-webgpu div.dashboards > div.project-metrics div.metric-slot {
+  background: rgba(221, 221, 221, 0.5);
 }
 
 @media (max-aspect-ratio: 16/10) {
@@ -1466,8 +1477,6 @@ div.iframes > div.iframe-wrapper,
 div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
   flex-grow: 1;
   position: absolute;
-  left: 2%;
-  bottom: calc(1 * var(--u));
   width: var(--iframe-card-w-back);
   height: var(--iframe-card-h);
   transform-origin: 0 50%;
@@ -1501,6 +1510,22 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
   pointer-events: auto;
   z-index: 0;
   will-change: left, bottom, width, height, transform;
+}
+div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
+  background:
+    radial-gradient(
+      circle at 18% 12%,
+      rgb(255 255 255 / 0.82) 0%,
+      rgb(255 255 255 / 0.62) 18%,
+      transparent 42%
+    ),
+    linear-gradient(
+      145deg,
+      rgb(255 255 255 / 0.68) 0%,
+      rgb(var(--year-accent-rgb) / 0.6) 36%,
+      rgb(var(--year-rgb) / 0.58) 66%,
+      rgb(255 255 255 / 0.6) 100%
+    );
 }
 
 div.iframes > div.iframe-wrapper.active {
@@ -1575,7 +1600,12 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
 
 div.iframes:has(> .iframe-wrapper.active:only-child)
   > .iframe-wrapper.active
-  > iframe,
+  > iframe {
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+
 div.iframes.has-picked-wrapper
   > .iframe-wrapper.active.is-picked-wrapper
   > iframe {
@@ -2252,10 +2282,11 @@ div.projectShowcase.active .projectList {
 }
 
 div.dashboards {
-  /* width: calc((99vw - calc(2 * var(--u))) / 6); */
-  width: calc(3 / 16 * 100vw);
-  height: 100%;
-  /* padding: 0 0 0 calc(2 * var(--u)); */
+  position: absolute;
+  top: calc(29 * var(--u));
+  right: 0;
+  width: calc(3 / 16 * 98vw);
+  height: var(--iframe-card-h);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -2265,16 +2296,29 @@ div.dashboards {
 @media (max-aspect-ratio: 2) {
   div.iframes.is-single-wrapper > div.iframe-wrapper.active,
   div.iframes.has-picked-wrapper > div.iframe-wrapper.active.is-picked-wrapper {
-    left: var(--large-card-left, 50%);
-    transform: var(--large-card-transform, translateX(-50%));
+    left: calc(-3 / 16 * 98vw) !important;
+    transform: none !important;
   }
 
   html:not(.no-webgpu) div.title {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
   }
 
+  html:not(.no-webgpu) div.title > div.project-metrics {
+    display: none;
+    width: 100%;
+    justify-content: space-evenly;
+  }
+
+  html:not(.no-webgpu):has(
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+    )
+    div.title
+    > div.project-metrics {
+    display: flex;
+  }
   html:not(.no-webgpu) div.title > p.title {
     padding: calc(1 * var(--u)) calc(3 * var(--u));
   }
@@ -2283,8 +2327,7 @@ div.dashboards {
     pointer-events: auto;
   }
 
-  html:not(.no-webgpu) div.title > ol.hotzone-list.is-title-hotzone {
-    /* position: absolute; */
+  /* html:not(.no-webgpu) div.title > ol.hotzone-list.is-title-hotzone {
 
     display: flex !important;
     flex-direction: column;
@@ -2312,15 +2355,15 @@ div.dashboards {
       black 95%,
       transparent 100%
     );
-  }
+  } */
 
-  html:not(.no-webgpu)
+  /* html:not(.no-webgpu)
     div.title
     > ol.hotzone-list.is-title-hotzone::-webkit-scrollbar {
     display: none;
-  }
+  } */
 
-  html:not(.no-webgpu) div.title > ol.hotzone-list.is-title-hotzone > li {
+  /* html:not(.no-webgpu) div.title > ol.hotzone-list.is-title-hotzone > li {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
@@ -2334,53 +2377,62 @@ div.dashboards {
     break-inside: avoid;
 
     cursor: pointer;
-  }
-
-  div.projectShowcase.dashboard-in-list
-    > .projectList
-    > ol.hotzone-list:not(.is-title-hotzone) {
-    display: none !important;
-  }
+  } */
 
   div.projectShowcase:has(
       .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
     )
     > .projectList {
-    padding: calc(1 * var(--u));
     z-index: 3;
   }
   div.projectShowcase:has(
       .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
     )
     > .projectList
-    > ol.hotzone-list {
-    display: none !important;
+    > .hotzone-list {
+    padding-left: 0;
   }
+
   div.projectShowcase:has(
       .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
     )
-    > .projectList
     > div.dashboards {
     flex-direction: row;
-    width: 65vw;
-    padding: calc(1 * var(--u)) 0 calc(4 * var(--u)) calc(0 * var(--u)) !important;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: calc(29 * var(--u));
+    padding: calc(1 * var(--u)) calc(1 * var(--u)) calc(3 * var(--u)) !important;
+    justify-content: flex-end;
+    z-index: 2;
   }
+
   div.projectShowcase:has(
       .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
     )
-    > .projectList
     > div.dashboards
     > div.summary {
     display: initial !important;
+    width: calc(58.3333 * var(--u));
+    background: rgba(221, 221, 221, 0.5);
   }
+
   div.projectShowcase:has(
       .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
     )
-    > .projectList
+    > div.dashboards
+    > div.summary
+    > p.title {
+    padding-right: var(6 * var(--u));
+  }
+
+  div.projectShowcase:has(
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
+    )
     > div.dashboards
     > div.project-metrics {
-    display: flex;
-    width: 24vw;
+    display: none;
+    width: calc(25 * var(--u)) !important;
     min-height: 20vh !important;
     padding: 0 2vw;
   }
@@ -2388,7 +2440,6 @@ div.dashboards {
   div.projectShowcase:has(
       .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
     )
-    > .projectList
     > div.dashboards
     > div.project-metrics
     div.metric-slot {
@@ -2398,7 +2449,7 @@ div.dashboards {
 
 div.dashboards > div.summary {
   width: 100%;
-  padding: calc(3 * var(--u));
+  padding: calc(4 * var(--u));
 
   border-radius: var(--radius-card);
 
@@ -2503,13 +2554,11 @@ div.dashboards > div.summary > .title > a[aria-disabled="true"] {
 
 div.dashboards > div.summary > p.description {
   margin-bottom: 0;
+  line-height: 1.25;
 }
 
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
+div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
   > div.dashboards
-  > div.summary,
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
-  > div.dashboards.is-closing
   > div.summary {
   display: initial;
 }
@@ -2534,38 +2583,23 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
   pointer-events: auto;
 }
 
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
-  > .dashboards
-  > .project-metrics,
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
-  > div.dashboards.is-closing
-  > .project-metrics {
+div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
+  > div.dashboards
+  > div.project-metrics {
   display: flex;
 }
 
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
+div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
   > div.dashboards:not(.is-closing)
   > div.summary {
   animation: summarySlideIn 520ms cubic-bezier(0.16, 0.86, 0.24, 1) both;
 }
 
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
+div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
   > div.dashboards:not(.is-closing)
   > .project-metrics {
   animation: metricsRiseFromDepth 680ms cubic-bezier(0.16, 0.86, 0.24, 1) 120ms
     both;
-}
-
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
-  > div.dashboards.is-closing
-  > div.summary {
-  animation: summarySlideOut 360ms cubic-bezier(0.42, 0, 0.7, 0.2) both;
-}
-
-div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
-  > div.dashboards.is-closing
-  > .project-metrics {
-  animation: metricsSinkToDepth 360ms cubic-bezier(0.42, 0, 0.7, 0.2) both;
 }
 
 @keyframes summarySlideIn {
@@ -2582,20 +2616,6 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
   }
 }
 
-@keyframes summarySlideOut {
-  from {
-    opacity: 1;
-    filter: blur(0);
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  to {
-    opacity: 0;
-    filter: blur(calc(0.75 * var(--u)));
-    transform: translate3d(calc(6.3 * var(--u)), 0, 0) scale(0.985);
-  }
-}
-
 @keyframes metricsRiseFromDepth {
   from {
     opacity: 0;
@@ -2608,21 +2628,6 @@ div.playzone:has(> .iframes > .iframe-wrapper.active:not(:only-child))
     opacity: 1;
     filter: blur(0);
     transform: perspective(calc(105 * var(--u))) translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes metricsSinkToDepth {
-  from {
-    opacity: 1;
-    filter: blur(0);
-    transform: perspective(calc(105 * var(--u))) translate3d(0, 0, 0) scale(1);
-  }
-
-  to {
-    opacity: 0;
-    filter: blur(calc(0.9 * var(--u)));
-    transform: perspective(calc(105 * var(--u)))
-      translate3d(0, 0, calc(-13.5 * var(--u))) scale(0.88);
   }
 }
 

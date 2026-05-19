@@ -34,8 +34,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         backIcon: document.querySelector(".project-back-icon"),
         backLightGradient: document.querySelector("#projectBackLightGradient"),
         metricFills: Array.from(document.querySelectorAll(".metric-fill")),
-        title: document.querySelector("div.title > p.title"),
-        summary: document.querySelector(".playzone .summary"),
+        title: document.querySelector("div.title > p.title")
     };
 
     // Global Illumination
@@ -519,21 +518,16 @@ window.addEventListener("DOMContentLoaded", async () => {
         const iframeWrappers = Array.from(
             document.querySelectorAll(".iframes > .iframe-wrapper")
         );
-        const dashboards = document.querySelector(".dashboards");
 
         if (!projectShowcase || !iframeWrappers.length) return;
         if (animating) return;
 
         clearPinnedProjectUrl();
-        clearPinnedDashboardWrapper();
 
         animating = true;
         openingId++;
 
         setWrappersPointerEvents(iframeWrappers, "none");
-
-        dashboards?.classList.add("is-closing");
-        // await sleep(300);
 
         for (let i = iframeWrappers.length - 1; i >= 0; i--) {
             const wrapper = iframeWrappers[i];
@@ -548,10 +542,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             const wrapper = iframeWrappers[i];
             wrapper.classList.remove("active");
         }
-        syncResponsiveDashboardPlacement();
 
         projectShowcase?.classList.remove("active");
-        dashboards?.classList.remove("is-closing");
 
         clearPickedIframeWrapper({ deactivate: false, clearChecked: false });
 
@@ -579,8 +571,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         applyStackVars(iframes, iframeWrappers.length);
 
-        clearPinnedDashboardWrapper();
-
         animating = true;
 
         const currentOpeningId = ++openingId;
@@ -602,8 +592,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             await sleep(50);
         }
-        scheduleLargeCardGlobalCenter(iframes);
-        syncResponsiveDashboardPlacement();
 
         await sleep(450);
 
@@ -624,9 +612,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         // 第三阶段：只先加载第一张，避免 4 个 iframe / PDF 同时抢主线程
         const firstWrapper = iframeWrappers[0];
         showAndLoadIframe(firstWrapper);
-
-        scheduleLargeCardGlobalCenter(iframes);
-        syncResponsiveDashboardPlacement();
 
         // 其他 iframe 延迟加载
         iframeWrappers.slice(1).forEach((wrapper, index) => {
@@ -797,139 +782,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     /* Unsupervised AI content */
-    const DASHBOARD_HIDDEN_QUERY = "(max-aspect-ratio: 2)";
-    // 如果你 CSS 改成 16/10，这里也要改成：
-    // const DASHBOARD_HIDDEN_QUERY = "(max-aspect-ratio: 16/10)";
-
-    let largeCardCenterRaf = 0;
-
-    function updateLargeCardGlobalCenter(iframes = document.querySelector(".iframes")) {
-        if (!iframes) return;
-
-        const shouldUseGlobalCenter =
-            window.matchMedia(DASHBOARD_HIDDEN_QUERY).matches ||
-            document.documentElement.classList.contains("no-webgpu");
-
-        if (!shouldUseGlobalCenter) {
-            iframes.style.removeProperty("--large-card-left");
-            iframes.style.removeProperty("--large-card-transform");
-            return;
-        }
-
-        const wrapper =
-            iframes.querySelector(".iframe-wrapper.active.is-picked-wrapper") ||
-            (
-                iframes.classList.contains("is-single-wrapper")
-                    ? iframes.querySelector(".iframe-wrapper.active")
-                    : null
-            );
-
-        if (!wrapper) return;
-
-        const mainFrame = document.querySelector(".mainFrame");
-        if (!mainFrame) return;
-
-        const frameRect = mainFrame.getBoundingClientRect();
-        const iframesRect = iframes.getBoundingClientRect();
-
-        const targetCenterX = frameRect.left + frameRect.width / 2;
-        const centerLeft = targetCenterX - iframesRect.left;
-
-        iframes.style.setProperty("--large-card-left", `${centerLeft}px`);
-        iframes.style.setProperty("--large-card-transform", "translateX(-50%)");
-    }
-
-    function scheduleLargeCardGlobalCenter(iframes = document.querySelector(".iframes")) {
-        cancelAnimationFrame(largeCardCenterRaf);
-
-        largeCardCenterRaf = requestAnimationFrame(() => {
-            largeCardCenterRaf = requestAnimationFrame(() => {
-                updateLargeCardGlobalCenter(iframes);
-            });
-        });
-    }
-
-    const dashboardLayoutQuery = window.matchMedia(DASHBOARD_HIDDEN_QUERY);
-
-    function syncResponsiveDashboardPlacement() {
-        const showcase = document.querySelector("div.projectShowcase");
-        const titleBox = document.querySelector("div.title");
-        const projectList = document.querySelector("div.projectList");
-        const playzone = document.querySelector("div.playzone");
-        const iframes = document.querySelector(".iframes");
-        const dashboards = document.querySelector("div.dashboards");
-        const hotzoneList = document.querySelector("ol.hotzone-list");
-
-        if (
-            !showcase ||
-            !titleBox ||
-            !projectList ||
-            !playzone ||
-            !iframes ||
-            !dashboards ||
-            !hotzoneList
-        ) return;
-
-        const isNoWebGPU =
-            document.documentElement.classList.contains("no-webgpu") ||
-            window.__NO_WEBGPU__ === true;
-
-        const activeCount = Array.from(iframes.children).filter((el) => {
-            return (
-                el.classList.contains("iframe-wrapper") &&
-                el.classList.contains("active")
-            );
-        }).length;
-
-        const shouldUseNarrowMultiLayout =
-            dashboardLayoutQuery.matches &&
-            activeCount > 1 &&
-            !isNoWebGPU;
-
-        const shouldMoveDashboardToProjectList = shouldUseNarrowMultiLayout;
-
-        const shouldMoveHotzoneToTitle = shouldUseNarrowMultiLayout && !isNoWebGPU;
-
-        showcase.classList.toggle(
-            "dashboard-in-list",
-            shouldMoveDashboardToProjectList
-        );
-
-        showcase.classList.toggle(
-            "hotzone-in-title",
-            shouldMoveHotzoneToTitle
-        );
-
-        hotzoneList.classList.toggle(
-            "is-title-hotzone",
-            shouldMoveHotzoneToTitle
-        );
-
-        // dashboards: narrow + multi active 时进入 projectList
-        if (shouldMoveDashboardToProjectList) {
-            if (dashboards.parentElement !== projectList) {
-                projectList.appendChild(dashboards);
-            }
-        } else {
-            if (dashboards.parentElement !== playzone) {
-                playzone.appendChild(dashboards);
-            }
-        }
-
-        // hotzone-list: narrow + multi active + 非 no-webgpu 时进入 div.title
-        if (shouldMoveHotzoneToTitle) {
-            if (hotzoneList.parentElement !== titleBox) {
-                titleBox.appendChild(hotzoneList);
-            }
-        } else {
-            if (hotzoneList.parentElement !== projectList) {
-                projectList.appendChild(hotzoneList);
-            }
-        }
-
-        scheduleLargeCardGlobalCenter();
-    }
-
     const applyStackVars = (iframes, maxN = 10) => {
         const items = Array.from(iframes.querySelectorAll(".iframe-wrapper"));
         const total = items.length;
@@ -957,7 +809,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                 el.style.removeProperty("--index");
             });
 
-            scheduleLargeCardGlobalCenter(iframes);
             return;
         }
 
@@ -985,13 +836,41 @@ window.addEventListener("DOMContentLoaded", async () => {
         items.slice(0, start).forEach((el) => {
             el.style.removeProperty("--index");
         });
-
-        scheduleLargeCardGlobalCenter(iframes);
     };
+
+    const METRICS_IN_TITLE_QUERY = "(max-aspect-ratio: 2)";
+
+    function syncProjectMetricsPlacement() {
+        const isNoWebGPU =
+            document.documentElement.classList.contains("no-webgpu") ||
+            window.__NO_WEBGPU__ === true;
+
+        if (isNoWebGPU) return;
+
+        const titleBox = document.querySelector("div.title");
+        const dashboards = document.querySelector("div.dashboards");
+        const metrics = document.querySelector("div.project-metrics");
+
+        if (!titleBox || !dashboards || !metrics) return;
+
+        const shouldMoveToTitle = window.matchMedia(METRICS_IN_TITLE_QUERY).matches;
+
+        if (shouldMoveToTitle) {
+            if (metrics.parentElement !== titleBox) {
+                titleBox.appendChild(metrics);
+            }
+        } else {
+            if (metrics.parentElement !== dashboards) {
+                dashboards.appendChild(metrics);
+            }
+        }
+    }
 
     let stackResizeRaf = 0;
 
     function refreshIframeStackVars() {
+        syncProjectMetricsPlacement();
+
         const iframes = document.querySelector(".iframes");
         if (!iframes) return;
 
@@ -1013,16 +892,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     window.addEventListener("resize", scheduleRefreshIframeStackVars);
-
-    syncResponsiveDashboardPlacement();
-
-    if (dashboardLayoutQuery.addEventListener) {
-        dashboardLayoutQuery.addEventListener("change", syncResponsiveDashboardPlacement);
-    } else {
-        dashboardLayoutQuery.addListener(syncResponsiveDashboardPlacement);
-    }
-
-    window.addEventListener("resize", syncResponsiveDashboardPlacement);
+    syncProjectMetricsPlacement();
 
     // —— 全局轮播管理 —— //
     const _IFRAME_ROTATORS = new Set();
@@ -1427,8 +1297,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         const iframes = document.querySelector(".iframes");
 
         if (!iframes || !project) return;
-
-        clearPinnedDashboardWrapper();
 
         const { name, URLs } = project;
 
@@ -1999,8 +1867,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             item.classList.add("active", "effect-ready");
         });
 
-        syncResponsiveDashboardPlacement();
-
         setDeepLinkLoaderProgress(0.62, "Restoring shared project state");
 
         // 初始 deep-link 加载时，只先加载目标 iframe。
@@ -2020,7 +1886,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             scheduleLazyIframeLoads(wrappers, wrapper, 250);
         }
 
-        clearIframeWrapperHoverState();
         clearIframeHoverProjectList();
         clearProjectListChecked();
 
@@ -2180,6 +2045,42 @@ window.addEventListener("DOMContentLoaded", async () => {
     let iframeWrapperHoverBound = false;
     let pinnedDashboardWrapper = null;
 
+    function clearIframeWrapperHoverState() {
+        document
+            .querySelectorAll(".iframes > .iframe-wrapper.is-dashboard-hover")
+            .forEach((wrapper) => {
+                wrapper.classList.remove("is-dashboard-hover");
+            });
+    }
+
+    function setDashboardHoverWrapper(wrapper) {
+        if (!wrapper) return;
+
+        // tape pin 后，不允许普通 hover 切换 dashboard
+        if (pinnedDashboardWrapper && pinnedDashboardWrapper !== wrapper) return;
+
+        clearIframeWrapperHoverState();
+
+        wrapper.classList.add("is-dashboard-hover");
+
+        setIframeHoverProjectList(wrapper.dataset.index);
+        updateDashboardFromWrapper(wrapper);
+    }
+
+    function resetDashboardHoverState() {
+        if (pinnedDashboardWrapper) return;
+
+        clearIframeWrapperHoverState();
+        clearIframeHoverProjectList();
+        updateDashboardFromFirstWrapper();
+    }
+
+    function clearPinnedDashboardWrapper() {
+        pinnedDashboardWrapper?.classList.remove("is-dashboard-pinned");
+        pinnedDashboardWrapper = null;
+        setTapePinned(false);
+    }
+
     function clearIframeHoverProjectList() {
         document
             .querySelectorAll(".hotzone-list > li.is-iframe-hover")
@@ -2264,9 +2165,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (clearChecked) {
             clearProjectListChecked();
         }
-
-        syncResponsiveDashboardPlacement();
-        scheduleLargeCardGlobalCenter(iframes);
     }
 
     function pickExistingIframeWrapper(index) {
@@ -2285,8 +2183,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         );
 
         if (!wrapper) return false;
-
-        clearPinnedDashboardWrapper();
 
         const wasOpen = projectShowcase.classList.contains("active");
 
@@ -2317,7 +2213,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             window.setTimeout(() => {
                 if (wrapper.classList.contains("is-picked-wrapper")) {
                     wrapper.classList.add("effect-ready");
-                    scheduleLargeCardGlobalCenter(iframes);
                 }
             }, 300);
         } else {
@@ -2329,8 +2224,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             wrapper.querySelector("iframe")?.classList.remove("show");
         }
 
-        syncResponsiveDashboardPlacement();
-        scheduleLargeCardGlobalCenter(iframes);
         return true;
     }
 
@@ -2340,8 +2233,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!projectShowcase || !iframes || !wrapper) return false;
         if (!wrapper.classList.contains("is-picked-wrapper")) return false;
-
-        clearPinnedDashboardWrapper();
 
         startIframeModeTransition();
 
@@ -2354,8 +2245,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         wrapper.classList.add("effect-ready");
         wrapper.querySelector("iframe")?.classList.add("show");
 
-        syncResponsiveDashboardPlacement();
-        scheduleLargeCardGlobalCenter(iframes);
         return true;
     }
 
@@ -2455,36 +2344,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             .join("");
     }
 
-    function clearIframeWrapperHoverState() {
-        document
-            .querySelectorAll(".iframes > .iframe-wrapper.is-dashboard-hover")
-            .forEach((wrapper) => {
-                wrapper.classList.remove("is-dashboard-hover");
-            });
-    }
-
-    function setDashboardHoverWrapper(wrapper) {
-        if (!wrapper) return;
-
-        // 固定后，普通鼠标 hover 不允许切换当前 dashboard wrapper
-        if (pinnedDashboardWrapper && pinnedDashboardWrapper !== wrapper) return;
-
-        clearIframeWrapperHoverState();
-
-        wrapper.classList.add("is-dashboard-hover");
-
-        setIframeHoverProjectList(wrapper.dataset.index);
-        updateDashboardFromWrapper(wrapper);
-    }
-
-    function resetDashboardHoverState() {
-        if (pinnedDashboardWrapper) return;
-
-        clearIframeWrapperHoverState();
-        clearIframeHoverProjectList();
-        updateDashboardFromFirstWrapper();
-    }
-
     function setTapePinned(isPinned) {
         const tape = document.querySelector(".tape");
         const showcase = document.querySelector("div.projectShowcase");
@@ -2494,12 +2353,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         tape.src = isPinned ? "/resources/tape_2.png" : "/resources/tape.png";
         tape.classList.toggle("is-pinned", isPinned);
         showcase?.classList.toggle("is-dashboard-pinned", isPinned);
-    }
-
-    function clearPinnedDashboardWrapper() {
-        pinnedDashboardWrapper?.classList.remove("is-dashboard-pinned");
-        pinnedDashboardWrapper = null;
-        setTapePinned(false);
     }
 
     function bindIframeWrapperHoverToProjectList() {
@@ -2547,8 +2400,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            clearPinnedDashboardWrapper();
-
             pinnedDashboardWrapper = currentWrapper;
             pinnedDashboardWrapper.classList.add("is-dashboard-pinned");
 
@@ -2562,10 +2413,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const next = event.relatedTarget;
 
-            // 鼠标移到 tape 上，不取消当前 iframe-wrapper hover
             if (next?.closest?.(".tape")) return;
-
-            // 鼠标移到 dashboard 上，也可以不取消，方便点 summary title
             if (next?.closest?.(".dashboards")) return;
 
             resetDashboardHoverState();
@@ -2645,7 +2493,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         backButton?.classList.toggle("is-visible", year !== `all`);
 
         _clearAllRotators();
-        clearPinnedDashboardWrapper();
 
         currentProjects = projects;
         currentRenderYear = year;
@@ -3200,8 +3047,6 @@ window.addEventListener("DOMContentLoaded", async () => {
         `;
 
         applyStackVars(iframes, 1);
-        clearPinnedDashboardWrapper();
-        syncResponsiveDashboardPlacement();
     }
 
     async function goBackToAllProjects(event = null) {
@@ -3801,7 +3646,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             } finally {
                 window.setTimeout(() => {
                     printingLegacy = false;
-                }, 1000);
+                }, 800);
             }
         }
 
