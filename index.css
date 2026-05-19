@@ -1638,12 +1638,9 @@ div.iframes.has-picked-wrapper
 
 div.iframes:has(> .iframe-wrapper.active:only-child)
   > .iframe-wrapper.active
-  > iframe.mobile,
-div.iframes.has-picked-wrapper
-  > .iframe-wrapper.active.is-picked-wrapper
   > iframe.mobile {
-  width: calc(var(--iframe-card-large-h) * 0.5625 / 0.85);
-  height: calc(var(--iframe-card-large-h) / 0.85);
+  width: calc(var(--iframe-card-large-h) * 0.5625);
+  height: calc(var(--iframe-card-large-h));
   border-radius: 0;
 }
 

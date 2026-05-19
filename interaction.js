@@ -560,6 +560,215 @@ window.addEventListener("DOMContentLoaded", async () => {
         wrapper.querySelector("iframe")?.classList.add("show");
     }
 
+    function waitForWrapperGeometryTransition(wrapper, fallback = 430) {
+        return new Promise((resolve) => {
+            if (!wrapper) {
+                resolve();
+                return;
+            }
+
+            const watchedProperties = new Set([
+                "left",
+                "bottom",
+                "width",
+                "height",
+                "transform",
+                "padding"
+            ]);
+
+            let done = false;
+
+            const finish = () => {
+                if (done) return;
+
+                done = true;
+                clearTimeout(timer);
+                wrapper.removeEventListener("transitionend", onEnd);
+                wrapper.removeEventListener("transitioncancel", finish);
+
+                resolve();
+            };
+
+            const onEnd = (event) => {
+                if (event.target !== wrapper) return;
+                if (!watchedProperties.has(event.propertyName)) return;
+
+                finish();
+            };
+
+            const timer = window.setTimeout(finish, fallback);
+
+            wrapper.addEventListener("transitionend", onEnd);
+            wrapper.addEventListener("transitioncancel", finish);
+        });
+    }
+
+    function expandAllIframeWrappers(iframes, options = {}) {
+        const { loadAll = true } = options;
+
+        if (!iframes) return;
+
+        const wrappers = Array.from(
+            iframes.querySelectorAll(".iframe-wrapper[data-index]")
+        );
+
+        if (!wrappers.length) return;
+
+        applyStackVars(iframes, wrappers.length);
+
+        wrappers.forEach((wrapper) => {
+            wrapper.classList.add("active", "effect-ready");
+
+            if (loadAll) {
+                showAndLoadIframe(wrapper);
+            }
+        });
+    }
+
+    function enterSingleProjectPreviewState(wrapper) {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframes = document.querySelector(".iframes");
+
+        if (!projectShowcase || !iframes || !wrapper) return false;
+
+        // 关键：先强制回到 file1 状态
+        projectShowcase.classList.remove("active");
+
+        iframes.classList.remove(
+            "has-picked-wrapper",
+            "is-mode-switching"
+        );
+
+        wrapper.classList.remove(
+            "active",
+            "effect-ready",
+            "is-picked-wrapper",
+            "is-dashboard-pinned"
+        );
+
+        wrapper.querySelector("iframe")?.classList.remove("show");
+
+        clearIframeWrapperHoverState();
+        clearIframeHoverProjectList();
+        updateDashboardFromWrapper(wrapper);
+
+        // 强制浏览器立刻吃到 not(.active) 的 file1 样式
+        void wrapper.offsetWidth;
+
+        return true;
+    }
+
+    async function openSingleIframeWrapper(wrapper) {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframes = document.querySelector(".iframes");
+
+        if (!projectShowcase || !iframes || !wrapper) return false;
+        if (!wrapper.isConnected || !iframes.contains(wrapper)) return false;
+
+        clearPickedAutoOpen();
+
+        const currentOpeningId = ++openingId;
+
+        // 关键：single wrapper 不走位移动画，避免经过 left:50% 中间状态
+        const previousTransition = wrapper.style.transition;
+        wrapper.style.transition = "none";
+
+        iframes.classList.remove(
+            "has-picked-wrapper",
+            "is-single-preopen",
+            "is-mode-switching"
+        );
+
+        projectShowcase.classList.add("active");
+
+        applyStackVars(
+            iframes,
+            iframes.querySelectorAll(".iframe-wrapper").length
+        );
+
+        wrapper.classList.remove("effect-ready");
+        wrapper.classList.add("active");
+
+        updateDashboardFromWrapper(wrapper);
+
+        // 强制浏览器立刻计算最终位置
+        void wrapper.offsetWidth;
+
+        // 下一帧恢复 transition，后续关闭/其它动画不受影响
+        requestAnimationFrame(() => {
+            if (previousTransition) {
+                wrapper.style.transition = previousTransition;
+            } else {
+                wrapper.style.removeProperty("transition");
+            }
+        });
+
+        // 等最终布局画出来之后再加载 iframe，避免 iframe 抢主线程
+        await waitForNextPaint(2);
+
+        if (currentOpeningId !== openingId) return true;
+        if (!wrapper.isConnected) return true;
+        if (!wrapper.classList.contains("active")) return true;
+
+        showAndLoadIframe(wrapper);
+
+        requestAnimationFrame(() => {
+            if (!wrapper.isConnected) return;
+            if (!wrapper.classList.contains("active")) return;
+
+            wrapper.classList.add("effect-ready");
+        });
+
+        return true;
+    }
+
+    function activateOtherWrappersAfterPicked(pickedWrapper, delay = 650) {
+        const iframes = pickedWrapper?.closest(".iframes");
+
+        if (!iframes) return;
+
+        const token = ++pickedExpandToken;
+
+        window.setTimeout(() => {
+            if (token !== pickedExpandToken) return;
+
+            const projectShowcase = document.querySelector("div.projectShowcase");
+
+            if (!projectShowcase?.classList.contains("active")) return;
+            if (!iframes.classList.contains("has-picked-wrapper")) return;
+            if (!pickedWrapper.isConnected) return;
+            if (!pickedWrapper.classList.contains("is-picked-wrapper")) return;
+
+            const wrappers = Array.from(
+                iframes.querySelectorAll(".iframe-wrapper[data-index]")
+            );
+
+            applyStackVars(iframes, wrappers.length);
+
+            const others = wrappers.filter((wrapper) => wrapper !== pickedWrapper);
+
+            others.forEach((wrapper, index) => {
+                window.setTimeout(() => {
+                    if (token !== pickedExpandToken) return;
+                    if (!wrapper.isConnected) return;
+                    if (!iframes.classList.contains("has-picked-wrapper")) return;
+                    if (!pickedWrapper.classList.contains("is-picked-wrapper")) return;
+
+                    wrapper.classList.add("active");
+
+                    window.setTimeout(() => {
+                        if (token !== pickedExpandToken) return;
+                        if (!wrapper.isConnected) return;
+                        if (!wrapper.classList.contains("active")) return;
+
+                        wrapper.classList.add("effect-ready");
+                        showAndLoadIframe(wrapper);
+                    }, 260 + index * 350);
+                }, index * 80);
+            });
+        }, delay);
+    }
+
     const openProjectShowcase = async () => {
         const projectShowcase = document.querySelector("div.projectShowcase");
         const iframeWrappers = Array.from(
@@ -1296,7 +1505,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     function renderSingleProjectInIframes(project, index = null) {
         const iframes = document.querySelector(".iframes");
 
-        if (!iframes || !project) return;
+        if (!iframes || !project) return null;
 
         const { name, URLs } = project;
 
@@ -1343,6 +1552,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         _attachRotator(iframeEl, URLs, 4000);
         applyStackVars(iframes, 1);
+
+        return wrapper;
     }
 
     let currentRenderYear = "all";
@@ -2083,6 +2294,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     function resetTapePinBeforeIframeUpdate() {
+        clearPickedAutoOpen();
+
         clearPinnedDashboardWrapper();
         clearPinnedProjectUrl();
         clearIframeWrapperHoverState();
@@ -2143,13 +2356,60 @@ window.addEventListener("DOMContentLoaded", async () => {
         }, duration);
     }
 
+    let pickedAutoOpenTimer = 0;
+    let pickedExpandToken = 0;
+
+    function clearPickedAutoOpen() {
+        pickedExpandToken++;
+
+        if (pickedAutoOpenTimer) {
+            clearTimeout(pickedAutoOpenTimer);
+            pickedAutoOpenTimer = 0;
+        }
+    }
+
+    function schedulePickedAutoOpen(wrapper, delay = 800) {
+        clearPickedAutoOpen();
+
+        pickedAutoOpenTimer = window.setTimeout(() => {
+            pickedAutoOpenTimer = 0;
+
+            const iframes = document.querySelector(".iframes");
+
+            if (!iframes || !wrapper) return;
+            if (!wrapper.isConnected) return;
+            if (!iframes.contains(wrapper)) return;
+
+            // 年份页面：先打开 picked wrapper
+            if (
+                iframes.classList.contains("has-picked-wrapper") &&
+                wrapper.classList.contains("is-picked-wrapper")
+            ) {
+                openPickedIframeWrapper(wrapper);
+                return;
+            }
+
+            // 首页 / 单项目页面：800ms 后直接打开单个 wrapper
+            if (!wrapper.classList.contains("active")) {
+                openSingleIframeWrapper(wrapper);
+            }
+        }, delay);
+    }
+
     function clearPickedIframeWrapper(options = {}) {
         const { deactivate = false, clearChecked = true } = options;
 
         const iframes = document.querySelector(".iframes");
+        const projectShowcase = document.querySelector("div.projectShowcase");
+
         if (!iframes) return;
 
+        clearPickedAutoOpen();
+
         const hadPickedWrapper = iframes.classList.contains("has-picked-wrapper");
+
+        const shouldRestoreExpandedGallery =
+            !deactivate && projectShowcase?.classList.contains("active");
 
         if (hadPickedWrapper) {
             startIframeModeTransition();
@@ -2168,6 +2428,10 @@ window.addEventListener("DOMContentLoaded", async () => {
                     wrapper.querySelector("iframe")?.classList.remove("show");
                 }
             });
+
+        if (shouldRestoreExpandedGallery) {
+            expandAllIframeWrappers(iframes, { loadAll: true });
+        }
 
         if (clearChecked) {
             clearProjectListChecked();
@@ -2231,7 +2495,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             wrapper.querySelector("iframe")?.classList.remove("show");
         }
 
-        return true;
+        return wrapper;
     }
 
     function openPickedIframeWrapper(wrapper) {
@@ -2241,16 +2505,31 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (!projectShowcase || !iframes || !wrapper) return false;
         if (!wrapper.classList.contains("is-picked-wrapper")) return false;
 
+        clearPickedAutoOpen();
+
         startIframeModeTransition();
 
         projectShowcase.classList.add("active");
         iframes.classList.add("has-picked-wrapper");
 
-        loadIframe(wrapper);
+        applyStackVars(iframes, iframes.querySelectorAll(".iframe-wrapper").length);
 
-        wrapper.classList.add("active");
-        wrapper.classList.add("effect-ready");
-        wrapper.querySelector("iframe")?.classList.add("show");
+        wrapper.classList.remove("effect-ready");
+        wrapper.classList.add("is-picked-wrapper", "active");
+
+        setDashboardHoverWrapper(wrapper);
+
+        waitForWrapperGeometryTransition(wrapper, 500).then(() => {
+            if (!wrapper.isConnected) return;
+            if (!wrapper.classList.contains("is-picked-wrapper")) return;
+            if (!wrapper.classList.contains("active")) return;
+
+            showAndLoadIframe(wrapper);
+            wrapper.classList.add("effect-ready");
+        });
+
+        // picked 大卡片先打开，再逐步激活其它 wrapper
+        activateOtherWrappersAfterPicked(wrapper, 650);
 
         return true;
     }
@@ -2424,7 +2703,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const next = event.relatedTarget;
 
-            if (next?.closest?.(".tape")) return;
+            if (next?.closest?.(".tape-hitbox, .tape")) return;
             if (next?.closest?.(".dashboards")) return;
 
             resetDashboardHoverState();
@@ -2617,10 +2896,28 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                 clearPinnedProjectUrl();
 
+                const wasShowcaseOpen =
+                    document
+                        .querySelector("div.projectShowcase")
+                        ?.classList.contains("active");
+
                 const pickedExistingWrapper = pickExistingIframeWrapper(index);
 
                 if (!pickedExistingWrapper) {
-                    renderSingleProjectInIframes(project, index);
+                    const renderedWrapper = renderSingleProjectInIframes(project, index);
+
+                    if (renderedWrapper) {
+                        enterSingleProjectPreviewState(renderedWrapper);
+
+                        // file1 状态停留一会，再进入 file2
+                        schedulePickedAutoOpen(renderedWrapper, 800);
+                    }
+                } else {
+                    updateDashboardFromWrapper(pickedExistingWrapper);
+
+                    if (!wasShowcaseOpen) {
+                        schedulePickedAutoOpen(pickedExistingWrapper, 800);
+                    }
                 }
 
                 setCheckedTimelineYear(targetYear);
