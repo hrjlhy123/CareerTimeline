@@ -2318,6 +2318,8 @@ div.dashboards {
     div.title
     > div.project-metrics {
     display: flex;
+    padding: calc(1 * var(--u)) 0 calc(3 * var(--u));
+    justify-content: center;
   }
   html:not(.no-webgpu) div.title > p.title {
     padding: calc(1 * var(--u)) calc(3 * var(--u));
@@ -2378,6 +2380,10 @@ div.dashboards {
 
     cursor: pointer;
   } */
+
+  div.projectShowcase {
+    left: -2%;
+  }
 
   div.projectShowcase:has(
       .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active
