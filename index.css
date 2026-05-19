@@ -1441,8 +1441,6 @@ div.playzone > img.tape {
   position: absolute;
   z-index: 25;
   height: calc(4 * var(--u));
-  /* bottom: calc(60 * var(--u)); */
-  /* left: calc(117.5 * var(--u)); */
   left: calc(var(--iframe-card-w));
   transform: rotate(-60deg);
   cursor: pointer;
@@ -1450,6 +1448,8 @@ div.playzone > img.tape {
   transform-origin: 0 50%;
   display: none;
   opacity: 0.8;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 div.playzone > img.tape:hover {

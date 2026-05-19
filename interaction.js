@@ -2380,6 +2380,26 @@ window.addEventListener("DOMContentLoaded", async () => {
             event.stopPropagation();
         });
 
+        showcase.addEventListener("pointerdown", (event) => {
+            if (!tape || getComputedStyle(tape).display === "none") return;
+
+            const rect = tape.getBoundingClientRect();
+            const padding = 32; // iPad 触摸扩大范围，觉得不够可改 44
+
+            const hit =
+                event.clientX >= rect.left - padding &&
+                event.clientX <= rect.right + padding &&
+                event.clientY >= rect.top - padding &&
+                event.clientY <= rect.bottom + padding;
+
+            if (!hit) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            tape.click();
+        }, true);
+
         tape?.addEventListener("click", (event) => {
             event.stopPropagation();
 
