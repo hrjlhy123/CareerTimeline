@@ -1711,6 +1711,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (pendingPinnedProjectLink) return;
 
         defaultAutoOpenTimer = window.setTimeout(() => {
+
             defaultAutoOpenTimer = 0;
 
             if (defaultAutoOpenDone) return;

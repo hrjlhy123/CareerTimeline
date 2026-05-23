@@ -573,10 +573,12 @@ div.mailboxSlot {
   position: absolute;
   height: 100%;
   z-index: 1;
+  left: 0;
+  top: 0;
 }
 
 div.mailboxSlot > p {
-  color: rgba(255, 255, 255, 0.5);
+  color: #ddd;
 }
 
 div.timelineBelt,
