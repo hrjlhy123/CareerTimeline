@@ -1420,7 +1420,7 @@ div.projectList
 
 div.projectShowcase > div.playzone {
   width: 100%;
-  height: calc(67 * var(--u));
+  height: calc(69 * var(--u));
   padding: calc(1 * var(--u));
   --step-left: 2%;
   --left-base: 0%;
@@ -2023,7 +2023,7 @@ div.iframe-wrapper > div.iframe-mask {
 
 div.projectShowcase:not(.active) > .playzone > .iframes > .iframe-wrapper {
   left: 12.5%;
-  bottom: -20%;
+  bottom: -17.5%;
 
   --final-rot: calc(12deg - var(--rand-global) * 30deg - 45deg);
   --deal-final-transform: scale(0.5) rotateZ(var(--final-rot));
