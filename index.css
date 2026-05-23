@@ -575,6 +575,7 @@ div.mailboxSlot {
   z-index: 1;
   left: 0;
   top: 0;
+  pointer-events: none;
 }
 
 div.mailboxSlot > p {
