@@ -567,7 +567,9 @@ div.title > .rainbow-firework-layer {
 div.mailboxSlot {
   grid-area: mailboxSlot;
   background-color: rgba(0, 255, 0, 0.5);
-  display: none;
+  /* display: none; */
+  position: absolute;
+  left: -9999px;
 }
 
 img.mailboxSlot {
