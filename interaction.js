@@ -3224,10 +3224,12 @@ window.addEventListener("DOMContentLoaded", async () => {
                 s.mx = ev.clientX; s.my = ev.clientY;
             };
             const onLeave = () => {
-                const s = states.get(bubble); if (!s) return;
+                const s = states.get(bubble);
+                if (!s) return;
+
                 s.hover = false;
 
-                // NEW: 用当前最后一帧的位置作为新的起点，并重置时间
+                // 从当前 hover 停住的位置继续漂浮
                 s.anchorX = s.lastTx;
                 s.anchorY = s.lastTy;
                 s.t0 = performance.now();
@@ -3237,6 +3239,9 @@ window.addEventListener("DOMContentLoaded", async () => {
                     s.dieAt = performance.now() + s.remaining;
                     s.timerId = setTimeout(() => removeHole(bubble), s.remaining);
                 }
+
+                // 关键：鼠标离开后重新启动 RAF，让 bubble 继续飘
+                kick();
             };
             bubble.addEventListener('mouseenter', onEnter);
             bubble.addEventListener('mousemove', onMove);
