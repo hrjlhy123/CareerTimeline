@@ -572,6 +572,7 @@ div.mailboxSlot {
   padding: 2vh;
   position: absolute;
   height: 100%;
+  z-index: 1;
 }
 
 div.mailboxSlot > p {
