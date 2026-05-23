@@ -570,6 +570,7 @@ div.mailboxSlot {
   /* display: none; */
   /* color: rgba(0, 0, 0, 0); */
   padding: 2.5vh;
+  z-index: -1;
 }
 
 img.mailboxSlot {
