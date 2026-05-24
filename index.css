@@ -1428,6 +1428,7 @@ div.projectShowcase > div.playzone {
   pointer-events: none;
   display: flex;
   justify-content: space-between;
+  position: relative;
 }
 
 div.playzone:has(
@@ -1450,13 +1451,12 @@ div.playzone > .tape-hitbox {
   z-index: 25;
 
   left: calc(var(--iframe-card-w));
+  top: 0;
+
   width: calc(9 * var(--u));
   height: calc(9 * var(--u));
 
   display: none;
-  align-items: center;
-  justify-content: center;
-
   padding: 0;
   border: 0;
   background: transparent;
@@ -1468,9 +1468,14 @@ div.playzone > .tape-hitbox {
 }
 
 div.playzone > .tape-hitbox > img.tape {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+
   height: calc(4 * var(--u));
+
+  transform-origin: left bottom;
   transform: rotate(-60deg);
-  transform-origin: center center;
   opacity: 0.8;
   pointer-events: none;
 }
@@ -1619,6 +1624,11 @@ div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
   bottom: calc(4.25 * var(--u));
   z-index: 24;
   padding: 0;
+}
+
+div.iframes.has-picked-wrapper > .iframe-wrapper.active.is-picked-wrapper {
+  left: 0;
+  transform: none;
 }
 
 div.iframes:has(> .iframe-wrapper.active:only-child)
@@ -2306,6 +2316,7 @@ div.dashboards {
   top: calc(29 * var(--u));
   right: 0;
   width: calc(3 / 16 * 98vw);
+  max-width: calc(55 * var(--u));
   height: var(--iframe-card-h);
   display: flex;
   flex-direction: column;
@@ -2316,7 +2327,10 @@ div.dashboards {
 @media (max-aspect-ratio: 2) {
   div.iframes.is-single-wrapper > div.iframe-wrapper.active,
   div.iframes.has-picked-wrapper > div.iframe-wrapper.active.is-picked-wrapper {
-    left: calc(-3 / 16 * 98vw) !important;
+    /* left: calc(-3 / 16 * 98vw) !important; */
+    left: calc(
+      (98vw - var(--iframe-card-large-w)) / 2 - 3 / 16 * 98vw
+    ) !important;
     transform: none !important;
   }
 
@@ -2459,13 +2473,7 @@ div.dashboards {
     background: rgba(221, 221, 221, 0.5);
   }
 
-  div.projectShowcase:has(
-      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
-      .iframes > .iframe-wrapper.is-picked-wrapper
-    )
-    > div.dashboards
-    > div.summary
-    > p.title {
+  div.dashboards > div.summary > p.title {
     padding-right: var(6 * var(--u));
   }
 
@@ -2489,6 +2497,18 @@ div.dashboards {
     > div.project-metrics
     div.metric-slot {
     background: rgba(221, 221, 221, 0.5);
+  }
+}
+
+@media (min-aspect-ratio: 16/10) {
+  :root {
+    --iframe-card-w: clamp(calc(108 * var(--u)), 48vw, calc(155 * var(--u)));
+
+    --iframe-card-large-w: clamp(
+      calc(140 * var(--u)),
+      52vw,
+      calc(175 * var(--u))
+    );
   }
 }
 
@@ -2620,6 +2640,10 @@ div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
   pointer-events: none;
 
   padding: 0 1vw;
+}
+
+.title > .project-metrics {
+  display: none;
 }
 
 .metric-value,

@@ -449,6 +449,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let projectShowcase = document.querySelector('div.projectShowcase')
     let projectList = document.querySelector(`div.projectList`)
     let iframes = document.querySelector(`div.iframes`)
+    let timelineSwitching = false;
 
     let year
 
@@ -462,33 +463,42 @@ window.addEventListener("DOMContentLoaded", async () => {
         item.setAttribute("aria-pressed", "false");
 
         item.addEventListener("click", async () => {
-            // visual checked state
-            item.parentNode
-                .querySelectorAll(".checked")
-                .forEach((el) => el.classList.remove("checked"));
+            if (timelineSwitching) return;
 
-            item.classList.add("checked");
+            timelineSwitching = true;
 
-            // accessibility pressed state
-            item.parentNode
-                .querySelectorAll('li[data-year][aria-pressed="true"]')
-                .forEach((el) => el.setAttribute("aria-pressed", "false"));
+            try {
+                const canSwitch = await deactivateBeforeTimelineSwitch();
 
-            item.setAttribute("aria-pressed", "true");
+                if (!canSwitch) return;
 
-            year = itemYear;
+                // visual checked state
+                item.parentNode
+                    .querySelectorAll(".checked")
+                    .forEach((el) => el.classList.remove("checked"));
 
-            projectShowcase.classList.remove("active");
+                item.classList.add("checked");
 
-            clearPinnedProjectUrl();
+                // accessibility pressed state
+                item.parentNode
+                    .querySelectorAll('li[data-year][aria-pressed="true"]')
+                    .forEach((el) => el.setAttribute("aria-pressed", "false"));
 
-            await getProjects(year);
+                item.setAttribute("aria-pressed", "true");
 
-            // random num
-            const now = Date.now();
-            const rand = (now % 1000) / 1000;
+                year = itemYear;
 
-            document.body.style.setProperty("--rand-global", rand.toFixed(3));
+                clearPinnedProjectUrl();
+
+                await getProjects(year);
+
+                const now = Date.now();
+                const rand = (now % 1000) / 1000;
+
+                document.body.style.setProperty("--rand-global", rand.toFixed(3));
+            } finally {
+                timelineSwitching = false;
+            }
         });
 
         item.addEventListener("keydown", (event) => {
@@ -505,6 +515,32 @@ window.addEventListener("DOMContentLoaded", async () => {
     let showcaseEventsBound = false;
     let animating = false;
     let openingId = 0;
+
+    async function deactivateBeforeTimelineSwitch() {
+        const projectShowcase = document.querySelector("div.projectShowcase");
+        const iframes = document.querySelector("div.playzone > div.iframes");
+
+        if (!projectShowcase || !iframes) return true;
+        if (animating) return false;
+
+        clearPickedAutoOpen();
+
+        const hasActiveWrapper = !!iframes.querySelector(".iframe-wrapper.active");
+        const hasPickedWrapper = iframes.classList.contains("has-picked-wrapper");
+        const isShowcaseOpen = projectShowcase.classList.contains("active");
+
+        if (isShowcaseOpen || hasActiveWrapper || hasPickedWrapper) {
+            await closeProjectShowcase();
+        } else {
+            projectShowcase.classList.remove("active");
+            clearPickedIframeWrapper({
+                deactivate: true,
+                clearChecked: true
+            });
+        }
+
+        return true;
+    }
 
     const setWrappersPointerEvents = (wrappers, value) => {
         wrappers.forEach((wrapper) => {
