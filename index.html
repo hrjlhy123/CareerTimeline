@@ -18,19 +18,18 @@
 
     // Deep Link Loader: I use URLSearchParams, loading progress, an ARIA live region, CSS variables, and iframe state so users can open a specific project from a link and receive clear loading feedback.
 
-    // 初始分享链接加载遮罩：只在 URL 自带 project 参数时显示
     const hasInitialPinnedProjectLink = params.has("project");
 
     if (hasInitialPinnedProjectLink) {
         document.documentElement.classList.add("deep-link-loading");
     }
-    // 新增：测试现代版，不跳旧版
+
     const forceModern = params.has("modern");
 
     function goOld(reason) {
         console.warn(reason);
 
-        // 如果带 ?modern，就不要跳旧版
+        // If ?modern is present, do not fall back to the older version
         if (forceModern) {
             console.warn("Modern page forced by URL parameter");
             return;
@@ -63,7 +62,7 @@
     if (forceNoGraphics || !hasGraphicsAcceleration()) {
         goOld("No graphics acceleration available");
 
-        // 如果 ?modern 阻止了跳转，就降级成 no-webgpu layout
+        // If ?modern prevents the redirect, fall back to the no-webgpu layout
         if (forceModern) {
             document.documentElement.classList.add("no-webgpu");
             window.__NO_WEBGPU__ = true;
@@ -153,9 +152,20 @@
                 </div>
             </div>
         </div>
-        <img src="./resources/bg.png" alt
-            class="conceptDesign">
+        <picture>
+            <source srcset="./resources/bg.avif" type="image/avif">
+            <source srcset="./resources/bg.webp" type="image/webp">
+            <img
+                src="./resources/bg.png"
+                alt
+                class="conceptDesign"
+                width="3840"
+                height="2160"
+                fetchpriority="high"
+                decoding="async">
+        </picture>
         <div class="mainFrame"
+            role="region"
             aria-label="I use CSS Grid, responsive layout, CSS custom properties, WebGPU fallback, and a background reveal canvas to organize the timeline, project list, project preview, and data dashboard into one portfolio stage.">
             <canvas class="mainFrame-reveal-canvas"></canvas>
             <div class="mailboxSlot">
@@ -264,41 +274,44 @@
                 <p class="title">Project Gallery</p>
             </div>
             <div class="timelineBelt"
+                role="region"
                 aria-label="I use WebGPU, WGSL shaders, gl-matrix, COLLADA .dae model parsing, and wheel/touch interaction to build a 3D timeline for browsing my project growth by year.">
                 <ul class="timeList">
-                    <li data-year="2017">
+                    <li role="button" data-year="2017">
                         <span>2017</span>
                     </li>
-                    <li data-year="2018">
+                    <li role="button" data-year="2018">
                         <span>2018</span>
                     </li>
-                    <li data-year="2019">
+                    <li role="button" data-year="2019">
                         <span>2019</span>
                     </li>
-                    <li data-year="2020">
+                    <li role="button" data-year="2020">
                         <span>2020</span>
                     </li>
-                    <li data-year="2021">
+                    <li role="button" data-year="2021">
                         <span>2021</span>
                     </li>
-                    <li data-year="2022">
+                    <li role="button" data-year="2022">
                         <span>2022</span>
                     </li>
-                    <li data-year="2023">
+                    <li role="button" data-year="2023">
                         <span>2023</span>
                     </li>
-                    <li data-year="2024">
+                    <li role="button" data-year="2024">
                         <span>2024</span>
                     </li>
-                    <li data-year="2025">
+                    <li role="button" data-year="2025">
                         <span>2025</span>
                     </li>
                 </ul>
                 <canvas class="timelineBelt"></canvas>
             </div>
             <div class="projectShowcase"
+                role="region"
                 aria-label="I use JavaScript state management, DOM class toggles, CSS variables, :has(), and event listeners to connect the timeline, project list, iframe previews, and dashboard data into one project showcase system.">
                 <div class="projectList"
+                    role="region"
                     aria-label="I use dynamic DOM rendering, data attributes, keyboard-accessible state, hover/focus feedback, a horizontal scroll container, and WebSocket data to generate a project list that can be browsed, selected, and synchronized with the current showcase.">
                     <button class="project-back-button" type="button"
                         aria-label="Back to all projects"
@@ -347,12 +360,27 @@
                     <ol class="hotzone-list"></ol>
                 </div>
                 <div class="playzone"
+                    role="region"
                     aria-label="I use iframe, data-src, data-urls, lazy loading, load timeouts, fallback URL rotation, and card stack states to show live project previews directly inside the portfolio.">
-                    <button class="tape-hitbox" type="button"
+                    <button
+                        class="tape-hitbox"
+                        type="button"
                         aria-label="Pin current project. I use button state, a pointer hitbox, class toggles, and dashboard pin/unpin logic to provide a lightweight way to keep the current project context while browsing.">
-                        <img src="/resources/tape.png" alt class="tape">
+                        <picture>
+                            <source srcset="/resources/tape.avif"
+                                type="image/avif">
+                            <source srcset="/resources/tape.webp"
+                                type="image/webp">
+                            <img
+                                src="/resources/tape.png"
+                                alt
+                                class="tape"
+                                decoding="async"
+                                draggable="false">
+                        </picture>
                     </button>
                     <div class="iframes"
+                        role="region"
                         aria-label="I use iframe, data-src, data-urls, lazy loading, load timeouts, fallback URL rotation, and card stack states to show live project previews directly inside the portfolio.">
                         <div
                             class="iframe-wrapper"
@@ -375,8 +403,10 @@
                     </div>
                 </div>
                 <div class="dashboards"
+                    role="region"
                     aria-label="I use MongoDB project data, WebSocket delivery, dynamic link state, ARIA state, CSS --value, and progress fill effects to present each project's summary, external link, complexity, ownership, and impact.">
                     <div class="summary"
+                        role="region"
                         aria-label="I use MongoDB project data, WebSocket delivery, dynamic link state, and ARIA state to present each project's summary and external link.">
                         <p class="title summary-title">
                             <a
@@ -390,6 +420,7 @@
                         <p class="description summary-description"></p>
                     </div>
                     <div class="project-metrics"
+                        role="region"
                         aria-label="I use CSS --value and progress fill effects to present each project's complexity, ownership, and impact metrics.">
                         <div class="metric metric-complexity"
                             style="--value: 58%;"

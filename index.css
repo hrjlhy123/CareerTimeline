@@ -1477,7 +1477,7 @@ div.playzone > .tape-hitbox.is-pinned {
   width: calc(17 * var(--u));
 }
 
-div.playzone > .tape-hitbox > img.tape {
+div.playzone > .tape-hitbox img.tape {
   position: absolute;
   left: 0;
   bottom: 0;
@@ -1490,7 +1490,7 @@ div.playzone > .tape-hitbox > img.tape {
   pointer-events: none;
 }
 
-div.playzone > .tape-hitbox:hover > img.tape {
+div.playzone > .tape-hitbox:hover img.tape {
   filter: drop-shadow(calc(0.15 * var(--u)) 0 0 rgb(255 255 255 / 0.5))
     drop-shadow(calc(-0.15 * var(--u)) 0 0 rgb(255 255 255 / 0.5))
     drop-shadow(0 calc(0.15 * var(--u)) 0 rgb(255 255 255 / 0.5))

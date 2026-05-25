@@ -2665,11 +2665,22 @@ window.addEventListener("DOMContentLoaded", async () => {
     function setTapePinned(isPinned) {
         const tapeButton = document.querySelector(".tape-hitbox");
         const tapeImage = document.querySelector(".tape");
+        const tapePicture = tapeImage?.closest("picture");
         const showcase = document.querySelector("div.projectShowcase");
 
         if (!tapeButton || !tapeImage) return;
 
-        tapeImage.src = isPinned ? "/resources/tape_2.png" : "/resources/tape.png";
+        const baseName = isPinned ? "tape_2" : "tape";
+
+        if (tapePicture) {
+            const avifSource = tapePicture.querySelector('source[type="image/avif"]');
+            const webpSource = tapePicture.querySelector('source[type="image/webp"]');
+
+            avifSource?.setAttribute("srcset", `/resources/${baseName}.avif`);
+            webpSource?.setAttribute("srcset", `/resources/${baseName}.webp`);
+        }
+
+        tapeImage.src = `/resources/${baseName}.png`;
 
         tapeButton.classList.toggle("is-pinned", isPinned);
         tapeImage.classList.toggle("is-pinned", isPinned);
