@@ -2447,7 +2447,7 @@ div.dashboards {
   }
 }
 
-@media (max-aspect-ratio: 22 / 9) {
+@media (max-aspect-ratio: 2) {
   html:not(.no-webgpu) div.title {
     display: flex;
     flex-direction: column;
