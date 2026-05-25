@@ -1047,7 +1047,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
     };
 
-    const METRICS_IN_TITLE_QUERY = "(max-aspect-ratio: 2)";
+    const METRICS_IN_TITLE_QUERY = "(max-aspect-ratio: 22 / 9)";
 
     function syncProjectMetricsPlacement() {
         const isNoWebGPU =
