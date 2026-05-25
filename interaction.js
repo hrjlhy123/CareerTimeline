@@ -3580,8 +3580,8 @@ window.addEventListener("DOMContentLoaded", async () => {
                 target.w = size;
                 target.h = size;
             } else {
-                const paddingX = 12.5 * u;
-                const paddingY = 10 * u;
+                const paddingX = 10 * u;
+                const paddingY = 7.5 * u;
 
                 target.x = rect.left - hostRect.left - paddingX;
                 target.y = rect.top - hostRect.top - paddingY;
