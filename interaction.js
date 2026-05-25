@@ -3507,9 +3507,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const rect = targetElement.getBoundingClientRect();
             const hostRect = host.getBoundingClientRect();
+            const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1;
 
             if (shape === "circle") {
-                const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1;
                 const size = Math.max(rect.width, rect.height) + 3 * u;
 
                 target.x = rect.left - hostRect.left + rect.width / 2 - size / 2;

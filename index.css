@@ -1218,7 +1218,7 @@ div.projectList > ol.hotzone-list {
   height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: calc(1 * var(--u)) 0 calc(3 * var(--u)) calc(4 * var(--u));
+  padding: calc(1 * var(--u)) 0 calc(2 * var(--u)) calc(2 * var(--u));
   counter-reset: project;
   list-style: none;
   margin: 0;
@@ -2353,13 +2353,6 @@ div.dashboards {
     padding: 1vw;
   }
 
-  div.iframes.is-single-wrapper > div.iframe-wrapper.active,
-  div.iframes.has-picked-wrapper > div.iframe-wrapper.active.is-picked-wrapper {
-    left: initial !important;
-    right: calc((98vw - 2 * var(--u) - 87.5vw) / 2) !important;
-    transform: none !important;
-  }
-
   html:not(.no-webgpu) div.title > p.title {
     padding: calc(1 * var(--u)) calc(3 * var(--u));
   }
@@ -2466,10 +2459,26 @@ div.dashboards {
       .iframes > .iframe-wrapper.is-picked-wrapper
     )
     div.title
+    > p.title {
+    padding: calc(1 * var(--u)) calc(2 * var(--u)) 0;
+  }
+  html:not(.no-webgpu):has(
+      .iframes > .iframe-wrapper.active ~ .iframe-wrapper.active,
+      .iframes > .iframe-wrapper.is-picked-wrapper
+    )
+    div.title
     > div.project-metrics {
     display: flex;
-    padding: calc(1 * var(--u)) 0 calc(3 * var(--u));
+    padding: calc(2 * var(--u)) 0;
     justify-content: center;
+    flex-grow: 1;
+  }
+
+  div.iframes.is-single-wrapper > div.iframe-wrapper.active,
+  div.iframes.has-picked-wrapper > div.iframe-wrapper.active.is-picked-wrapper {
+    left: initial !important;
+    right: calc((98vw - 2 * var(--u) - var(--iframe-card-large-w)) / 2) !important;
+    transform: none !important;
   }
 
   div.projectShowcase:has(
@@ -2512,6 +2521,10 @@ div.dashboards {
 
   div.dashboards > div.summary > p.title {
     padding-right: calc(6 * var(--u));
+  }
+
+  div.iframes[data-year] > div.iframe-wrapper.active {
+    margin-bottom: calc(2 * var(--u));
   }
 }
 
@@ -2666,10 +2679,6 @@ div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
 .metric-slot,
 .metric-label {
   pointer-events: auto;
-}
-
-.metric-slot {
-  height: calc(15.4 * var(--u));
 }
 
 div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
