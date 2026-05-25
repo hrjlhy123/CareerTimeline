@@ -1452,10 +1452,10 @@ div.playzone > .tape-hitbox {
   z-index: 25;
 
   left: calc(var(--iframe-card-w));
-  top: 0;
+  top: calc(2.5 * var(--u));
 
+  height: calc(4 * var(--u));
   width: calc(9 * var(--u));
-  height: calc(9 * var(--u));
 
   display: none;
   padding: 0;
@@ -1466,6 +1466,15 @@ div.playzone > .tape-hitbox {
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+
+  overflow: visible;
+
+  transform-origin: left bottom;
+  transform: rotate(-60deg);
+}
+
+div.playzone > .tape-hitbox.is-pinned {
+  width: calc(17 * var(--u));
 }
 
 div.playzone > .tape-hitbox > img.tape {
@@ -1475,8 +1484,8 @@ div.playzone > .tape-hitbox > img.tape {
 
   height: calc(4 * var(--u));
 
-  transform-origin: left bottom;
-  transform: rotate(-60deg);
+  /* transform-origin: left bottom;
+  transform: rotate(-60deg); */
   opacity: 0.8;
   pointer-events: none;
 }
