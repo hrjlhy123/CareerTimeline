@@ -449,7 +449,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     let projectShowcase = document.querySelector('div.projectShowcase')
     let projectList = document.querySelector(`div.projectList`)
     let iframes = document.querySelector(`div.iframes`)
-    let timelineSwitching = false;
 
     let year
 
@@ -463,42 +462,33 @@ window.addEventListener("DOMContentLoaded", async () => {
         item.setAttribute("aria-pressed", "false");
 
         item.addEventListener("click", async () => {
-            if (timelineSwitching) return;
+            // visual checked state
+            item.parentNode
+                .querySelectorAll(".checked")
+                .forEach((el) => el.classList.remove("checked"));
 
-            timelineSwitching = true;
+            item.classList.add("checked");
 
-            try {
-                const canSwitch = await deactivateBeforeTimelineSwitch();
+            // accessibility pressed state
+            item.parentNode
+                .querySelectorAll('li[data-year][aria-pressed="true"]')
+                .forEach((el) => el.setAttribute("aria-pressed", "false"));
 
-                if (!canSwitch) return;
+            item.setAttribute("aria-pressed", "true");
 
-                // visual checked state
-                item.parentNode
-                    .querySelectorAll(".checked")
-                    .forEach((el) => el.classList.remove("checked"));
+            year = itemYear;
 
-                item.classList.add("checked");
+            projectShowcase.classList.remove("active");
 
-                // accessibility pressed state
-                item.parentNode
-                    .querySelectorAll('li[data-year][aria-pressed="true"]')
-                    .forEach((el) => el.setAttribute("aria-pressed", "false"));
+            clearPinnedProjectUrl();
 
-                item.setAttribute("aria-pressed", "true");
+            await getProjects(year);
 
-                year = itemYear;
+            // random num
+            const now = Date.now();
+            const rand = (now % 1000) / 1000;
 
-                clearPinnedProjectUrl();
-
-                await getProjects(year);
-
-                const now = Date.now();
-                const rand = (now % 1000) / 1000;
-
-                document.body.style.setProperty("--rand-global", rand.toFixed(3));
-            } finally {
-                timelineSwitching = false;
-            }
+            document.body.style.setProperty("--rand-global", rand.toFixed(3));
         });
 
         item.addEventListener("keydown", (event) => {
@@ -515,32 +505,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     let showcaseEventsBound = false;
     let animating = false;
     let openingId = 0;
-
-    async function deactivateBeforeTimelineSwitch() {
-        const projectShowcase = document.querySelector("div.projectShowcase");
-        const iframes = document.querySelector("div.playzone > div.iframes");
-
-        if (!projectShowcase || !iframes) return true;
-        if (animating) return false;
-
-        clearPickedAutoOpen();
-
-        const hasActiveWrapper = !!iframes.querySelector(".iframe-wrapper.active");
-        const hasPickedWrapper = iframes.classList.contains("has-picked-wrapper");
-        const isShowcaseOpen = projectShowcase.classList.contains("active");
-
-        if (isShowcaseOpen || hasActiveWrapper || hasPickedWrapper) {
-            await closeProjectShowcase();
-        } else {
-            projectShowcase.classList.remove("active");
-            clearPickedIframeWrapper({
-                deactivate: true,
-                clearChecked: true
-            });
-        }
-
-        return true;
-    }
 
     const setWrappersPointerEvents = (wrappers, value) => {
         wrappers.forEach((wrapper) => {
@@ -1391,7 +1355,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         const duration = PROJECT_RIPPLE_DURATION;
 
         let dataDateApplied = false;
-        const DATA_DATE_APPLY_TIME = 1550;
+        const DATA_DATE_APPLY_TIME = 800;
 
         function animate(now) {
             if (token !== yearColorRippleToken) return;
@@ -2433,6 +2397,37 @@ window.addEventListener("DOMContentLoaded", async () => {
         }, delay);
     }
 
+    function openPickedWrapperOnHover(wrapper) {
+        if (!wrapper) return;
+
+        clearPickedAutoOpen();
+
+        const open = () => {
+            const iframes = document.querySelector(".iframes");
+
+            if (!iframes) return;
+            if (!wrapper.isConnected) return;
+            if (!iframes.contains(wrapper)) return;
+            if (!wrapper.classList.contains("is-picked-wrapper")) return;
+
+            openPickedIframeWrapper(wrapper);
+        };
+
+        wrapper.addEventListener("pointerenter", open, { once: true });
+
+        // 可选：键盘用户仍然可以按 Enter/Space 打开
+        wrapper.addEventListener(
+            "keydown",
+            (event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+
+                event.preventDefault();
+                open();
+            },
+            { once: true }
+        );
+    }
+
     function clearPickedIframeWrapper(options = {}) {
         const { deactivate = false, clearChecked = true } = options;
 
@@ -2947,13 +2942,13 @@ window.addEventListener("DOMContentLoaded", async () => {
                         enterSingleProjectPreviewState(renderedWrapper);
 
                         // file1 状态停留一会，再进入 file2
-                        schedulePickedAutoOpen(renderedWrapper, 800);
+                        schedulePickedAutoOpen(renderedWrapper, 1200);
                     }
                 } else {
                     updateDashboardFromWrapper(pickedExistingWrapper);
 
                     if (!wasShowcaseOpen) {
-                        schedulePickedAutoOpen(pickedExistingWrapper, 800);
+                        openPickedWrapperOnHover(pickedExistingWrapper);
                     }
                 }
 
