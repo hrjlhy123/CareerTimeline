@@ -3499,15 +3499,78 @@ window.addEventListener("DOMContentLoaded", async () => {
             return [current, velocity];
         }
 
-        function setTargetFromElement(el, shape = "pill") {
-            const targetElement =
-                el.querySelector(".project-label") ||
-                el.querySelector(".project-back-icon") ||
-                el;
+        let textRectCache = new WeakMap();
 
-            const rect = targetElement.getBoundingClientRect();
+        function getTextContentRect(label) {
+            if (!label) return null;
+
+            const cached = textRectCache.get(label);
+            if (cached) return cached;
+
+            const textNode = Array.from(label.childNodes).find(
+                (node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim()
+            );
+
+            if (!textNode) {
+                const fallback = label.getBoundingClientRect();
+                textRectCache.set(label, fallback);
+                return fallback;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(textNode);
+
+            const rects = range.getClientRects();
+
+            let left = Infinity;
+            let top = Infinity;
+            let right = -Infinity;
+            let bottom = -Infinity;
+
+            for (const rect of rects) {
+                left = Math.min(left, rect.left);
+                top = Math.min(top, rect.top);
+                right = Math.max(right, rect.right);
+                bottom = Math.max(bottom, rect.bottom);
+            }
+
+            range.detach();
+
+            if (!Number.isFinite(left)) {
+                const fallback = label.getBoundingClientRect();
+                textRectCache.set(label, fallback);
+                return fallback;
+            }
+
+            const result = {
+                left,
+                top,
+                right,
+                bottom,
+                width: right - left,
+                height: bottom - top,
+            };
+
+            textRectCache.set(label, result);
+            return result;
+        }
+
+        function setTargetFromElement(el, shape = "pill") {
+            const label = el.querySelector(".project-label");
+            const icon = el.querySelector(".project-back-icon");
+
+            const targetElement = label || icon || el;
+
+            const rect =
+                shape === "pill" && label
+                    ? getTextContentRect(label)
+                    : targetElement.getBoundingClientRect();
+
             const hostRect = host.getBoundingClientRect();
-            const u = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--u")) || 1;
+            const u =
+                parseFloat(
+                    getComputedStyle(document.documentElement).getPropertyValue("--u")
+                ) || 1;
 
             if (shape === "circle") {
                 const size = Math.max(rect.width, rect.height) + 3 * u;
@@ -3517,13 +3580,13 @@ window.addEventListener("DOMContentLoaded", async () => {
                 target.w = size;
                 target.h = size;
             } else {
-                const paddingX = 1.2 * u;
-                const paddingY = 1.2 * u;
-                const extraX = 5 * u;
+                const paddingX = 12.5 * u;
+                const paddingY = 10 * u;
 
-                target.x = rect.left - hostRect.left - paddingX / 2 - extraX;
+                target.x = rect.left - hostRect.left - paddingX;
                 target.y = rect.top - hostRect.top - paddingY;
-                target.w = rect.width - paddingX * 2 + extraX * 2;
+
+                target.w = rect.width + paddingX * 2;
                 target.h = rect.height + paddingY * 2;
             }
 
@@ -3584,6 +3647,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         list.addEventListener("pointerover", (event) => {
             const li = event.target.closest("li");
             if (!li || !list.contains(li)) return;
+            if (event.relatedTarget && li.contains(event.relatedTarget)) return;
 
             activeLi = li;
             visible = true;
@@ -3605,6 +3669,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         list.addEventListener(
             "scroll",
             () => {
+                textRectCache = new WeakMap();
+
                 if (!activeLi) return;
 
                 setTargetFromElement(activeLi, "pill");
@@ -3614,6 +3680,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         );
 
         window.addEventListener("resize", () => {
+            textRectCache = new WeakMap();
+
             if (!activeLi) return;
 
             setTargetFromElement(activeLi, "pill");
