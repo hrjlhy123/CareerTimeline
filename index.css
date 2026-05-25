@@ -1486,7 +1486,7 @@ div.playzone > .tape-hitbox > img.tape {
 
   /* transform-origin: left bottom;
   transform: rotate(-60deg); */
-  opacity: 0.8;
+  opacity: 0.85;
   pointer-events: none;
 }
 
