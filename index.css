@@ -1451,9 +1451,9 @@ div.playzone > .tape-hitbox {
   position: absolute;
   z-index: 25;
 
-  left: calc(var(--iframe-card-w));
-  top: calc(2.5 * var(--u));
-
+  left: calc(var(--iframe-card-w) + 2 * var(--u));
+  top: calc(2 * var(--u));
+  
   height: calc(4 * var(--u));
   width: calc(9 * var(--u));
 
