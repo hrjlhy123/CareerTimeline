@@ -2452,6 +2452,7 @@ div.dashboards {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 0;
   }
 
   html:not(.no-webgpu) div.title > div.project-metrics {
@@ -2467,7 +2468,7 @@ div.dashboards {
     div.title
     > div.project-metrics {
     display: flex;
-    padding: calc(1 * var(--u)) 0 0;
+    padding: calc(1 * var(--u)) 0 calc(3 * var(--u));
     justify-content: center;
   }
 
