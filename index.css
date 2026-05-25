@@ -2542,7 +2542,7 @@ div.dashboards {
 
 div.dashboards > div.summary {
   width: 100%;
-  padding: calc(4 * var(--u));
+  padding: calc(3.5 * var(--u));
 
   border-radius: var(--radius-card);
 
