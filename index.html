@@ -16,6 +16,10 @@
     const forceNoWebGPU = params.has("noWebGPU");
     const forceNoGraphics = params.has("noGraphics");
 
+    const hasProjectDeepLink =
+        params.has("year") &&
+        params.has("project");
+
     // Deep Link Loader: I use URLSearchParams, loading progress, an ARIA live region, CSS variables, and iframe state so users can open a specific project from a link and receive clear loading feedback.
 
     const hasInitialPinnedProjectLink = params.has("project");
@@ -53,7 +57,7 @@
     }
 
     // mobile
-    if (isIPhone || isAndroidPhone) {
+    if ((isIPhone || isAndroidPhone) && !hasProjectDeepLink) {
         goOld("Phone detected");
         return;
     }
