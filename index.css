@@ -1453,7 +1453,7 @@ div.playzone > .tape-hitbox {
 
   left: calc(var(--iframe-card-w) + 2 * var(--u));
   top: calc(2 * var(--u));
-  
+
   height: calc(4 * var(--u));
   width: calc(9 * var(--u));
 
@@ -1477,15 +1477,26 @@ div.playzone > .tape-hitbox.is-pinned {
   width: calc(17 * var(--u));
 }
 
-div.playzone > .tape-hitbox img.tape {
+div.playzone > .tape-hitbox > picture {
   position: absolute;
   left: 0;
   bottom: 0;
 
+  display: block;
   height: calc(4 * var(--u));
+  width: max-content;
 
-  /* transform-origin: left bottom;
-  transform: rotate(-60deg); */
+  overflow: visible;
+  pointer-events: none;
+}
+
+div.playzone > .tape-hitbox img.tape {
+  position: static;
+  display: block;
+
+  height: 100%;
+  width: auto;
+
   opacity: 0.85;
   pointer-events: none;
 }
@@ -2541,7 +2552,7 @@ div.dashboards {
   }
 }
 
-@media (min-aspect-ratio: 16/10) {
+@media (min-aspect-ratio: 2) {
   :root {
     --iframe-card-w: clamp(calc(108 * var(--u)), 48vw, calc(155 * var(--u)));
 
@@ -2550,6 +2561,10 @@ div.dashboards {
       52vw,
       calc(175 * var(--u))
     );
+  }
+
+  div.iframes.has-picked-wrapper {
+    z-index: unset !important;
   }
 }
 
