@@ -5,6 +5,19 @@ import {
 } from "./3D_model.js";
 import { getCoordinates, getRotations } from "./tools/calculate.js"
 
+const TAPE_ASSETS = {
+    tape: {
+        avif: new URL("./resources/tape.avif", import.meta.url).href,
+        webp: new URL("./resources/tape.webp", import.meta.url).href,
+        png: new URL("./resources/tape.png", import.meta.url).href,
+    },
+    tape_2: {
+        avif: new URL("./resources/tape_2.avif", import.meta.url).href,
+        webp: new URL("./resources/tape_2.webp", import.meta.url).href,
+        png: new URL("./resources/tape_2.png", import.meta.url).href,
+    },
+};
+
 "use strict";
 window.addEventListener("DOMContentLoaded", async () => {
 
@@ -2670,17 +2683,17 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         if (!tapeButton || !tapeImage) return;
 
-        const baseName = isPinned ? "tape_2" : "tape";
+        const assets = isPinned ? TAPE_ASSETS.tape_2 : TAPE_ASSETS.tape;
 
         if (tapePicture) {
             const avifSource = tapePicture.querySelector('source[type="image/avif"]');
             const webpSource = tapePicture.querySelector('source[type="image/webp"]');
 
-            avifSource?.setAttribute("srcset", `/resources/${baseName}.avif`);
-            webpSource?.setAttribute("srcset", `/resources/${baseName}.webp`);
+            avifSource?.setAttribute("srcset", assets.avif);
+            webpSource?.setAttribute("srcset", assets.webp);
         }
 
-        tapeImage.src = `/resources/${baseName}.png`;
+        tapeImage.src = assets.png;
 
         tapeButton.classList.toggle("is-pinned", isPinned);
         tapeImage.classList.toggle("is-pinned", isPinned);
