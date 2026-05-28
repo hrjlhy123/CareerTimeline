@@ -4149,20 +4149,46 @@ window.addEventListener("DOMContentLoaded", async () => {
         const config = {
             idleDelay: 60000,
             moveThreshold: 10,
-            growSpeed: 0.03,     // 蔓延速度
+            growSpeed: 0.03,
             revealDuration: 18000,
-            shrinkSpeed: 0.03,    // 鼠标离开后的收回速度
-            edgeSoftness: 0,     // 边缘柔和程度
+            shrinkSpeed: 0.03,
+            edgeSoftness: 0,
             fillColor: "#ddd",
+            backgroundImageSrc: new URL("./resources/mainframe-bg.png", import.meta.url).href,
         };
+
+        const revealBackgroundImage = new Image();
+        let revealBackgroundImageReady = false;
+
+        revealBackgroundImage.onload = () => {
+            revealBackgroundImageReady = true;
+
+            resizeCanvas();
+            paintInitialMask();
+        };
+
+        revealBackgroundImage.src = config.backgroundImageSrc;
+
+        function drawCoverImage(ctx, image, width, height) {
+            ctx.drawImage(image, 0, 0, width, height);
+        }
+
+        function paintRevealBackground(rect) {
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            ctx.globalCompositeOperation = "source-over";
+
+            if (revealBackgroundImageReady) {
+                drawCoverImage(ctx, revealBackgroundImage, rect.width, rect.height);
+            } else {
+                ctx.fillStyle = config.fillColor;
+                ctx.fillRect(0, 0, rect.width, rect.height);
+            }
+        }
 
         function paintInitialMask() {
             const rect = mainFrame.getBoundingClientRect();
 
-            ctx.clearRect(0, 0, rect.width, rect.height);
-            ctx.globalCompositeOperation = "source-over";
-            ctx.fillStyle = config.fillColor;
-            ctx.fillRect(0, 0, rect.width, rect.height);
+            paintRevealBackground(rect);
 
             canvas.classList.add("is-ready");
         }
@@ -4268,10 +4294,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             const rect = mainFrame.getBoundingClientRect();
 
-            ctx.clearRect(0, 0, rect.width, rect.height);
-            ctx.globalCompositeOperation = "source-over";
-            ctx.fillStyle = config.fillColor;
-            ctx.fillRect(0, 0, rect.width, rect.height);
+            paintRevealBackground(rect);
 
             const idleTime = now - state.lastMoveTime;
 
