@@ -2733,6 +2733,11 @@ div.dashboards > div.summary > p.description {
   line-height: 1.25;
 }
 
+div.projectShowcase:has(.iframes > .iframe-wrapper.active:only-child)
+> div.dashboards {
+  z-index: 1;
+}
+
 div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
   > div.dashboards
   > div.summary {
