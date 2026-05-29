@@ -387,6 +387,32 @@ html.no-webgpu div.dashboards > div.project-metrics div.metric-slot {
   }
 } */
 
+.bg-mainframe-intro-video {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  z-index: 1;
+
+  object-fit: fill;
+  pointer-events: none;
+  background-color: #dbe0ea;
+
+  border-radius: inherit;
+  opacity: 0.5;
+
+  transition:
+    opacity 500ms ease-out,
+    filter 500ms ease-out;
+}
+
+.bg-mainframe-intro-video.is-finished {
+  opacity: 0;
+  filter: blur(calc(0.25 * var(--u)));
+}
+
 .mainFrame-reveal-canvas {
   position: absolute;
   inset: 0;
@@ -395,7 +421,7 @@ html.no-webgpu div.dashboards > div.project-metrics div.metric-slot {
   border-radius: inherit;
   pointer-events: none;
   z-index: 1;
-  background-color: #ddd;
+  background-color: #dbe0ea;
 }
 
 .mainFrame-reveal-canvas.is-ready {
@@ -580,7 +606,7 @@ div.mailboxSlot {
 }
 
 div.mailboxSlot > p {
-  color: #ddd;
+  color: #dbe0ea;
 }
 
 div.timelineBelt,
@@ -2025,7 +2051,7 @@ div.iframe-wrapper > iframe {
   opacity: 0;
   display: none;
   z-index: 0;
-  background: #ddd;
+  background: #dbe0ea;
   border-radius: var(--radius-card);
   transition:
     transform 0.3s ease-out,
@@ -2697,7 +2723,6 @@ div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
   pointer-events: none;
 
   padding: 0 1vw;
-  background: rgba(221, 221, 221, 0.5);
 }
 
 .title > .project-metrics {
@@ -2792,12 +2817,14 @@ div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
 
   border-radius: var(--radius-pill);
 
-  background: linear-gradient(
-    145deg,
-    rgb(0 0 0 / 0.018) 0%,
-    rgb(255 255 255 / 0.08) 45%,
-    rgb(255 255 255 / 0.025) 100%
-  );
+  background:
+    linear-gradient(
+      145deg,
+      rgb(0 0 0 / 0.018) 0%,
+      rgb(255 255 255 / 0.08) 45%,
+      rgb(255 255 255 / 0.025) 100%
+    ),
+    rgba(221, 221, 221, 0.5);
 
   box-shadow:
     inset calc(0.45 * var(--u)) calc(0.6 * var(--u)) calc(1.2 * var(--u))

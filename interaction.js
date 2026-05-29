@@ -4153,36 +4153,68 @@ window.addEventListener("DOMContentLoaded", async () => {
             revealDuration: 18000,
             shrinkSpeed: 0.03,
             edgeSoftness: 0,
-            fillColor: "#ddd",
-            backgroundImageSrc: new URL("./resources/mainframe-bg.png", import.meta.url).href,
+            fillColor: "#dbe0ea",
+            backgroundImageSources: [
+                new URL("./resources/bg-mainframe.avif", import.meta.url).href,
+                new URL("./resources/bg-mainframe.webp", import.meta.url).href,
+                new URL("./resources/bg-mainframe.png", import.meta.url).href,
+            ],
         };
 
         const revealBackgroundImage = new Image();
         let revealBackgroundImageReady = false;
 
-        revealBackgroundImage.onload = () => {
-            revealBackgroundImageReady = true;
+        function loadImageWithFallback(sources, image) {
+            let index = 0;
 
-            resizeCanvas();
-            paintInitialMask();
-        };
+            function tryNext() {
+                if (index >= sources.length) {
+                    console.warn("No mainFrame background image could be loaded.");
+                    return;
+                }
 
-        revealBackgroundImage.src = config.backgroundImageSrc;
+                image.onload = () => {
+                    revealBackgroundImageReady = true;
+
+                    resizeCanvas();
+                    paintInitialMask();
+
+                    console.log("Loaded mainFrame background:", sources[index]);
+                };
+
+                image.onerror = () => {
+                    console.warn("Failed to load mainFrame background:", sources[index]);
+
+                    index++;
+                    tryNext();
+                };
+
+                image.src = sources[index];
+            }
+
+            tryNext();
+        }
+
+        loadImageWithFallback(config.backgroundImageSources, revealBackgroundImage);
 
         function drawCoverImage(ctx, image, width, height) {
             ctx.drawImage(image, 0, 0, width, height);
         }
 
         function paintRevealBackground(rect) {
-            ctx.clearRect(0, 0, rect.width, rect.height);
+            const width = rect.width;
+            const height = rect.height;
+
+            ctx.clearRect(0, 0, width, height);
             ctx.globalCompositeOperation = "source-over";
 
             if (revealBackgroundImageReady) {
-                drawCoverImage(ctx, revealBackgroundImage, rect.width, rect.height);
-            } else {
-                ctx.fillStyle = config.fillColor;
-                ctx.fillRect(0, 0, rect.width, rect.height);
+                drawCoverImage(ctx, revealBackgroundImage, width, height);
+                return;
             }
+
+            ctx.fillStyle = config.fillColor;
+            ctx.fillRect(0, 0, width, height);
         }
 
         function paintInitialMask() {
@@ -4422,6 +4454,55 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         resizeCanvas();
         paintInitialMask();
+
+        const introVideo = document.querySelector(".bg-mainframe-intro-video");
+
+        if (introVideo) {
+            const params = new URLSearchParams(window.location.search);
+
+            const hasProjectDeepLink =
+                params.has("year") &&
+                params.has("project");
+
+            // Shared project deep link: skip intro video.
+            if (hasProjectDeepLink) {
+                introVideo.remove();
+            } else {
+                let introFinished = false;
+
+                // 2s video
+                introVideo.defaultPlaybackRate = .6666;
+                introVideo.playbackRate = .6666;
+
+                const finishIntroVideo = () => {
+                    if (introFinished) return;
+                    introFinished = true;
+
+                    introVideo.classList.add("is-finished");
+
+                    window.setTimeout(() => {
+                        introVideo.remove();
+                    }, 500);
+                };
+
+                introVideo.addEventListener("loadedmetadata", () => {
+                    introVideo.playbackRate = .6666;
+                }, { once: true });
+
+                introVideo.addEventListener("ended", finishIntroVideo, { once: true });
+
+                introVideo.addEventListener("error", () => {
+                    introVideo.remove();
+                }, { once: true });
+
+                // fallback: 2s playback + 0.5s fade + buffer
+                window.setTimeout(() => {
+                    if (introVideo.isConnected) {
+                        finishIntroVideo();
+                    }
+                }, 3500);
+            }
+        }
 
         window.addEventListener("resize", () => {
             resizeCanvas();
