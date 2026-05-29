@@ -2360,6 +2360,28 @@ div.projectShowcase.active .projectList {
   }
 }
 
+div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
+  > .iframe-wrapper:not(.active)
+  > .iframe-mask::after {
+  content: "Portfolio Notice: Projects are personal, academic, authorized, or sanitized portfolio versions, and are not connected to live company systems.";
+
+  position: absolute;
+  left: 50%;
+  bottom: 25%;
+  transform: translateX(-50%);
+
+  color: #ddd;
+  font-size: calc(0.95 * var(--u));
+  text-align: center;
+  white-space: nowrap;
+
+  pointer-events: none;
+
+  text-shadow:
+    0 calc(0.05 * var(--u)) calc(0.1 * var(--u)) rgb(0 0 0 / 0.35),
+    0 0 calc(0.3 * var(--u)) rgb(0 0 0 / 0.18);
+}
+
 div.dashboards {
   position: absolute;
   top: calc(29 * var(--u));
@@ -2465,6 +2487,12 @@ div.dashboards {
   /* div.projectShowcase {
     left: -2%;
   } */
+
+  div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
+  > .iframe-wrapper:not(.active)
+  > .iframe-mask::after {
+    left: 43.5%;
+  }
 
   div.projectShowcase:has(.iframes > .iframe-wrapper.is-picked-wrapper)
     > .playzone {
