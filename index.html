@@ -174,14 +174,42 @@
             <canvas class="mainFrame-reveal-canvas"></canvas>
             <video
                 class="bg-mainframe-intro-video"
+                src="./resources/bg-mainframe-intro.mp4"
                 muted
                 autoplay
                 playsinline
                 preload="auto"
                 aria-hidden="true">
-                <source src="./resources/bg-mainframe-intro.mp4"
-                    type="video/mp4">
             </video>
+
+            <script>
+(() => {
+    const introVideo = document.querySelector(".bg-mainframe-intro-video");
+    if (!introVideo) return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    const hasProjectDeepLink =
+        params.has("year") &&
+        params.has("project");
+
+    if (hasProjectDeepLink) {
+        introVideo.remove();
+        return;
+    }
+
+    introVideo.defaultPlaybackRate = 0.5333;
+    introVideo.playbackRate = 0.5333;
+
+    introVideo.load();
+
+    const playPromise = introVideo.play();
+
+    if (playPromise?.catch) {
+        playPromise.catch(() => {});
+    }
+})();
+            </script>
             <div class="mailboxSlot">
                 <p>
                     Portfolio component overview for AI readability.

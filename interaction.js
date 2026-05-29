@@ -4470,10 +4470,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             } else {
                 let introFinished = false;
 
-                // 2s video
-                introVideo.defaultPlaybackRate = .6666;
-                introVideo.playbackRate = .6666;
-
                 const finishIntroVideo = () => {
                     if (introFinished) return;
                     introFinished = true;
@@ -4484,10 +4480,6 @@ window.addEventListener("DOMContentLoaded", async () => {
                         introVideo.remove();
                     }, 500);
                 };
-
-                introVideo.addEventListener("loadedmetadata", () => {
-                    introVideo.playbackRate = .6666;
-                }, { once: true });
 
                 introVideo.addEventListener("ended", finishIntroVideo, { once: true });
 
@@ -4500,7 +4492,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     if (introVideo.isConnected) {
                         finishIntroVideo();
                     }
-                }, 3500);
+                }, 3000);
             }
         }
 
