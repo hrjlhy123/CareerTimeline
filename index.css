@@ -404,8 +404,8 @@ html.no-webgpu div.dashboards > div.project-metrics div.metric-slot {
   opacity: 0.5;
 
   transition:
-    opacity 500ms ease-out,
-    filter 500ms ease-out;
+    opacity 300ms ease-out,
+    filter 300ms ease-out;
 }
 
 .bg-mainframe-intro-video.is-finished {

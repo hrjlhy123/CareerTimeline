@@ -4478,7 +4478,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
                     window.setTimeout(() => {
                         introVideo.remove();
-                    }, 500);
+                    }, 300);
                 };
 
                 introVideo.addEventListener("ended", finishIntroVideo, { once: true });
@@ -4492,7 +4492,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     if (introVideo.isConnected) {
                         finishIntroVideo();
                     }
-                }, 2500);
+                }, 1300);
             }
         }
 
