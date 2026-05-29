@@ -4492,7 +4492,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                     if (introVideo.isConnected) {
                         finishIntroVideo();
                     }
-                }, 1300);
+                }, 800);
             }
         }
 
