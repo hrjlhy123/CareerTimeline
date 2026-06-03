@@ -2385,6 +2385,7 @@ div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
 div.dashboards {
   position: absolute;
   top: calc(29 * var(--u));
+  margin: 0 calc(1 * var(--u));
   right: 0;
   width: calc(3 / 16 * 98vw);
   max-width: calc(55 * var(--u));
@@ -2625,7 +2626,7 @@ div.dashboards {
 
 div.dashboards > div.summary {
   width: 100%;
-  padding: calc(3.5 * var(--u));
+  padding: calc(3 * var(--u));
 
   border-radius: var(--radius-card);
 
