@@ -4,6 +4,23 @@ import {
     clearTimelineScrollQueue
 } from "./3D_model.js";
 import { getCoordinates, getRotations } from "./tools/calculate.js"
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: "strict",
+    theme: "base",
+    themeVariables: {
+        fontFamily: "monospace"
+    },
+    flowchart: {
+        htmlLabels: true,
+        curve: "basis",
+        useMaxWidth: true,
+        nodeSpacing: 45,
+        rankSpacing: 60
+    }
+});
 
 const TAPE_ASSETS = {
     tape: {
@@ -857,7 +874,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const projectShowcase = document.querySelector("div.projectShowcase");
             const iframes = document.querySelector("div.playzone > div.iframes");
             const title = document.querySelector("div.title > p.title");
-            const summary = document.querySelector("div.dashboards > div.summary");
+            const summary = document.querySelector("div.dashboards div.summary");
 
             if (!projectShowcase || !iframes) return;
 
@@ -1114,6 +1131,15 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     window.addEventListener("resize", scheduleRefreshIframeStackVars);
+    window.addEventListener("resize", () => {
+        const body = document.querySelector(".architecture-bg-body");
+
+        if (!body?.querySelector("svg")) return;
+
+        requestAnimationFrame(() => {
+            fitArchitectureSvg(body);
+        });
+    });
     syncProjectMetricsPlacement();
 
     // —— 全局轮播管理 —— //
@@ -2138,6 +2164,121 @@ window.addEventListener("DOMContentLoaded", async () => {
         impact: 0,
     });
 
+    const architectureSvgCache = new Map();
+    let architectureRenderToken = 0;
+
+    function getProjectArchitectureMermaid(project) {
+        return (
+            project?.architecture?.architectureMermaidPreview ||
+            project?.architecture?.mermaidPreview ||
+            project?.architecture?.preview?.mermaid ||
+
+            project?.architectureMermaidPreview ||
+            project?.mermaidPreview ||
+
+            project?.architecture?.architectureMermaid ||
+            project?.architecture?.mermaid ||
+
+            project?.architectureMermaid ||
+            project?.mermaid ||
+
+            project?.dashboard?.architectureMermaid ||
+            project?.dashboard?.mermaid ||
+
+            ""
+        );
+    }
+
+    function getArchitectureKey(project, index) {
+        const baseKey =
+            project?.architecture?._id?.$oid ||
+            project?.architecture?._id ||
+            project?.dashboardKey ||
+            project?.dashboard?.dashboardKey ||
+            getProjectDashboardKey(project, index);
+
+        const previewVersion =
+            project?.architecture?.architecturePreviewNodeCount ||
+            project?.architecture?.architecturePreviewEdgeCount ||
+            project?.architecture?.architecturePreviewAvailable ||
+            "preview";
+
+        return `${baseKey}::${previewVersion}`;
+    }
+
+    function clampNumber(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    function fitArchitectureSvg(body) {
+        const svg = body?.querySelector("svg");
+
+        if (!body || !svg) return;
+
+        svg.removeAttribute("width");
+        svg.removeAttribute("height");
+        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+        body.style.setProperty("--architecture-zoom", "1");
+        body.style.setProperty("--architecture-font-scale", "1");
+    }
+
+    async function renderProjectArchitectureBackground(project, index) {
+        const architectureHost = document.querySelector("div.dashboards");
+        const body = architectureHost?.querySelector(".architecture-bg-body");
+
+        if (!architectureHost || !body) return;
+
+        const mermaidCode = getProjectArchitectureMermaid(project);
+        const available =
+            project?.architectureAvailable !== false &&
+            project?.architecture?.architectureAvailable !== false &&
+            mermaidCode.trim();
+
+        if (!available) {
+            architectureHost.classList.remove("has-architecture-bg");
+            body.innerHTML = `<div class="architecture-bg-empty"><p>Architecture not available</p></div>`;
+            return;
+        }
+
+        architectureHost.classList.add("has-architecture-bg");
+
+        const token = ++architectureRenderToken;
+        const key = getArchitectureKey(project, index);
+
+        if (architectureSvgCache.has(key)) {
+            body.innerHTML = architectureSvgCache.get(key);
+
+            requestAnimationFrame(() => {
+                fitArchitectureSvg(body);
+            });
+
+            return;
+        }
+
+        try {
+            const renderId = `architecture-bg-${String(key).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+            const result = await mermaid.render(renderId, mermaidCode);
+
+            if (token !== architectureRenderToken) return;
+
+            architectureSvgCache.set(key, result.svg);
+            body.innerHTML = result.svg;
+
+            requestAnimationFrame(() => {
+                fitArchitectureSvg(body);
+            });
+        } catch (error) {
+            console.warn("Failed to render architecture Mermaid:", error);
+
+            if (token !== architectureRenderToken) return;
+
+            architectureHost.classList.add("has-architecture-bg");
+            body.innerHTML = `<div class="architecture-bg-empty">Architecture preview unavailable</div>`;
+        }
+    }
+
     let dashboardUpdateToken = 0;
 
     function getProjectDashboardKey(project, index) {
@@ -2196,7 +2337,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     function renderDashboardProject(project, index, meta, wrapper = null) {
-        const summary = document.querySelector(".dashboards > .summary");
+        const summary = document.querySelector(".dashboards .summary");
         if (!summary) return;
 
         const titleLink = summary.querySelector(".summary-title-link");
@@ -2227,6 +2368,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         setMetricValue("complexity", meta.complexity);
         setMetricValue("ownership", meta.ownership);
         setMetricValue("impact", meta.impact);
+
+        renderProjectArchitectureBackground(project, index);
     }
 
     async function updateDashboardByIndex(index, wrapper = null) {
