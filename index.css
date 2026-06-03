@@ -2577,7 +2577,9 @@ div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
     > div.dashboards
     > div.dashboard-cards
     > div.summary {
-    display: initial !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
     width: calc(58.3333 * var(--u));
     background: rgba(221, 221, 221, 0.5);
   }
