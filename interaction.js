@@ -875,6 +875,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const iframes = document.querySelector("div.playzone > div.iframes");
             const title = document.querySelector("div.title > p.title");
             const summary = document.querySelector("div.dashboards div.summary");
+            const architecture = document.querySelector("div.dashboards .architecture-bg");
 
             if (!projectShowcase || !iframes) return;
 
@@ -883,6 +884,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const clickedActiveWrapper = event.target.closest(".iframe-wrapper.active");
             const clickedTitle = title?.contains(event.target);
             const clickedSummary = summary?.contains(event.target);
+            const clickedArchitecture = architecture?.contains(event.target);
             const clickedDashboardControl = event.target.closest(
                 ".metric-value, .metric-slot, .metric-label"
             );
@@ -891,6 +893,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 clickedActiveWrapper ||
                 clickedTitle ||
                 clickedSummary ||
+                clickedArchitecture ||
                 clickedDashboardControl
             ) return;
 
@@ -2223,6 +2226,120 @@ window.addEventListener("DOMContentLoaded", async () => {
         body.style.setProperty("--architecture-font-scale", "1");
     }
 
+    function getArchitectureNodeType(nodeText = "") {
+        const text = String(nodeText).toLowerCase();
+
+        if (text.includes("frontend")) return "frontend";
+        if (text.includes("backend") || text.includes("api")) return "backend";
+        if (
+            text.includes("data") ||
+            text.includes("mongodb") ||
+            text.includes("static assets") ||
+            text.includes("spatial") ||
+            text.includes("dicom")
+        ) return "data";
+        if (text.includes("ai")) return "ai";
+        if (
+            text.includes("webgpu") ||
+            text.includes("renderer") ||
+            text.includes("3d renderer")
+        ) return "renderer";
+        if (
+            text.includes("external") ||
+            text.includes("service") ||
+            text.includes("devops")
+        ) return "external";
+        if (text.includes("output")) return "output";
+        if (text.includes("user")) return "user";
+
+        return "";
+    }
+
+    function getArchitectureNodeSummary(project, type, nodeText = "") {
+        switch (type) {
+            case "frontend":
+                return project?.architecture?.frontendSummary || project?.frontendSummary || "";
+            case "backend":
+                return project?.architecture?.backendSummary || project?.backendSummary || "";
+            case "data":
+                return project?.architecture?.dataSummary || project?.dataSummary || "";
+            case "ai":
+                return project?.containsAI || project?.architecture?.containsAI
+                    ? "AI-related layer used for OCR, LLM, computer vision, or assisted workflow logic."
+                    : "";
+            case "renderer":
+                return project?.containsWebGPU || project?.architecture?.containsWebGPU
+                    ? "Graphics/rendering layer for WebGPU, WebGL, 3D visualization, or shader-based browser rendering."
+                    : "";
+            case "external": {
+                const categories =
+                    project?.architecture?.externalCategories ||
+                    project?.externalCategories ||
+                    [];
+
+                return categories.length
+                    ? `External integration layer: ${categories.join(", ")}.`
+                    : "External service or integration layer.";
+            }
+            case "output":
+                return "Final user-facing project output or rendered experience.";
+            case "user":
+                return "Primary user or actor interacting with the project.";
+            default:
+                return "";
+        }
+    }
+
+    function bindArchitectureSvgInteractions(body, project, meta) {
+        const svg = body?.querySelector("svg");
+        const summary = document.querySelector(".dashboards .summary");
+        const descriptionEl = summary?.querySelector("p.description > span");
+
+        if (!svg || !descriptionEl) return;
+
+        const originalDescription = meta?.description || descriptionEl.textContent || "";
+
+        svg.querySelectorAll(".node").forEach((node) => {
+            const nodeText = node.textContent || "";
+            const type = getArchitectureNodeType(nodeText);
+            const summaryText = getArchitectureNodeSummary(project, type, nodeText);
+
+            node.dataset.architectureType = type;
+            node.style.cursor = summaryText ? "pointer" : "default";
+
+            node.addEventListener("pointerover", (event) => {
+                if (!summaryText) return;
+
+                if (event.relatedTarget && node.contains(event.relatedTarget)) return;
+
+                descriptionEl.textContent = summaryText;
+                svg.classList.add("is-node-hovering");
+                node.classList.add("is-architecture-node-hover");
+            });
+
+            node.addEventListener("pointerout", (event) => {
+                if (event.relatedTarget && node.contains(event.relatedTarget)) return;
+
+                descriptionEl.textContent = originalDescription;
+                svg.classList.remove("is-node-hovering");
+                node.classList.remove("is-architecture-node-hover");
+            });
+
+            node.addEventListener("click", (event) => {
+                event.stopPropagation();
+
+                svg.querySelectorAll(".node.is-architecture-node-selected")
+                    .forEach((item) => {
+                        if (item !== node) {
+                            item.classList.remove("is-architecture-node-selected");
+                        }
+                    });
+
+                node.classList.toggle("is-architecture-node-selected");
+            });
+        });
+    }
+
     async function renderProjectArchitectureBackground(project, index) {
         const architectureHost = document.querySelector("div.dashboards");
         const body = architectureHost?.querySelector(".architecture-bg-body");
@@ -2251,6 +2368,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             requestAnimationFrame(() => {
                 fitArchitectureSvg(body);
+                bindArchitectureSvgInteractions(body, project, project?.dashboard);
             });
 
             return;
@@ -2268,6 +2386,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
             requestAnimationFrame(() => {
                 fitArchitectureSvg(body);
+                bindArchitectureSvgInteractions(body, project, project?.dashboard);
             });
         } catch (error) {
             console.warn("Failed to render architecture Mermaid:", error);
@@ -3602,7 +3721,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     function initProjectCellBlob() {
         const host = document.querySelector(".projectList");
         const list = host?.querySelector(".hotzone-list");
-        const backButton = host.querySelector(".project-back-button");
+        const backButton = host?.querySelector(".project-back-button");
+        const backHotzone = document.querySelector("div.mainFrame > div.hotzone");
 
         if (!host || !list) return;
         if (host.querySelector(".project-cell-blob")) return;
@@ -3855,7 +3975,9 @@ window.addEventListener("DOMContentLoaded", async () => {
             start();
         });
 
-        backButton?.addEventListener("pointerover", () => {
+        function showBackButtonBlob() {
+            if (!backButton) return;
+
             activeLi = null;
             visible = true;
 
@@ -3863,13 +3985,26 @@ window.addEventListener("DOMContentLoaded", async () => {
             blob.classList.add("is-visible");
 
             start();
-        });
+        }
 
-        backButton?.addEventListener("pointerleave", () => {
+        function hideBackButtonBlob() {
             visible = false;
             blob.classList.remove("is-visible");
 
             start();
+        }
+
+        backButton?.addEventListener("pointerover", showBackButtonBlob);
+        backButton?.addEventListener("pointerleave", hideBackButtonBlob);
+
+        backHotzone?.addEventListener("pointerover", showBackButtonBlob);
+        backHotzone?.addEventListener("pointerleave", hideBackButtonBlob);
+
+        backHotzone?.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            backButton?.click();
         });
     }
 

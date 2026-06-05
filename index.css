@@ -238,6 +238,23 @@ div.mainFrame {
   overflow: hidden;
 }
 
+div.mainFrame > div.hotzone {
+  position: absolute;
+  top: calc(3 * var(--u) + 0.5vh);
+  right: calc(3 * var(--u) + 0.5vw);
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
+  border-radius: 50%;
+  z-index: 2;
+  cursor: pointer;
+}
+
+/* div.mainFrame:has(> div.hotzone:hover):has(
+    div.iframes > .iframe-wrapper + .iframe-wrapper
+  )
+  > div.projectShowcase {
+} */
+
 html.no-webgpu > body > div.mainFrame {
   display: block;
   position: relative;
@@ -1150,11 +1167,6 @@ div.projectShowcase > div.projectList {
   );
 }
 
-div.projectList:hover,
-div.projectShowcase:has(div.dashboards:hover) div.projectList {
-  z-index: 5 !important;
-}
-
 div.projectShowcase > div.projectList:has(ol.hotzone-list > li:hover) {
   z-index: 2;
 }
@@ -1300,8 +1312,8 @@ div.projectList > ol.hotzone-list {
   top: calc(3 * var(--u));
   right: calc(3 * var(--u));
 
-  width: calc(6.6 * var(--u));
-  height: calc(6.6 * var(--u));
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
 
   border: none;
   padding: 0;
@@ -2496,6 +2508,10 @@ div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
     flex-grow: 1;
   }
 
+  div.mainFrame > div.hotzone {
+    display: none;
+  }
+
   div.iframes.is-single-wrapper > div.iframe-wrapper.active,
   div.iframes.has-picked-wrapper > div.iframe-wrapper.active.is-picked-wrapper {
     left: initial !important;
@@ -2591,11 +2607,7 @@ div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
     > div.dashboard-cards
     > div.summary
     > p.description {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
     font-size: calc(1.3 * var(--u));
-    flex-grow: 1;
   }
 
   div.projectShowcase:has(
@@ -2640,10 +2652,15 @@ div.dashboards {
   width: calc(3 / 16 * 98vw);
   max-width: calc(55 * var(--u));
   height: calc(94 * var(--u));
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: space-between;
   z-index: 4;
+}
+
+div.mainFrame:has(div.iframes > .iframe-wrapper + .iframe-wrapper)
+  div.dashboards {
+  display: flex;
 }
 
 div.dashboards > div.dashboard-cards {
@@ -2693,6 +2710,10 @@ div.dashboards > div.dashboard-cards > div.summary {
   position: relative;
   isolation: isolate;
   pointer-events: auto;
+}
+
+div.dashboards > div.dashboard-cards > div.summary {
+  min-height: calc(24 * var(--u));
 }
 
 div.dashboards > div.dashboard-cards > div.architecture-bg::after,
@@ -2763,15 +2784,18 @@ div.dashboards
 }
 
 div.dashboards > div.dashboard-cards > div.summary > p.description {
-  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   font-size: calc(1.6 * var(--u));
   line-height: 1.2;
+  flex-grow: 1;
 }
 
 div.dashboards > div.dashboard-cards > div.architecture-bg {
   width: 100%;
   height: calc(24 * var(--u));
-  pointer-events: none;
+  pointer-events: auto;
   padding: calc(3 * var(--u));
   transition:
     opacity 260ms ease,
@@ -2814,6 +2838,11 @@ div.dashboards > div.dashboard-cards > div.architecture-bg {
   font-size: calc(1.6 * var(--u));
 }
 
+.architecture-bg-body svg,
+.architecture-bg-body svg .node {
+  pointer-events: auto;
+}
+
 .architecture-bg-body {
   width: 100%;
   height: 100%;
@@ -2845,6 +2874,35 @@ div.dashboards > div.dashboard-cards > div.architecture-bg {
 
 .architecture-bg-body svg > g {
   height: 100%;
+}
+
+.architecture-bg-body svg .node {
+  cursor: pointer;
+}
+
+.architecture-bg-body svg .node:hover rect,
+.architecture-bg-body svg .node:hover polygon,
+.architecture-bg-body svg .node:hover path {
+  filter: brightness(1.08);
+  stroke-width: 2px;
+}
+
+.architecture-bg-body svg .node:hover rect,
+.architecture-bg-body svg .node:hover polygon,
+.architecture-bg-body svg .node:hover path,
+.architecture-bg-body svg .node.is-architecture-node-hover rect,
+.architecture-bg-body svg .node.is-architecture-node-hover polygon,
+.architecture-bg-body svg .node.is-architecture-node-hover path {
+  stroke-width: 2px !important;
+  filter: brightness(1.08);
+}
+
+.architecture-bg-body svg .node.is-architecture-node-selected rect,
+.architecture-bg-body svg .node.is-architecture-node-selected polygon,
+.architecture-bg-body svg .node.is-architecture-node-selected path {
+  stroke-width: 2.5px !important;
+  filter: brightness(1.15)
+    drop-shadow(0 0 calc(0.45 * var(--u)) rgb(255 255 255 / 0.75));
 }
 
 .architecture-bg-body {
@@ -2881,7 +2939,10 @@ div.projectShowcase:has(.iframes > .iframe-wrapper.active:not(:only-child))
   > div.dashboards
   > div.dashboard-cards
   > div.summary {
-  display: initial !important;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 /* progress bar */

@@ -183,32 +183,32 @@
             </video>
 
             <script>
-(() => {
-    const introVideo = document.querySelector(".bg-mainframe-intro-video");
-    if (!introVideo) return;
+            (() => {
+                const introVideo = document.querySelector(".bg-mainframe-intro-video");
+                if (!introVideo) return;
 
-    const params = new URLSearchParams(window.location.search);
+                const params = new URLSearchParams(window.location.search);
 
-    const hasProjectDeepLink =
-        params.has("year") &&
-        params.has("project");
+                const hasProjectDeepLink =
+                    params.has("year") &&
+                    params.has("project");
 
-    if (hasProjectDeepLink) {
-        introVideo.remove();
-        return;
-    }
+                if (hasProjectDeepLink) {
+                    introVideo.remove();
+                    return;
+                }
 
-    introVideo.defaultPlaybackRate = 2;
-    introVideo.playbackRate = 2;
+                introVideo.defaultPlaybackRate = 2;
+                introVideo.playbackRate = 2;
 
-    introVideo.load();
+                introVideo.load();
 
-    const playPromise = introVideo.play();
+                const playPromise = introVideo.play();
 
-    if (playPromise?.catch) {
-        playPromise.catch(() => {});
-    }
-})();
+                if (playPromise?.catch) {
+                    playPromise.catch(() => {});
+                }
+            })();
             </script>
             <div class="mailboxSlot">
                 <p>
@@ -448,7 +448,7 @@
                     role="region"
                     aria-label="I use MongoDB project data, WebSocket delivery, dynamic link state, ARIA state, CSS --value, and progress fill effects to present each project's summary, external link, complexity, ownership, and impact.">
                     <div class="dashboard-cards">
-                        <div class="architecture-bg" aria-hidden="true">
+                        <div class="architecture-bg" role="region" aria-label="Project architecture diagram">
                             <div
                                 class="architecture-bg-title">Architecture</div>
                             <div class="architecture-bg-body"></div>
@@ -504,6 +504,7 @@
                     </div>
                 </div>
             </div>
+            <div class="hotzone"></div>
         </div>
 
         <script type="module" src="./3D_model.js"></script>
