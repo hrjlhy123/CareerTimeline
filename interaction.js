@@ -2340,8 +2340,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         const summary = document.querySelector(".dashboards .summary");
         if (!summary) return;
 
-        const titleLink = summary.querySelector(".summary > .title");
-        const descriptionEl = summary.querySelector(".summary > .description > span");
+        const titleLink = summary.querySelector("div.summary > p.title > a.summary-title-link");
+        const descriptionEl = summary.querySelector("div.summary > p.description > span");
 
         const year = project ? getProjectYear(project) : "";
         const name = project?.name || "";
