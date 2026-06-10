@@ -250,6 +250,10 @@ div.mainFrame > div.hotzone {
   display: none;
 }
 
+div.mainFrame:has(.iframe-wrapper + .iframe-wrapper) > div.hotzone {
+  display: initial;
+}
+
 /* div.mainFrame:has(> div.hotzone:hover):has(
     div.iframes > .iframe-wrapper + .iframe-wrapper
   )
@@ -2511,10 +2515,6 @@ div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
 
   div.mainFrame > div.hotzone {
     display: none;
-  }
-
-  div.mainFrame:has(.iframe-wrapper + .iframe-wrapper) > div.hotzone {
-    display: initial;
   }
 
   div.iframes.is-single-wrapper > div.iframe-wrapper.active,
