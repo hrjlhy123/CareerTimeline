@@ -4004,7 +4004,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
             event.stopPropagation();
 
-            backButton?.click();
+            goBackToAllProjects(event);
         });
     }
 
