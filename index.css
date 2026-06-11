@@ -2458,7 +2458,7 @@ div.iframes:not(:has(> .iframe-wrapper + .iframe-wrapper))
   div.projectShowcase:has(.iframes > .iframe-wrapper.is-picked-wrapper)
     > .playzone {
     position: relative;
-    z-index: 4;
+    z-index: 5;
   }
 
   div.projectShowcase:has(
